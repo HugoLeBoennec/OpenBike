@@ -1,0 +1,234 @@
+import 'package:drift/drift.dart';
+
+import '../../core/domain/entities/lap.dart';
+import '../../core/domain/entities/ride.dart';
+import '../../core/domain/entities/sensor_reading.dart';
+import '../../core/domain/entities/user_profile.dart';
+import '../../core/domain/ports/storage_port.dart';
+import '../../core/domain/value_objects/value_objects.dart';
+import 'app_database.dart';
+
+/// [StoragePort] implementation backed by Drift (SQLite).
+class DriftStorage implements StoragePort {
+  final AppDatabase _db;
+
+  DriftStorage(this._db);
+
+  // -------------------------------------------------------------------------
+  // Rides
+  // -------------------------------------------------------------------------
+
+  @override
+  Future<void> saveRide(Ride ride) async {
+    await _db.into(_db.rides).insertOnConflictUpdate(
+          RidesCompanion.insert(
+            id: ride.id,
+            startTime: ride.startTime.millisecondsSinceEpoch,
+            endTime: Value(ride.endTime?.millisecondsSinceEpoch),
+            status: ride.status.name,
+            avgPower: Value(ride.averagePower.value),
+            normalizedPower: Value(ride.normalizedPower.value),
+            maxPower: Value(ride.maxPower.value),
+            avgCadence: Value(ride.averageCadence.rpm),
+            avgHr: Value(ride.averageHr.bpm.toDouble()),
+            maxHr: Value(ride.maxHr.bpm.toDouble()),
+            totalDistance: Value(ride.totalDistance.meters),
+            durationSeconds: Value(ride.activeDuration.inSeconds),
+            pauseDurationSeconds: Value(ride.pauseDuration.inSeconds),
+            tss: const Value(null), // computed externally with FTP
+            intensityFactor: const Value(null),
+            ftpAtTime: const Value(null),
+          ),
+        );
+  }
+
+  /// Saves a ride with pre-computed TSS/IF metrics.
+  Future<void> saveRideWithMetrics(
+    Ride ride, {
+    required double tssValue,
+    required double ifValue,
+    required double ftpValue,
+  }) async {
+    await _db.into(_db.rides).insertOnConflictUpdate(
+          RidesCompanion.insert(
+            id: ride.id,
+            startTime: ride.startTime.millisecondsSinceEpoch,
+            endTime: Value(ride.endTime?.millisecondsSinceEpoch),
+            status: ride.status.name,
+            avgPower: Value(ride.averagePower.value),
+            normalizedPower: Value(ride.normalizedPower.value),
+            maxPower: Value(ride.maxPower.value),
+            avgCadence: Value(ride.averageCadence.rpm),
+            avgHr: Value(ride.averageHr.bpm.toDouble()),
+            maxHr: Value(ride.maxHr.bpm.toDouble()),
+            totalDistance: Value(ride.totalDistance.meters),
+            durationSeconds: Value(ride.activeDuration.inSeconds),
+            pauseDurationSeconds: Value(ride.pauseDuration.inSeconds),
+            tss: Value(tssValue),
+            intensityFactor: Value(ifValue),
+            ftpAtTime: Value(ftpValue),
+          ),
+        );
+  }
+
+  @override
+  Future<Ride?> getRide(String id) async {
+    final row = await (_db.select(_db.rides)
+          ..where((t) => t.id.equals(id)))
+        .getSingleOrNull();
+    if (row == null) return null;
+    return _rideFromRow(row);
+  }
+
+  @override
+  Future<List<Ride>> getRides() async {
+    final rows = await (_db.select(_db.rides)
+          ..orderBy([(t) => OrderingTerm.desc(t.startTime)]))
+        .get();
+    return rows.map(_rideFromRow).toList();
+  }
+
+  @override
+  Future<void> deleteRide(String id) async {
+    // Delete dependent rows first (no cascading FK in SQLite by default).
+    await (_db.delete(_db.sensorReadings)
+          ..where((t) => t.rideId.equals(id)))
+        .go();
+    await (_db.delete(_db.laps)..where((t) => t.rideId.equals(id))).go();
+    await (_db.delete(_db.exportQueue)..where((t) => t.rideId.equals(id)))
+        .go();
+    await (_db.delete(_db.rides)..where((t) => t.id.equals(id))).go();
+  }
+
+  Ride _rideFromRow(RideRow row) {
+    return Ride(
+      id: row.id,
+      startTime: DateTime.fromMillisecondsSinceEpoch(row.startTime),
+      endTime: row.endTime != null
+          ? DateTime.fromMillisecondsSinceEpoch(row.endTime!)
+          : null,
+      status: RideStatus.values.byName(row.status),
+      pauseDuration: Duration(seconds: row.pauseDurationSeconds ?? 0),
+      // readings and laps are loaded separately on demand.
+    );
+  }
+
+  // -------------------------------------------------------------------------
+  // Sensor Readings
+  // -------------------------------------------------------------------------
+
+  @override
+  Future<void> saveSensorReadings(
+    String rideId,
+    List<SensorReading> readings,
+  ) async {
+    await _db.batch((batch) {
+      batch.insertAll(
+        _db.sensorReadings,
+        readings.map(
+          (r) => SensorReadingsCompanion.insert(
+            rideId: rideId,
+            timestamp: r.timestamp.millisecondsSinceEpoch,
+            powerWatts: Value(r.power?.value),
+            cadenceRpm: Value(r.cadence?.rpm),
+            heartRateBpm: Value(r.heartRate?.bpm),
+            speedKmh: Value(r.speed?.kmh),
+            distanceM: Value(r.distance?.meters),
+          ),
+        ),
+      );
+    });
+  }
+
+  @override
+  Future<List<SensorReading>> getSensorReadings(String rideId) async {
+    final rows = await (_db.select(_db.sensorReadings)
+          ..where((t) => t.rideId.equals(rideId))
+          ..orderBy([(t) => OrderingTerm.asc(t.timestamp)]))
+        .get();
+    return rows.map(_sensorReadingFromRow).toList();
+  }
+
+  SensorReading _sensorReadingFromRow(SensorReadingRow row) {
+    return SensorReading(
+      timestamp: DateTime.fromMillisecondsSinceEpoch(row.timestamp),
+      power: row.powerWatts != null ? Watts(row.powerWatts!) : null,
+      cadence: row.cadenceRpm != null ? Cadence(row.cadenceRpm!) : null,
+      heartRate:
+          row.heartRateBpm != null ? HeartRate(row.heartRateBpm!) : null,
+      speed: row.speedKmh != null ? Speed(row.speedKmh!) : null,
+      distance: row.distanceM != null ? Distance(row.distanceM!) : null,
+    );
+  }
+
+  // -------------------------------------------------------------------------
+  // Laps
+  // -------------------------------------------------------------------------
+
+  @override
+  Future<void> saveLaps(String rideId, List<Lap> laps) async {
+    await _db.batch((batch) {
+      batch.insertAll(
+        _db.laps,
+        laps.map(
+          (l) => LapsCompanion.insert(
+            rideId: rideId,
+            startIndex: l.startIndex,
+            endIndex: l.endIndex,
+            startTime: l.startTime.millisecondsSinceEpoch,
+            durationMs: l.duration.inMilliseconds,
+          ),
+        ),
+      );
+    });
+  }
+
+  @override
+  Future<List<Lap>> getLaps(String rideId) async {
+    final rows = await (_db.select(_db.laps)
+          ..where((t) => t.rideId.equals(rideId))
+          ..orderBy([(t) => OrderingTerm.asc(t.startIndex)]))
+        .get();
+    return rows
+        .map((r) => Lap(
+              startIndex: r.startIndex,
+              endIndex: r.endIndex,
+              startTime: DateTime.fromMillisecondsSinceEpoch(r.startTime),
+              duration: Duration(milliseconds: r.durationMs),
+            ))
+        .toList();
+  }
+
+  // -------------------------------------------------------------------------
+  // User Profile
+  // -------------------------------------------------------------------------
+
+  @override
+  Future<void> saveProfile(UserProfile profile) async {
+    await _db.into(_db.userProfiles).insertOnConflictUpdate(
+          UserProfilesCompanion.insert(
+            id: 'default',
+            name: profile.name,
+            ftp: profile.ftp.value,
+            maxHr: Value(profile.maxHr.bpm),
+            restHr: Value(profile.restingHr.bpm),
+            weight: Value(profile.weight),
+            height: Value(profile.height),
+          ),
+        );
+  }
+
+  @override
+  Future<UserProfile?> getProfile() async {
+    final row = await _db.select(_db.userProfiles).getSingleOrNull();
+    if (row == null) return null;
+    return UserProfile(
+      name: row.name,
+      ftp: Watts(row.ftp),
+      maxHr: HeartRate(row.maxHr ?? 190),
+      restingHr: HeartRate(row.restHr ?? 60),
+      weight: row.weight ?? 75.0,
+      height: row.height ?? 1.75,
+    );
+  }
+}
