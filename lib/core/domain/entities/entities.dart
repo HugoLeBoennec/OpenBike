@@ -1,0 +1,10 @@
+export 'ride.dart';
+export 'lap.dart';
+export 'route.dart';
+export 'route_point.dart';
+export 'workout.dart';
+export 'workout_step.dart';
+export 'trainer_device.dart';
+export 'sensor_reading.dart';
+export 'power_zone.dart';
+export 'user_profile.dart';
