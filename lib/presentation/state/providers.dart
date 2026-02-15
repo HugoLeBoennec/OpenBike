@@ -185,3 +185,11 @@ final stravaAuthProvider = Provider<bool>((ref) {
   final strava = plugins['strava-export'];
   return strava?.isAuthenticated ?? false;
 });
+
+/// Action provider to export a [Ride] to a given target (e.g. 'strava-export').
+///
+/// Usage: `ref.read(exportRideProvider)('ride-id', 'strava-export');`
+final exportRideProvider = Provider<Future<void> Function(String rideId, String target)>((ref) {
+  final queueService = ref.watch(exportQueueServiceProvider);
+  return queueService.enqueue;
+});
