@@ -1,0 +1,64 @@
+name: open_bike
+description: Open-source indoor cycling app — smart trainer control, structured workouts, route simulation.
+publish_to: 'none'
+version: 0.1.0
+
+environment:
+  sdk: '>=2.19.4 <3.0.0'
+
+dependencies:
+  flutter:
+    sdk: flutter
+
+  # State management
+  flutter_riverpod: ^2.3.6
+
+  # Immutable data classes
+  freezed_annotation: ^2.2.0
+
+  # Navigation
+  go_router: ^7.1.1
+
+  # Persistence
+  drift: ^2.8.0
+  sqlite3_flutter_libs: ^0.5.15
+
+  # BLE
+  flutter_blue_plus: ^1.14.0
+
+  # Permissions
+  permission_handler: ^10.4.0
+
+  # Logging
+  logging: ^1.2.0
+
+  # File formats
+  xml: ^6.2.2
+  gpx: ^2.2.0
+
+  # UUID generation
+  uuid: ^3.0.7
+
+  # Path utilities
+  path_provider: ^2.0.15
+  path: ^1.8.2
+
+  # Networking & export
+  http: ^0.13.6
+  url_launcher: ^6.1.11
+  flutter_secure_storage: ^8.0.0
+  connectivity_plus: ^4.0.1
+
+dev_dependencies:
+  flutter_test:
+    sdk: flutter
+  flutter_lints: ^2.0.0
+  mocktail: ^0.3.0
+
+  # Code generation
+  build_runner: ^2.3.1
+  freezed: ^2.3.2
+  drift_dev: ^2.8.0
+
+flutter:
+  uses-material-design: true
