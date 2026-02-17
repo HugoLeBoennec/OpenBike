@@ -38,17 +38,18 @@ class BleConnection {
 
   /// Opens the GATT connection, negotiates MTU and discovers services.
   Future<void> connect({Duration timeout = const Duration(seconds: 15)}) async {
-    _log.info('Connecting to ${_device.remoteId}…');
+    _log.info('[BLE-DEBUG] GATT connecting to ${_device.remoteId}…');
     _stateController.add(BleConnectionState.connecting);
 
     try {
       await _device.connect(timeout: timeout, autoConnect: false);
+      _log.info('[BLE-DEBUG] GATT connected to ${_device.remoteId}');
 
       // Listen for platform-level disconnection.
       _subscriptions.add(
         _device.connectionState.listen((state) {
           if (state == BluetoothConnectionState.disconnected) {
-            _log.info('Device ${_device.remoteId} disconnected (platform)');
+            _log.info('[BLE-DEBUG] Device ${_device.remoteId} disconnected (platform)');
             _stateController.add(BleConnectionState.disconnected);
           }
         }),
@@ -58,10 +59,10 @@ class BleConnection {
       await _discoverServices();
 
       _stateController.add(BleConnectionState.connected);
-      _log.info('Connected to ${_device.remoteId} (MTU=$_negotiatedMtu, '
-          '${_services.length} services)');
+      _log.info('[BLE-DEBUG] Connected to ${_device.remoteId} '
+          '(MTU=$_negotiatedMtu, ${_services.length} services)');
     } catch (e) {
-      _log.severe('Connection to ${_device.remoteId} failed: $e');
+      _log.severe('[BLE-DEBUG] Connection to ${_device.remoteId} failed: $e');
       _stateController.add(BleConnectionState.disconnected);
       rethrow;
     }
@@ -112,10 +113,17 @@ class BleConnection {
 
   Future<void> _discoverServices() async {
     _services = await _device.discoverServices();
-    _log.fine('Discovered ${_services.length} services');
+    _log.info('[BLE-DEBUG] Discovered ${_services.length} services');
     for (final s in _services) {
-      _log.finer('  Service ${s.serviceUuid} '
-          '(${s.characteristics.length} characteristics)');
+      _log.info('[BLE-DEBUG]   Service ${s.serviceUuid} '
+          '(${s.characteristics.length} chars)');
+      for (final c in s.characteristics) {
+        _log.fine('[BLE-DEBUG]     Char ${c.characteristicUuid} '
+            'props: notify=${c.properties.notify}, '
+            'indicate=${c.properties.indicate}, '
+            'read=${c.properties.read}, '
+            'write=${c.properties.write}');
+      }
     }
   }
 
@@ -154,8 +162,9 @@ class BleConnection {
       );
     }
 
-    _log.fine('Subscribing to $charUuid on service $serviceUuid');
+    _log.info('[BLE-DEBUG] Subscribing to $charUuid on service $serviceUuid');
     await char.setNotifyValue(true);
+    _log.info('[BLE-DEBUG] Notifications enabled for $charUuid');
 
     return char.onValueReceived;
   }

@@ -1,10 +1,13 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:logging/logging.dart';
 
 import '../../core/domain/entities/trainer_device.dart';
 import '../../infrastructure/ble/ble_transport.dart';
 import '../../infrastructure/simulator/simulator.dart';
 import '../state/providers.dart';
+
+final _log = Logger('DeviceScanScreen');
 
 /// BLE device scanning and connection screen.
 ///
@@ -109,8 +112,14 @@ class _DeviceScanScreenState extends ConsumerState<DeviceScanScreen> {
             _SectionHeader('CONNECTED'),
             _ConnectedDeviceTile(
               device: connectedDevice,
-              onDisconnect: () {
-                ref.read(bleTransportProvider).disconnectDevice();
+              onDisconnect: () async {
+                final port = ref.read(activeTrainerPortProvider);
+                if (port != null) {
+                  await port.disconnect();
+                  ref.read(activeTrainerPortProvider.notifier).state = null;
+                } else {
+                  await ref.read(bleTransportProvider).disconnectDevice();
+                }
                 ref.read(trainerDeviceProvider.notifier).state = null;
               },
             ),
@@ -231,17 +240,46 @@ class _DeviceScanScreenState extends ConsumerState<DeviceScanScreen> {
   }
 
   Future<void> _connect(BleScannedDevice scanned) async {
-    final transport = ref.read(bleTransportProvider);
-    await transport.connectToDevice(scanned.device.id);
-    if (!mounted) return;
+    _log.info('[BLE-DEBUG] Connecting to ${scanned.device.name} '
+        '(${scanned.device.id}, protocol=${scanned.device.protocol})');
 
-    ref.read(trainerDeviceProvider.notifier).state = scanned.device;
+    // Look up the correct plugin for this device.
+    final registry = ref.read(pluginRegistryProvider);
+    final plugin = registry.getPluginForDevice(scanned.device);
 
-    final saved = ref.read(savedDeviceIdsProvider);
-    if (!saved.contains(scanned.device.id)) {
-      final updated = [...saved, scanned.device.id];
-      ref.read(savedDeviceIdsProvider.notifier).state = updated;
-      ref.read(appPreferencesProvider).setSavedDeviceIds(updated);
+    if (plugin == null) {
+      _log.warning('[BLE-DEBUG] No plugin found for ${scanned.device.protocol}');
+      if (mounted) {
+        setState(() => _bleError =
+            'No plugin available for ${scanned.device.name}');
+      }
+      return;
+    }
+
+    _log.info('[BLE-DEBUG] Using plugin ${plugin.manifest.name}');
+
+    try {
+      // plugin.connect() handles: raw BLE connect → service discovery →
+      // FTMS subscribe → control handshake → fires TrainerEvents on EventBus.
+      final trainerPort = await plugin.connect(scanned.device);
+      if (!mounted) return;
+
+      _log.info('[BLE-DEBUG] Plugin connect complete — TrainerPort ready');
+
+      ref.read(trainerDeviceProvider.notifier).state = scanned.device;
+      ref.read(activeTrainerPortProvider.notifier).state = trainerPort;
+
+      final saved = ref.read(savedDeviceIdsProvider);
+      if (!saved.contains(scanned.device.id)) {
+        final updated = [...saved, scanned.device.id];
+        ref.read(savedDeviceIdsProvider.notifier).state = updated;
+        ref.read(appPreferencesProvider).setSavedDeviceIds(updated);
+      }
+    } catch (e, st) {
+      _log.severe('[BLE-DEBUG] Plugin connect failed: $e', e, st);
+      if (mounted) {
+        setState(() => _bleError = 'Connection failed: $e');
+      }
     }
   }
 

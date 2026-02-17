@@ -138,33 +138,40 @@ class FtmsTrainerAdapter implements TrainerPort {
 
   /// Sets up data subscriptions and runs the FTMS control handshake.
   Future<void> initialize() async {
-    _log.info('Initializing FTMS adapter for ${_device.name}');
+    _log.info('[BLE-DEBUG] Initializing FTMS adapter for ${_device.name} '
+        '(${_device.id})');
 
     // Monitor BLE connection state.
     _connectionStateSub = _connection.stateStream.listen((state) {
+      _log.info('[BLE-DEBUG] BLE connection state → $state');
       if (state == BleConnectionState.disconnected) {
-        _log.info('BLE disconnected — firing TrainerDisconnected');
         _eventBus.fire(TrainerEvent.disconnected(_device.id));
       }
     });
 
-    // Subscribe to Indoor Bike Data.
-    _log.fine('Subscribing to Indoor Bike Data');
+    // Subscribe to Indoor Bike Data (0x2AD2).
+    _log.info('[BLE-DEBUG] Subscribing to Indoor Bike Data '
+        '(${BleConstants.ftmsIndoorBikeData})');
     final bikeDataStream = await _connection.subscribe(
       BleConstants.ftmsService,
       BleConstants.ftmsIndoorBikeData,
     );
+    _log.info('[BLE-DEBUG] Indoor Bike Data subscription active — '
+        'waiting for notifications');
     _dataSub = bikeDataStream.listen(_onIndoorBikeData);
 
     // Initialize the control client (full FTMS handshake).
+    _log.info('[BLE-DEBUG] Starting FTMS control handshake');
     _controlClient = FtmsControlClient(_connection);
     await _controlClient.initialize();
+    _log.info('[BLE-DEBUG] FTMS control handshake complete — '
+        'features: ${_controlClient.features}');
 
     // Fire events.
     _eventBus.fire(TrainerEvent.connected(_device));
     _eventBus.fire(TrainerEvent.controlAcquired(_device.id));
 
-    _log.info('FTMS adapter initialized');
+    _log.info('[BLE-DEBUG] FTMS adapter fully initialized');
   }
 
   // ---------------------------------------------------------------------------
@@ -172,11 +179,21 @@ class FtmsTrainerAdapter implements TrainerPort {
   // ---------------------------------------------------------------------------
 
   void _onIndoorBikeData(List<int> raw) {
+    _log.fine('[BLE-DEBUG] Raw Indoor Bike Data (${raw.length} bytes): $raw');
+
     final parsed = _dataParser.parseIndoorBikeData(raw);
-    if (parsed == null) return;
+    if (parsed == null) {
+      _log.warning('[BLE-DEBUG] Failed to parse Indoor Bike Data');
+      return;
+    }
 
     final reading = _dataParser.toSensorReading(parsed);
+    _log.fine('[BLE-DEBUG] Parsed → power=${reading.power}, '
+        'cadence=${reading.cadence}, speed=${reading.speed}, '
+        'hr=${reading.heartRate}');
+
     _dataController.add(reading);
+    _eventBus.fire(SensorEvent(reading: reading, deviceId: _device.id));
   }
 
   // ---------------------------------------------------------------------------

@@ -1,6 +1,7 @@
 import 'dart:async';
 
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:logging/logging.dart';
 
 import '../../core/domain/entities/entities.dart';
 import '../../core/domain/ports/storage_port.dart';
@@ -175,6 +176,10 @@ final trainerDeviceProvider = StateProvider<TrainerDevice?>((ref) => null);
 
 final trainerListProvider = StateProvider<List<TrainerDevice>>((ref) => []);
 
+/// The currently connected [TrainerPort] from a real BLE or simulator plugin.
+/// Set by DeviceScanScreen on successful connection.
+final activeTrainerPortProvider = StateProvider<TrainerPort?>((ref) => null);
+
 // ---------------------------------------------------------------------------
 // Live sensor data
 // ---------------------------------------------------------------------------
@@ -198,10 +203,16 @@ final sensorReadingsProvider = StateProvider<List<SensorReading>>((ref) => []);
 ///
 /// Without this, the ride screen data fields stay at zero because nothing
 /// pushes trainer data into the Riverpod state layer.
+final _bridgeLog = Logger('LiveSensorBridge');
+
 final liveSensorBridgeProvider = Provider<void>((ref) {
   final eventBus = ref.watch(eventBusProvider);
+  _bridgeLog.info('[BLE-DEBUG] LiveSensorBridge listening for SensorEvents');
   final sub = eventBus.on<SensorEvent>().listen((event) {
     final r = event.reading;
+    _bridgeLog.fine('[BLE-DEBUG] SensorEvent received — '
+        'power=${r.power}, cadence=${r.cadence}, '
+        'speed=${r.speed}, hr=${r.heartRate}');
     Future.microtask(() {
       ref.read(livePowerProvider.notifier).state = r.power ?? Watts.zero;
       ref.read(liveCadenceProvider.notifier).state = r.cadence ?? Cadence.zero;
@@ -378,11 +389,14 @@ final physicsEngineProvider = Provider<CyclingPhysicsEngine>((ref) {
   return CyclingPhysicsEngine();
 });
 
-/// Override [trainerPortProvider] with the actual BLE trainer adapter.
+/// Provides the active [TrainerPort] from [activeTrainerPortProvider].
+/// Throws if no trainer is connected — only access when a device is connected.
 final trainerPortProvider = Provider<TrainerPort>((ref) {
-  throw UnimplementedError(
-    'trainerPortProvider must be overridden with a platform-specific adapter',
-  );
+  final port = ref.watch(activeTrainerPortProvider);
+  if (port == null) {
+    throw StateError('No trainer connected — connect a device first');
+  }
+  return port;
 });
 
 final routeSimulatorProvider = Provider<RouteSimulator>((ref) {

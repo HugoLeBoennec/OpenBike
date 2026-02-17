@@ -225,58 +225,63 @@ class FtmsControlClient {
   ///
   /// Throws if any step fails.
   Future<void> initialize() async {
-    _log.info('Initializing FTMS control…');
+    _log.info('[BLE-DEBUG] Initializing FTMS control…');
 
     // Step 1: Subscribe to Control Point indications.
-    _log.fine('Step 1: Subscribing to Control Point indications');
+    _log.info('[BLE-DEBUG] Step 1: Subscribing to Control Point indications');
     final cpStream = await _connection.subscribe(
       BleConstants.ftmsService,
       BleConstants.ftmsControlPoint,
     );
     _controlPointSub = cpStream.listen(_onControlPointIndication);
+    _log.info('[BLE-DEBUG] Step 1 OK — Control Point subscribed');
 
     // Step 2: Subscribe to Fitness Machine Status.
-    _log.fine('Step 2: Subscribing to Fitness Machine Status');
+    _log.info('[BLE-DEBUG] Step 2: Subscribing to Fitness Machine Status');
     try {
       final statusStream = await _connection.subscribe(
         BleConstants.ftmsService,
         BleConstants.ftmsStatus,
       );
       _statusSub = statusStream.listen(_onMachineStatus);
+      _log.info('[BLE-DEBUG] Step 2 OK — Machine Status subscribed');
     } catch (e) {
-      _log.warning('FTMS Status characteristic not found — skipping: $e');
+      _log.warning('[BLE-DEBUG] Step 2 SKIP — Status char not found: $e');
     }
 
     // Step 3: Read Fitness Machine Feature.
-    _log.fine('Step 3: Reading Fitness Machine Feature');
+    _log.info('[BLE-DEBUG] Step 3: Reading Fitness Machine Feature');
     _features = await _readFeatures();
-    _log.info('FTMS features: $_features');
+    _log.info('[BLE-DEBUG] Step 3 OK — features: $_features');
 
     // Step 4: Request Control.
-    _log.fine('Step 4: Requesting control');
+    _log.info('[BLE-DEBUG] Step 4: Requesting control');
     final controlResult = await _writeAndWaitResponse(
       FtmsOpCode.requestControl,
       Uint8List.fromList([FtmsOpCode.requestControl]),
     );
     if (!controlResult.isSuccess) {
+      _log.severe('[BLE-DEBUG] Step 4 FAILED — ${controlResult.resultCode}');
       throw StateError(
         'FTMS Request Control failed: ${controlResult.resultCode}',
       );
     }
     _hasControl = true;
-    _log.info('FTMS control acquired');
+    _log.info('[BLE-DEBUG] Step 4 OK — control acquired');
 
     // Step 5: Start/Resume.
-    _log.fine('Step 5: Sending Start/Resume');
+    _log.info('[BLE-DEBUG] Step 5: Sending Start/Resume');
     final startResult = await _writeAndWaitResponse(
       FtmsOpCode.startOrResume,
       Uint8List.fromList([FtmsOpCode.startOrResume]),
     );
     if (!startResult.isSuccess) {
-      _log.warning('FTMS Start/Resume response: ${startResult.resultCode}');
+      _log.warning('[BLE-DEBUG] Step 5 WARN — ${startResult.resultCode}');
+    } else {
+      _log.info('[BLE-DEBUG] Step 5 OK — trainer started');
     }
 
-    _log.info('FTMS initialization complete');
+    _log.info('[BLE-DEBUG] FTMS initialization complete');
   }
 
   // ---------------------------------------------------------------------------

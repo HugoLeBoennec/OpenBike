@@ -34,8 +34,9 @@ void main() async {
 
   // ---- Core singletons ----
   final eventBus = EventBus();
+  final bleTransport = BleTransport();
   final registry = PluginRegistry();
-  _registerPlugins(registry, eventBus);
+  _registerPlugins(registry, eventBus, bleTransport);
 
   // ---- Preferences ----
   final prefs = await SharedPreferences.getInstance();
@@ -51,6 +52,7 @@ void main() async {
         appDatabaseProvider.overrideWithValue(db),
         eventBusProvider.overrideWithValue(eventBus),
         pluginRegistryProvider.overrideWithValue(registry),
+        bleTransportProvider.overrideWithValue(bleTransport),
         appPreferencesProvider.overrideWithValue(appPrefs),
         // Seed saved device IDs from preferences.
         savedDeviceIdsProvider.overrideWith((ref) => appPrefs.savedDeviceIds),
@@ -67,12 +69,13 @@ void main() async {
   );
 }
 
-void _registerPlugins(PluginRegistry registry, EventBus eventBus) {
+void _registerPlugins(
+    PluginRegistry registry, EventBus eventBus, BleTransport bleTransport) {
   // ---- Device plugins ----
 
-  // BLE FTMS — always available.
+  // BLE FTMS — always available (shares BleTransport with bleTransportProvider).
   registry.registerDevice(FtmsDevicePlugin(
-    transport: BleTransport(),
+    transport: bleTransport,
     eventBus: eventBus,
   ));
 
