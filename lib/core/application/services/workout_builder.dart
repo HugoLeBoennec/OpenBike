@@ -17,7 +17,7 @@ import '../../domain/entities/workout_step.dart';
 class WorkoutBuilder {
   WorkoutBuilder(this._name, {String? description, Uuid? uuid})
       : _description = description,
-        _uuid = uuid ?? const Uuid();
+        _uuid = uuid ?? Uuid();
 
   final String _name;
   final String? _description;
