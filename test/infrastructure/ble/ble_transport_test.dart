@@ -33,16 +33,16 @@ void main() {
       transport.dispose();
     });
 
-    test('startScan throws when permissions denied', () async {
+    test('startScan sets lastScanError when permissions denied', () async {
       when(() => mockPermissions.requestPermissions())
           .thenAnswer((_) async => false);
 
       final transport = BleTransport(permissionHandler: mockPermissions);
 
-      expect(
-        () => transport.startScan(),
-        throwsA(isA<StateError>()),
-      );
+      await transport.startScan();
+
+      expect(transport.lastScanError, isNotNull);
+      expect(transport.state, BleTransportState.idle);
 
       await transport.dispose();
     });
@@ -53,11 +53,7 @@ void main() {
 
       final transport = BleTransport(permissionHandler: mockPermissions);
 
-      // startScan will throw because permissions are denied, but we verify
-      // that permissions were checked.
-      try {
-        await transport.startScan();
-      } catch (_) {}
+      await transport.startScan();
 
       verify(() => mockPermissions.requestPermissions()).called(1);
 

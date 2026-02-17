@@ -23,6 +23,15 @@ mixin _$Ride {
   List<SensorReading> get readings => throw _privateConstructorUsedError;
   List<Lap> get laps => throw _privateConstructorUsedError;
   Duration get pauseDuration => throw _privateConstructorUsedError;
+  Watts? get cachedAvgPower => throw _privateConstructorUsedError;
+  Watts? get cachedNormalizedPower => throw _privateConstructorUsedError;
+  Watts? get cachedMaxPower => throw _privateConstructorUsedError;
+  Cadence? get cachedAvgCadence => throw _privateConstructorUsedError;
+  HeartRate? get cachedAvgHr => throw _privateConstructorUsedError;
+  HeartRate? get cachedMaxHr => throw _privateConstructorUsedError;
+  Distance? get cachedTotalDistance => throw _privateConstructorUsedError;
+  double? get cachedTss => throw _privateConstructorUsedError;
+  double? get cachedIntensityFactor => throw _privateConstructorUsedError;
 
   @JsonKey(ignore: true)
   $RideCopyWith<Ride> get copyWith => throw _privateConstructorUsedError;
@@ -40,7 +49,16 @@ abstract class $RideCopyWith<$Res> {
       RideStatus status,
       List<SensorReading> readings,
       List<Lap> laps,
-      Duration pauseDuration});
+      Duration pauseDuration,
+      Watts? cachedAvgPower,
+      Watts? cachedNormalizedPower,
+      Watts? cachedMaxPower,
+      Cadence? cachedAvgCadence,
+      HeartRate? cachedAvgHr,
+      HeartRate? cachedMaxHr,
+      Distance? cachedTotalDistance,
+      double? cachedTss,
+      double? cachedIntensityFactor});
 }
 
 /// @nodoc
@@ -63,6 +81,15 @@ class _$RideCopyWithImpl<$Res, $Val extends Ride>
     Object? readings = null,
     Object? laps = null,
     Object? pauseDuration = null,
+    Object? cachedAvgPower = freezed,
+    Object? cachedNormalizedPower = freezed,
+    Object? cachedMaxPower = freezed,
+    Object? cachedAvgCadence = freezed,
+    Object? cachedAvgHr = freezed,
+    Object? cachedMaxHr = freezed,
+    Object? cachedTotalDistance = freezed,
+    Object? cachedTss = freezed,
+    Object? cachedIntensityFactor = freezed,
   }) {
     return _then(_value.copyWith(
       id: null == id
@@ -93,6 +120,42 @@ class _$RideCopyWithImpl<$Res, $Val extends Ride>
           ? _value.pauseDuration
           : pauseDuration // ignore: cast_nullable_to_non_nullable
               as Duration,
+      cachedAvgPower: freezed == cachedAvgPower
+          ? _value.cachedAvgPower
+          : cachedAvgPower // ignore: cast_nullable_to_non_nullable
+              as Watts?,
+      cachedNormalizedPower: freezed == cachedNormalizedPower
+          ? _value.cachedNormalizedPower
+          : cachedNormalizedPower // ignore: cast_nullable_to_non_nullable
+              as Watts?,
+      cachedMaxPower: freezed == cachedMaxPower
+          ? _value.cachedMaxPower
+          : cachedMaxPower // ignore: cast_nullable_to_non_nullable
+              as Watts?,
+      cachedAvgCadence: freezed == cachedAvgCadence
+          ? _value.cachedAvgCadence
+          : cachedAvgCadence // ignore: cast_nullable_to_non_nullable
+              as Cadence?,
+      cachedAvgHr: freezed == cachedAvgHr
+          ? _value.cachedAvgHr
+          : cachedAvgHr // ignore: cast_nullable_to_non_nullable
+              as HeartRate?,
+      cachedMaxHr: freezed == cachedMaxHr
+          ? _value.cachedMaxHr
+          : cachedMaxHr // ignore: cast_nullable_to_non_nullable
+              as HeartRate?,
+      cachedTotalDistance: freezed == cachedTotalDistance
+          ? _value.cachedTotalDistance
+          : cachedTotalDistance // ignore: cast_nullable_to_non_nullable
+              as Distance?,
+      cachedTss: freezed == cachedTss
+          ? _value.cachedTss
+          : cachedTss // ignore: cast_nullable_to_non_nullable
+              as double?,
+      cachedIntensityFactor: freezed == cachedIntensityFactor
+          ? _value.cachedIntensityFactor
+          : cachedIntensityFactor // ignore: cast_nullable_to_non_nullable
+              as double?,
     ) as $Val);
   }
 }
@@ -110,7 +173,16 @@ abstract class _$$_RideCopyWith<$Res> implements $RideCopyWith<$Res> {
       RideStatus status,
       List<SensorReading> readings,
       List<Lap> laps,
-      Duration pauseDuration});
+      Duration pauseDuration,
+      Watts? cachedAvgPower,
+      Watts? cachedNormalizedPower,
+      Watts? cachedMaxPower,
+      Cadence? cachedAvgCadence,
+      HeartRate? cachedAvgHr,
+      HeartRate? cachedMaxHr,
+      Distance? cachedTotalDistance,
+      double? cachedTss,
+      double? cachedIntensityFactor});
 }
 
 /// @nodoc
@@ -129,6 +201,15 @@ class __$$_RideCopyWithImpl<$Res> extends _$RideCopyWithImpl<$Res, _$_Ride>
     Object? readings = null,
     Object? laps = null,
     Object? pauseDuration = null,
+    Object? cachedAvgPower = freezed,
+    Object? cachedNormalizedPower = freezed,
+    Object? cachedMaxPower = freezed,
+    Object? cachedAvgCadence = freezed,
+    Object? cachedAvgHr = freezed,
+    Object? cachedMaxHr = freezed,
+    Object? cachedTotalDistance = freezed,
+    Object? cachedTss = freezed,
+    Object? cachedIntensityFactor = freezed,
   }) {
     return _then(_$_Ride(
       id: null == id
@@ -159,6 +240,42 @@ class __$$_RideCopyWithImpl<$Res> extends _$RideCopyWithImpl<$Res, _$_Ride>
           ? _value.pauseDuration
           : pauseDuration // ignore: cast_nullable_to_non_nullable
               as Duration,
+      cachedAvgPower: freezed == cachedAvgPower
+          ? _value.cachedAvgPower
+          : cachedAvgPower // ignore: cast_nullable_to_non_nullable
+              as Watts?,
+      cachedNormalizedPower: freezed == cachedNormalizedPower
+          ? _value.cachedNormalizedPower
+          : cachedNormalizedPower // ignore: cast_nullable_to_non_nullable
+              as Watts?,
+      cachedMaxPower: freezed == cachedMaxPower
+          ? _value.cachedMaxPower
+          : cachedMaxPower // ignore: cast_nullable_to_non_nullable
+              as Watts?,
+      cachedAvgCadence: freezed == cachedAvgCadence
+          ? _value.cachedAvgCadence
+          : cachedAvgCadence // ignore: cast_nullable_to_non_nullable
+              as Cadence?,
+      cachedAvgHr: freezed == cachedAvgHr
+          ? _value.cachedAvgHr
+          : cachedAvgHr // ignore: cast_nullable_to_non_nullable
+              as HeartRate?,
+      cachedMaxHr: freezed == cachedMaxHr
+          ? _value.cachedMaxHr
+          : cachedMaxHr // ignore: cast_nullable_to_non_nullable
+              as HeartRate?,
+      cachedTotalDistance: freezed == cachedTotalDistance
+          ? _value.cachedTotalDistance
+          : cachedTotalDistance // ignore: cast_nullable_to_non_nullable
+              as Distance?,
+      cachedTss: freezed == cachedTss
+          ? _value.cachedTss
+          : cachedTss // ignore: cast_nullable_to_non_nullable
+              as double?,
+      cachedIntensityFactor: freezed == cachedIntensityFactor
+          ? _value.cachedIntensityFactor
+          : cachedIntensityFactor // ignore: cast_nullable_to_non_nullable
+              as double?,
     ));
   }
 }
@@ -173,7 +290,16 @@ class _$_Ride extends _Ride {
       this.status = RideStatus.idle,
       final List<SensorReading> readings = const [],
       final List<Lap> laps = const [],
-      this.pauseDuration = Duration.zero})
+      this.pauseDuration = Duration.zero,
+      this.cachedAvgPower,
+      this.cachedNormalizedPower,
+      this.cachedMaxPower,
+      this.cachedAvgCadence,
+      this.cachedAvgHr,
+      this.cachedMaxHr,
+      this.cachedTotalDistance,
+      this.cachedTss,
+      this.cachedIntensityFactor})
       : _readings = readings,
         _laps = laps,
         super._();
@@ -208,10 +334,28 @@ class _$_Ride extends _Ride {
   @override
   @JsonKey()
   final Duration pauseDuration;
+  @override
+  final Watts? cachedAvgPower;
+  @override
+  final Watts? cachedNormalizedPower;
+  @override
+  final Watts? cachedMaxPower;
+  @override
+  final Cadence? cachedAvgCadence;
+  @override
+  final HeartRate? cachedAvgHr;
+  @override
+  final HeartRate? cachedMaxHr;
+  @override
+  final Distance? cachedTotalDistance;
+  @override
+  final double? cachedTss;
+  @override
+  final double? cachedIntensityFactor;
 
   @override
   String toString() {
-    return 'Ride(id: $id, startTime: $startTime, endTime: $endTime, status: $status, readings: $readings, laps: $laps, pauseDuration: $pauseDuration)';
+    return 'Ride(id: $id, startTime: $startTime, endTime: $endTime, status: $status, readings: $readings, laps: $laps, pauseDuration: $pauseDuration, cachedAvgPower: $cachedAvgPower, cachedNormalizedPower: $cachedNormalizedPower, cachedMaxPower: $cachedMaxPower, cachedAvgCadence: $cachedAvgCadence, cachedAvgHr: $cachedAvgHr, cachedMaxHr: $cachedMaxHr, cachedTotalDistance: $cachedTotalDistance, cachedTss: $cachedTss, cachedIntensityFactor: $cachedIntensityFactor)';
   }
 
   @override
@@ -227,7 +371,25 @@ class _$_Ride extends _Ride {
             const DeepCollectionEquality().equals(other._readings, _readings) &&
             const DeepCollectionEquality().equals(other._laps, _laps) &&
             (identical(other.pauseDuration, pauseDuration) ||
-                other.pauseDuration == pauseDuration));
+                other.pauseDuration == pauseDuration) &&
+            (identical(other.cachedAvgPower, cachedAvgPower) ||
+                other.cachedAvgPower == cachedAvgPower) &&
+            (identical(other.cachedNormalizedPower, cachedNormalizedPower) ||
+                other.cachedNormalizedPower == cachedNormalizedPower) &&
+            (identical(other.cachedMaxPower, cachedMaxPower) ||
+                other.cachedMaxPower == cachedMaxPower) &&
+            (identical(other.cachedAvgCadence, cachedAvgCadence) ||
+                other.cachedAvgCadence == cachedAvgCadence) &&
+            (identical(other.cachedAvgHr, cachedAvgHr) ||
+                other.cachedAvgHr == cachedAvgHr) &&
+            (identical(other.cachedMaxHr, cachedMaxHr) ||
+                other.cachedMaxHr == cachedMaxHr) &&
+            (identical(other.cachedTotalDistance, cachedTotalDistance) ||
+                other.cachedTotalDistance == cachedTotalDistance) &&
+            (identical(other.cachedTss, cachedTss) ||
+                other.cachedTss == cachedTss) &&
+            (identical(other.cachedIntensityFactor, cachedIntensityFactor) ||
+                other.cachedIntensityFactor == cachedIntensityFactor));
   }
 
   @override
@@ -239,7 +401,16 @@ class _$_Ride extends _Ride {
       status,
       const DeepCollectionEquality().hash(_readings),
       const DeepCollectionEquality().hash(_laps),
-      pauseDuration);
+      pauseDuration,
+      cachedAvgPower,
+      cachedNormalizedPower,
+      cachedMaxPower,
+      cachedAvgCadence,
+      cachedAvgHr,
+      cachedMaxHr,
+      cachedTotalDistance,
+      cachedTss,
+      cachedIntensityFactor);
 
   @JsonKey(ignore: true)
   @override
@@ -256,7 +427,16 @@ abstract class _Ride extends Ride {
       final RideStatus status,
       final List<SensorReading> readings,
       final List<Lap> laps,
-      final Duration pauseDuration}) = _$_Ride;
+      final Duration pauseDuration,
+      final Watts? cachedAvgPower,
+      final Watts? cachedNormalizedPower,
+      final Watts? cachedMaxPower,
+      final Cadence? cachedAvgCadence,
+      final HeartRate? cachedAvgHr,
+      final HeartRate? cachedMaxHr,
+      final Distance? cachedTotalDistance,
+      final double? cachedTss,
+      final double? cachedIntensityFactor}) = _$_Ride;
   const _Ride._() : super._();
 
   @override
@@ -273,6 +453,24 @@ abstract class _Ride extends Ride {
   List<Lap> get laps;
   @override
   Duration get pauseDuration;
+  @override
+  Watts? get cachedAvgPower;
+  @override
+  Watts? get cachedNormalizedPower;
+  @override
+  Watts? get cachedMaxPower;
+  @override
+  Cadence? get cachedAvgCadence;
+  @override
+  HeartRate? get cachedAvgHr;
+  @override
+  HeartRate? get cachedMaxHr;
+  @override
+  Distance? get cachedTotalDistance;
+  @override
+  double? get cachedTss;
+  @override
+  double? get cachedIntensityFactor;
   @override
   @JsonKey(ignore: true)
   _$$_RideCopyWith<_$_Ride> get copyWith => throw _privateConstructorUsedError;

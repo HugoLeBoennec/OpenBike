@@ -28,5 +28,7 @@
 	<string>MainMenu</string>
 	<key>NSPrincipalClass</key>
 	<string>NSApplication</string>
+	<key>NSBluetoothAlwaysUsageDescription</key>
+	<string>PedalHub needs Bluetooth to connect to your smart trainer and sensors</string>
 </dict>
 </plist>

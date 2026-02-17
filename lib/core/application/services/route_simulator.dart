@@ -90,6 +90,7 @@ class RouteSimulator {
   Watts _latestPower = Watts.zero;
 
   DateTime? _pauseStart;
+  // ignore: unused_field
   Duration _totalPauseDuration = Duration.zero;
 
   final _stateController = StreamController<SimulationState>.broadcast();

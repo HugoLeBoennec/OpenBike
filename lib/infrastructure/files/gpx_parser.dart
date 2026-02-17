@@ -8,7 +8,7 @@ import '../../core/domain/entities/route_point.dart';
 import '../../core/domain/value_objects/value_objects.dart';
 
 class GpxRouteParser {
-  GpxRouteParser({Uuid? uuid}) : _uuid = uuid ?? const Uuid();
+  GpxRouteParser({Uuid? uuid}) : _uuid = uuid ?? Uuid();
 
   final Uuid _uuid;
 

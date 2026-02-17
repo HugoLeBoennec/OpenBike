@@ -6,7 +6,7 @@ class StartRide {
   final StoragePort _storage;
   final Uuid _uuid;
 
-  StartRide(this._storage, {Uuid? uuid}) : _uuid = uuid ?? const Uuid();
+  StartRide(this._storage, {Uuid? uuid}) : _uuid = uuid ?? Uuid();
 
   Future<Ride> call() async {
     final ride = Ride(

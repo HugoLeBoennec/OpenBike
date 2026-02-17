@@ -69,10 +69,30 @@ class BleTransport {
   Stream<List<BleScannedDevice>> get scanResults =>
       _scanResultsController.stream;
 
+  /// Whether Bluetooth is available on this device.
+  ///
+  /// Returns `false` if the adapter is unsupported, off, or permissions
+  /// were denied. Callers can check this before calling [startScan].
+  Future<bool> get isAvailable async {
+    try {
+      final allowed = await _permissionHandler.requestPermissions();
+      return allowed;
+    } catch (e) {
+      _log.warning('BLE availability check failed: $e');
+      return false;
+    }
+  }
+
+  /// Error message from the last failed scan attempt, or `null`.
+  String? lastScanError;
+
   /// Starts scanning for BLE cycling devices.
   ///
   /// Checks permissions first.  Emits discovered devices on [scanResults].
   /// Scanning stops automatically after [timeout] or when [stopScan] is called.
+  ///
+  /// If Bluetooth is unavailable, sets [lastScanError] and returns without
+  /// throwing — the UI can display a user-friendly message.
   Future<void> startScan({
     Duration timeout = const Duration(seconds: 10),
   }) async {
@@ -84,8 +104,12 @@ class BleTransport {
     final allowed = await _permissionHandler.requestPermissions();
     if (!allowed) {
       _log.severe('BLE permissions not granted — cannot scan');
-      throw StateError('BLE permissions not granted');
+      lastScanError = 'Bluetooth is not available on this device. '
+          'Check that Bluetooth is turned on and permissions are granted.';
+      _scanResultsController.add([]);
+      return;
     }
+    lastScanError = null;
 
     _setState(BleTransportState.scanning);
     _log.info('Starting BLE scan (timeout=${timeout.inSeconds}s)…');

@@ -1,0 +1,548 @@
+import 'package:fl_chart/fl_chart.dart';
+import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
+
+import '../../core/domain/entities/entities.dart';
+import '../../core/domain/value_objects/value_objects.dart';
+import '../../infrastructure/persistence/export_queue_service.dart';
+import '../state/providers.dart';
+
+// ---------------------------------------------------------------------------
+// Header card
+// ---------------------------------------------------------------------------
+
+class HeaderCard extends StatelessWidget {
+  const HeaderCard({super.key, required this.ride});
+  final Ride ride;
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      padding: const EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        color: Colors.white.withValues(alpha: 0.05),
+        borderRadius: BorderRadius.circular(12),
+      ),
+      child: Row(
+        mainAxisAlignment: MainAxisAlignment.spaceAround,
+        children: [
+          HeaderStat(
+            label: 'DATE',
+            value: formatDate(ride.startTime),
+          ),
+          HeaderStat(
+            label: 'DURATION',
+            value: formatDuration(ride.activeDuration),
+          ),
+          HeaderStat(
+            label: 'DISTANCE',
+            value: '${ride.totalDistance.km.toStringAsFixed(1)} km',
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class HeaderStat extends StatelessWidget {
+  const HeaderStat({super.key, required this.label, required this.value});
+  final String label;
+  final String value;
+
+  @override
+  Widget build(BuildContext context) {
+    return Column(
+      children: [
+        Text(value,
+            style: const TextStyle(
+                color: Colors.white, fontSize: 16, fontWeight: FontWeight.w700)),
+        const SizedBox(height: 2),
+        Text(label,
+            style: const TextStyle(
+                color: Colors.white38, fontSize: 10, letterSpacing: 1)),
+      ],
+    );
+  }
+}
+
+// ---------------------------------------------------------------------------
+// Metrics grid (2×3)
+// ---------------------------------------------------------------------------
+
+class MetricsGrid extends StatelessWidget {
+  const MetricsGrid({super.key, required this.ride, required this.ftp});
+  final Ride ride;
+  final Watts ftp;
+
+  @override
+  Widget build(BuildContext context) {
+    return GridView.count(
+      crossAxisCount: 3,
+      shrinkWrap: true,
+      physics: const NeverScrollableScrollPhysics(),
+      childAspectRatio: 1.6,
+      children: [
+        MetricCell(
+            label: 'AVG POWER', value: '${ride.averagePower.value.round()}', unit: 'W'),
+        MetricCell(
+            label: 'NP', value: '${ride.normalizedPower.value.round()}', unit: 'W'),
+        MetricCell(
+            label: 'MAX POWER', value: '${ride.maxPower.value.round()}', unit: 'W'),
+        MetricCell(
+            label: 'TSS', value: ride.tss(ftp).round().toString()),
+        MetricCell(
+            label: 'IF',
+            value: ride.intensityFactor(ftp).toStringAsFixed(2)),
+        MetricCell(
+            label: 'AVG HR', value: '${ride.averageHr.bpm}', unit: 'bpm'),
+      ],
+    );
+  }
+}
+
+class MetricCell extends StatelessWidget {
+  const MetricCell({super.key, required this.label, required this.value, this.unit});
+  final String label;
+  final String value;
+  final String? unit;
+
+  @override
+  Widget build(BuildContext context) {
+    return Column(
+      mainAxisAlignment: MainAxisAlignment.center,
+      children: [
+        Row(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.baseline,
+          textBaseline: TextBaseline.alphabetic,
+          children: [
+            Text(value,
+                style: const TextStyle(
+                    color: Colors.white,
+                    fontSize: 22,
+                    fontWeight: FontWeight.w700)),
+            if (unit != null)
+              Text(' $unit',
+                  style: const TextStyle(color: Colors.white38, fontSize: 12)),
+          ],
+        ),
+        const SizedBox(height: 2),
+        Text(label,
+            style: const TextStyle(
+                color: Colors.white38, fontSize: 9, letterSpacing: 0.8)),
+      ],
+    );
+  }
+}
+
+// ---------------------------------------------------------------------------
+// Power chart
+// ---------------------------------------------------------------------------
+
+class RidePowerChart extends StatelessWidget {
+  const RidePowerChart({
+    super.key,
+    required this.ride,
+    required this.zones,
+    required this.ftp,
+  });
+
+  final Ride ride;
+  final List<PowerZone> zones;
+  final Watts ftp;
+
+  @override
+  Widget build(BuildContext context) {
+    final readings = ride.readings;
+    if (readings.isEmpty) return const SizedBox.shrink();
+
+    final spots = <FlSpot>[];
+    for (int i = 0; i < readings.length; i++) {
+      final power = readings[i].power?.value ?? 0;
+      spots.add(FlSpot(i.toDouble(), power));
+    }
+
+    final maxY = (ride.maxPower.value * 1.1).clamp(100, 2000).toDouble();
+
+    return LineChart(
+      LineChartData(
+        minY: 0,
+        maxY: maxY,
+        gridData: FlGridData(
+          show: true,
+          drawVerticalLine: false,
+          horizontalInterval: ftp.value > 0 ? ftp.value : 100,
+          getDrawingHorizontalLine: (value) => FlLine(
+            color: Colors.white.withValues(alpha: 0.1),
+            strokeWidth: 0.5,
+          ),
+        ),
+        borderData: FlBorderData(show: false),
+        titlesData: const FlTitlesData(show: false),
+        lineTouchData: const LineTouchData(enabled: false),
+        lineBarsData: [
+          LineChartBarData(
+            spots: spots,
+            isCurved: true,
+            curveSmoothness: 0.15,
+            color: Colors.blue,
+            barWidth: 1,
+            dotData: const FlDotData(show: false),
+            belowBarData: BarAreaData(
+              show: true,
+              color: Colors.blue.withValues(alpha: 0.15),
+            ),
+          ),
+        ],
+      ),
+      duration: Duration.zero,
+    );
+  }
+}
+
+// ---------------------------------------------------------------------------
+// Zone distribution chart
+// ---------------------------------------------------------------------------
+
+class ZoneDistributionChart extends StatelessWidget {
+  const ZoneDistributionChart({
+    super.key,
+    required this.ride,
+    required this.zones,
+    required this.ftp,
+  });
+
+  final Ride ride;
+  final List<PowerZone> zones;
+  final Watts ftp;
+
+  @override
+  Widget build(BuildContext context) {
+    if (ftp.value == 0 || zones.isEmpty) return const SizedBox.shrink();
+
+    final zoneCounts = List.filled(zones.length, 0);
+    final total = ride.readings.length;
+    if (total == 0) return const SizedBox.shrink();
+
+    for (final reading in ride.readings) {
+      final pct = ((reading.power?.value ?? 0) / ftp.value) * 100;
+      for (int i = 0; i < zones.length; i++) {
+        if (zones[i].contains(pct)) {
+          zoneCounts[i]++;
+          break;
+        }
+      }
+    }
+
+    return Column(
+      children: [
+        for (int i = 0; i < zones.length; i++)
+          ZoneBarWidget(
+            zoneIndex: i + 1,
+            zone: zones[i],
+            fraction: total > 0 ? zoneCounts[i] / total : 0,
+            seconds: zoneCounts[i],
+          ),
+      ],
+    );
+  }
+}
+
+class ZoneBarWidget extends StatelessWidget {
+  const ZoneBarWidget({
+    super.key,
+    required this.zoneIndex,
+    required this.zone,
+    required this.fraction,
+    required this.seconds,
+  });
+
+  final int zoneIndex;
+  final PowerZone zone;
+  final double fraction;
+  final int seconds;
+
+  @override
+  Widget build(BuildContext context) {
+    final minutes = seconds ~/ 60;
+    final secs = seconds % 60;
+    final timeStr = '$minutes:${secs.toString().padLeft(2, '0')}';
+
+    return Padding(
+      padding: const EdgeInsets.only(bottom: 4),
+      child: Row(
+        children: [
+          SizedBox(
+            width: 28,
+            child: Text(
+              'Z$zoneIndex',
+              style: TextStyle(
+                  color: zone.color, fontSize: 11, fontWeight: FontWeight.w600),
+            ),
+          ),
+          Expanded(
+            child: LayoutBuilder(builder: (_, constraints) {
+              return Stack(
+                children: [
+                  Container(
+                    height: 18,
+                    decoration: BoxDecoration(
+                      color: Colors.white.withValues(alpha: 0.05),
+                      borderRadius: BorderRadius.circular(3),
+                    ),
+                  ),
+                  Container(
+                    height: 18,
+                    width: constraints.maxWidth * fraction,
+                    decoration: BoxDecoration(
+                      color: zone.color.withValues(alpha: 0.6),
+                      borderRadius: BorderRadius.circular(3),
+                    ),
+                  ),
+                ],
+              );
+            }),
+          ),
+          const SizedBox(width: 8),
+          SizedBox(
+            width: 44,
+            child: Text(
+              timeStr,
+              style: const TextStyle(color: Colors.white54, fontSize: 11),
+              textAlign: TextAlign.right,
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+// ---------------------------------------------------------------------------
+// Laps table
+// ---------------------------------------------------------------------------
+
+class LapsTable extends StatelessWidget {
+  const LapsTable({super.key, required this.ride});
+  final Ride ride;
+
+  @override
+  Widget build(BuildContext context) {
+    return Column(
+      children: [
+        const Padding(
+          padding: EdgeInsets.symmetric(vertical: 4),
+          child: Row(
+            children: [
+              SizedBox(width: 40, child: Text('LAP', style: _headerStyle)),
+              Expanded(child: Text('DURATION', style: _headerStyle)),
+              SizedBox(
+                  width: 60,
+                  child: Text('AVG W', style: _headerStyle, textAlign: TextAlign.right)),
+              SizedBox(
+                  width: 60,
+                  child: Text('AVG HR', style: _headerStyle, textAlign: TextAlign.right)),
+            ],
+          ),
+        ),
+        for (int i = 0; i < ride.laps.length; i++)
+          LapRow(index: i, lap: ride.laps[i], ride: ride),
+      ],
+    );
+  }
+
+  static const _headerStyle = TextStyle(
+    color: Colors.white38,
+    fontSize: 10,
+    fontWeight: FontWeight.w600,
+    letterSpacing: 0.8,
+  );
+}
+
+class LapRow extends StatelessWidget {
+  const LapRow({super.key, required this.index, required this.lap, required this.ride});
+  final int index;
+  final Lap lap;
+  final Ride ride;
+
+  @override
+  Widget build(BuildContext context) {
+    final lapReadings = ride.readings.length > lap.endIndex
+        ? ride.readings.sublist(lap.startIndex, lap.endIndex + 1)
+        : <SensorReading>[];
+
+    final avgPower = lapReadings.isEmpty
+        ? 0
+        : lapReadings
+                .where((r) => r.power != null)
+                .map((r) => r.power!.value)
+                .fold<double>(0, (a, b) => a + b) /
+            lapReadings.where((r) => r.power != null).length;
+
+    final avgHr = lapReadings.isEmpty
+        ? 0
+        : lapReadings
+                .where((r) => r.heartRate != null)
+                .map((r) => r.heartRate!.bpm)
+                .fold<int>(0, (a, b) => a + b) /
+            lapReadings.where((r) => r.heartRate != null).length.clamp(1, 99999);
+
+    return Padding(
+      padding: const EdgeInsets.symmetric(vertical: 3),
+      child: Row(
+        children: [
+          SizedBox(
+            width: 40,
+            child: Text('${index + 1}',
+                style: const TextStyle(color: Colors.white, fontSize: 13)),
+          ),
+          Expanded(
+            child: Text(formatDuration(lap.duration),
+                style: const TextStyle(color: Colors.white70, fontSize: 13)),
+          ),
+          SizedBox(
+            width: 60,
+            child: Text('${avgPower.round()}',
+                style: const TextStyle(color: Colors.white70, fontSize: 13),
+                textAlign: TextAlign.right),
+          ),
+          SizedBox(
+            width: 60,
+            child: Text('${avgHr.round()}',
+                style: const TextStyle(color: Colors.white70, fontSize: 13),
+                textAlign: TextAlign.right),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+// ---------------------------------------------------------------------------
+// Export section
+// ---------------------------------------------------------------------------
+
+class ExportSection extends ConsumerWidget {
+  const ExportSection({super.key, required this.rideId});
+  final String rideId;
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final plugins = ref.watch(exportPluginsProvider);
+    final queueAsync = ref.watch(exportQueueProvider);
+
+    if (plugins.isEmpty) {
+      return const Text(
+        'No export plugins configured.',
+        style: TextStyle(color: Colors.white38, fontSize: 13),
+      );
+    }
+
+    return Wrap(
+      spacing: 8,
+      children: [
+        for (final entry in plugins.entries)
+          ExportButton(
+            rideId: rideId,
+            pluginId: entry.key,
+            pluginName: entry.value.manifest.name,
+            isAuthenticated: entry.value.isAuthenticated,
+            queueItems: queueAsync.valueOrNull ?? [],
+          ),
+      ],
+    );
+  }
+}
+
+class ExportButton extends ConsumerWidget {
+  const ExportButton({
+    super.key,
+    required this.rideId,
+    required this.pluginId,
+    required this.pluginName,
+    required this.isAuthenticated,
+    required this.queueItems,
+  });
+
+  final String rideId;
+  final String pluginId;
+  final String pluginName;
+  final bool isAuthenticated;
+  final List<ExportQueueItem> queueItems;
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final matching = queueItems
+        .where((i) => i.rideId == rideId && i.target == pluginId)
+        .toList();
+    final hasQueued = matching.isNotEmpty;
+    final isSuccess = matching.any((i) => i.isSuccess);
+
+    return OutlinedButton.icon(
+      style: OutlinedButton.styleFrom(
+        foregroundColor: isSuccess ? Colors.green : Colors.white70,
+        side: BorderSide(
+          color: isSuccess
+              ? Colors.green
+              : Colors.white.withValues(alpha: 0.2),
+        ),
+      ),
+      onPressed: hasQueued
+          ? null
+          : () => ref.read(exportRideProvider)(rideId, pluginId),
+      icon: Icon(
+        isSuccess
+            ? Icons.check_circle
+            : hasQueued
+                ? Icons.hourglass_top
+                : Icons.upload,
+        size: 16,
+      ),
+      label: Text(pluginName),
+    );
+  }
+}
+
+// ---------------------------------------------------------------------------
+// Section label
+// ---------------------------------------------------------------------------
+
+class SectionLabel extends StatelessWidget {
+  const SectionLabel(this.text, {super.key});
+  final String text;
+
+  @override
+  Widget build(BuildContext context) {
+    return Text(
+      text,
+      style: const TextStyle(
+        color: Colors.white54,
+        fontSize: 11,
+        fontWeight: FontWeight.w600,
+        letterSpacing: 1.2,
+      ),
+    );
+  }
+}
+
+// ---------------------------------------------------------------------------
+// Helpers
+// ---------------------------------------------------------------------------
+
+String formatDuration(Duration d) {
+  final h = d.inHours;
+  final m = d.inMinutes.remainder(60);
+  final s = d.inSeconds.remainder(60);
+  if (h > 0) {
+    return '$h:${m.toString().padLeft(2, '0')}:${s.toString().padLeft(2, '0')}';
+  }
+  return '$m:${s.toString().padLeft(2, '0')}';
+}
+
+String formatDate(DateTime dt) {
+  const months = [
+    'Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun',
+    'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec',
+  ];
+  return '${months[dt.month - 1]} ${dt.day}, ${dt.year}';
+}

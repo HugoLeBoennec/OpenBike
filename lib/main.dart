@@ -1,14 +1,129 @@
+import 'dart:io';
+
+import 'package:drift/native.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'presentation/router.dart';
+import 'package:go_router/go_router.dart';
+import 'package:path/path.dart' as p;
+import 'package:path_provider/path_provider.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 
-void main() {
+import 'core/application/services/physics_engine.dart';
+import 'core/events/event_bus.dart';
+import 'infrastructure/ble/ble_transport.dart';
+import 'infrastructure/ble/ftms/ftms_device_plugin.dart';
+import 'infrastructure/files/erg_parser.dart';
+import 'infrastructure/files/zwo_parser.dart';
+import 'infrastructure/persistence/app_database.dart';
+import 'infrastructure/persistence/drift_storage.dart';
+import 'infrastructure/preferences/app_preferences.dart';
+import 'infrastructure/simulator/simulator.dart';
+import 'plugins/exports/garmin_export_plugin.dart';
+import 'plugins/exports/strava_export_plugin.dart';
+import 'plugins/plugin_registry.dart';
+import 'presentation/router.dart';
+import 'presentation/state/providers.dart';
+
+void main() async {
   WidgetsFlutterBinding.ensureInitialized();
-  runApp(const ProviderScope(child: OpenBikeApp()));
+
+  // ---- Database ----
+  final dbDir = await getApplicationDocumentsDirectory();
+  final dbFile = File(p.join(dbDir.path, 'open_bike.db'));
+  final db = AppDatabase(NativeDatabase(dbFile));
+
+  // ---- Core singletons ----
+  final eventBus = EventBus();
+  final registry = PluginRegistry();
+  _registerPlugins(registry, eventBus);
+
+  // ---- Preferences ----
+  final prefs = await SharedPreferences.getInstance();
+  final appPrefs = AppPreferences(prefs);
+
+  // ---- Load persisted user profile ----
+  final storage = DriftStorage(db);
+  final savedProfile = await storage.getProfile();
+
+  runApp(
+    ProviderScope(
+      overrides: [
+        appDatabaseProvider.overrideWithValue(db),
+        eventBusProvider.overrideWithValue(eventBus),
+        pluginRegistryProvider.overrideWithValue(registry),
+        appPreferencesProvider.overrideWithValue(appPrefs),
+        // Seed saved device IDs from preferences.
+        savedDeviceIdsProvider.overrideWith((ref) => appPrefs.savedDeviceIds),
+        // Seed profile from DB so zones/FTP are available immediately.
+        if (savedProfile != null)
+          userProfileProvider.overrideWith((ref) => savedProfile),
+      ],
+      child: OpenBikeApp(
+        router: createAppRouter(
+          hasCompletedOnboarding: appPrefs.hasCompletedOnboarding,
+        ),
+      ),
+    ),
+  );
+}
+
+void _registerPlugins(PluginRegistry registry, EventBus eventBus) {
+  // ---- Device plugins ----
+
+  // BLE FTMS — always available.
+  registry.registerDevice(FtmsDevicePlugin(
+    transport: BleTransport(),
+    eventBus: eventBus,
+  ));
+
+  // ANT+ FE-C — desktop only (requires USB dongle).
+  // To enable: provide a UsbBackend implementation (e.g. dart:ffi + libusb)
+  // and uncomment the block below.
+  //
+  // if (Platform.isLinux || Platform.isMacOS || Platform.isWindows) {
+  //   final usbBackend = LibusbBackend(); // TODO: implement UsbBackend
+  //   registry.registerDevice(AntDevicePlugin(
+  //     transport: AntUsbTransport(backend: usbBackend),
+  //     eventBus: eventBus,
+  //   ));
+  // }
+
+  // Simulator — dev mode only (--dart-define=DEV_MODE=true).
+  const devMode = bool.fromEnvironment('DEV_MODE');
+  if (devMode) {
+    registry.registerDevice(SimulatorDevicePlugin(
+      eventBus: eventBus,
+      physics: CyclingPhysicsEngine(),
+    ));
+  }
+
+  // ---- Export plugins ----
+
+  // Garmin Connect — local FIT file export (always available).
+  registry.registerExport(GarminConnectExportPlugin());
+
+  // Strava — OAuth2 upload (requires client credentials via env).
+  const stravaClientId = String.fromEnvironment('STRAVA_CLIENT_ID');
+  const stravaClientSecret = String.fromEnvironment('STRAVA_CLIENT_SECRET');
+  if (stravaClientId.isNotEmpty && stravaClientSecret.isNotEmpty) {
+    registry.registerExport(StravaExportPlugin(
+      config: StravaConfig(
+        clientId: stravaClientId,
+        clientSecret: stravaClientSecret,
+      ),
+    ));
+  }
+
+  // ---- Workout format plugins ----
+
+  registry.registerFormat(ZwoParser());
+  registry.registerFormat(ErgMrcParser());
 }
 
 class OpenBikeApp extends StatelessWidget {
-  const OpenBikeApp({super.key});
+  const OpenBikeApp({super.key, required this.router});
+
+  final GoRouter router;
 
   @override
   Widget build(BuildContext context) {
@@ -20,7 +135,7 @@ class OpenBikeApp extends StatelessWidget {
         colorSchemeSeed: Colors.deepOrange,
         brightness: Brightness.dark,
       ),
-      routerConfig: appRouter,
+      routerConfig: router,
     );
   }
 }

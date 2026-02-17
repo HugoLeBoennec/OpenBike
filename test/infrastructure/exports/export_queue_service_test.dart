@@ -83,7 +83,7 @@ void main() {
 
     // Default: online
     when(() => connectivity.checkConnectivity())
-        .thenAnswer((_) async => ConnectivityResult.wifi);
+        .thenAnswer((_) async => [ConnectivityResult.wifi]);
     when(() => connectivity.onConnectivityChanged)
         .thenAnswer((_) => const Stream.empty());
 
@@ -196,7 +196,7 @@ void main() {
 
     test('skips when offline', () async {
       when(() => connectivity.checkConnectivity())
-          .thenAnswer((_) async => ConnectivityResult.none);
+          .thenAnswer((_) async => [ConnectivityResult.none]);
 
       await service.enqueue('ride-001', 'strava-export');
       await Future<void>.delayed(const Duration(milliseconds: 200));

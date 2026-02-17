@@ -21,6 +21,18 @@ class Ride with _$Ride {
     @Default([]) List<SensorReading> readings,
     @Default([]) List<Lap> laps,
     @Default(Duration.zero) Duration pauseDuration,
+
+    // Cached summary metrics — populated from the DB for list views so we
+    // don't need to load all readings just to show avg power, distance, etc.
+    Watts? cachedAvgPower,
+    Watts? cachedNormalizedPower,
+    Watts? cachedMaxPower,
+    Cadence? cachedAvgCadence,
+    HeartRate? cachedAvgHr,
+    HeartRate? cachedMaxHr,
+    Distance? cachedTotalDistance,
+    double? cachedTss,
+    double? cachedIntensityFactor,
   }) = _Ride;
 
   // ---------------------------------------------------------------------------
@@ -44,13 +56,13 @@ class Ride with _$Ride {
 
   Watts get averagePower {
     final p = _powerValues;
-    if (p.isEmpty) return Watts.zero;
+    if (p.isEmpty) return cachedAvgPower ?? Watts.zero;
     return Watts(p.reduce((a, b) => a + b) / p.length);
   }
 
   Watts get maxPower {
     final p = _powerValues;
-    if (p.isEmpty) return Watts.zero;
+    if (p.isEmpty) return cachedMaxPower ?? Watts.zero;
     return Watts(p.reduce(max));
   }
 
@@ -58,6 +70,7 @@ class Ride with _$Ride {
   /// averaged, then 4th root.
   Watts get normalizedPower {
     final p = _powerValues;
+    if (p.isEmpty) return cachedNormalizedPower ?? Watts.zero;
     if (p.length < 30) return averagePower;
 
     final rollingAvgs = <double>[];
@@ -83,7 +96,7 @@ class Ride with _$Ride {
         .where((r) => r.cadence != null)
         .map((r) => r.cadence!.rpm)
         .toList();
-    if (vals.isEmpty) return Cadence.zero;
+    if (vals.isEmpty) return cachedAvgCadence ?? Cadence.zero;
     return Cadence(vals.reduce((a, b) => a + b) / vals.length);
   }
 
@@ -92,7 +105,7 @@ class Ride with _$Ride {
         .where((r) => r.heartRate != null)
         .map((r) => r.heartRate!.bpm)
         .toList();
-    if (vals.isEmpty) return HeartRate.zero;
+    if (vals.isEmpty) return cachedAvgHr ?? HeartRate.zero;
     return HeartRate((vals.reduce((a, b) => a + b) / vals.length).round());
   }
 
@@ -101,7 +114,7 @@ class Ride with _$Ride {
         .where((r) => r.heartRate != null)
         .map((r) => r.heartRate!.bpm)
         .toList();
-    if (vals.isEmpty) return HeartRate.zero;
+    if (vals.isEmpty) return cachedMaxHr ?? HeartRate.zero;
     return HeartRate(vals.reduce(max));
   }
 
@@ -111,7 +124,7 @@ class Ride with _$Ride {
 
   Distance get totalDistance {
     final distances = readings.where((r) => r.distance != null).toList();
-    if (distances.isEmpty) return Distance.zero;
+    if (distances.isEmpty) return cachedTotalDistance ?? Distance.zero;
     return distances.last.distance!;
   }
 
@@ -121,6 +134,9 @@ class Ride with _$Ride {
 
   /// Intensity Factor = NP / FTP.
   double intensityFactor(Watts ftp) {
+    if (readings.isEmpty && cachedIntensityFactor != null) {
+      return cachedIntensityFactor!;
+    }
     if (ftp.value == 0) return 0;
     return normalizedPower.value / ftp.value;
   }
@@ -129,6 +145,7 @@ class Ride with _$Ride {
   ///
   /// Uses [activeDuration] (excluding pauses) for the time component.
   double tss(Watts ftp) {
+    if (readings.isEmpty && cachedTss != null) return cachedTss!;
     if (ftp.value == 0) return 0;
     final ifactor = intensityFactor(ftp);
     return (activeDuration.inSeconds * normalizedPower.value * ifactor) /

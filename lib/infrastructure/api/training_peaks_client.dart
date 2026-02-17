@@ -2,22 +2,23 @@ import '../../core/domain/entities/ride.dart';
 import '../../core/domain/ports/export_port.dart';
 
 class TrainingPeaksClient implements ExportPort {
+  // ignore: unused_field
   String? _accessToken;
 
   @override
-  String get serviceName => 'TrainingPeaks';
-
-  @override
-  Future<bool> get isAuthenticated async => _accessToken != null;
-
-  @override
-  Future<bool> authenticate() async {
+  Future<void> authenticate() async {
     // TODO: Implement OAuth2 flow for TrainingPeaks
-    return false;
   }
 
   @override
-  Future<void> uploadRide(Ride ride) async {
+  Future<String> exportActivity(Ride ride, ExportFormat format) async {
     // TODO: Upload to TrainingPeaks API
+    return '';
+  }
+
+  @override
+  Future<ExportStatus> checkStatus(String id) async {
+    // TODO: Check upload status via TrainingPeaks API
+    return ExportStatus.pending;
   }
 }

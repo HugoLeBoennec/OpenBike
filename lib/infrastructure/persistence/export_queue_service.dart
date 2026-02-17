@@ -87,7 +87,7 @@ class ExportQueueService {
 
   final _queueController =
       StreamController<List<ExportQueueItem>>.broadcast();
-  StreamSubscription<ConnectivityResult>? _connectivitySub;
+  StreamSubscription<List<ConnectivityResult>>? _connectivitySub;
   bool _processing = false;
   bool _disposed = false;
   final List<Timer> _retryTimers = [];
@@ -145,7 +145,7 @@ class ExportQueueService {
 
     try {
       final connectivity = await _connectivity.checkConnectivity();
-      final isOnline = connectivity != ConnectivityResult.none;
+      final isOnline = !connectivity.contains(ConnectivityResult.none);
 
       final rows = await (_db.select(_db.exportQueue)
             ..where((t) =>

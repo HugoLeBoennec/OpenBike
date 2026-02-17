@@ -109,7 +109,21 @@ class DriftStorage implements StoragePort {
           : null,
       status: RideStatus.values.byName(row.status),
       pauseDuration: Duration(seconds: row.pauseDurationSeconds ?? 0),
-      // readings and laps are loaded separately on demand.
+      // Cached summary metrics — avoids loading all readings for list views.
+      cachedAvgPower: row.avgPower != null ? Watts(row.avgPower!) : null,
+      cachedNormalizedPower:
+          row.normalizedPower != null ? Watts(row.normalizedPower!) : null,
+      cachedMaxPower: row.maxPower != null ? Watts(row.maxPower!) : null,
+      cachedAvgCadence:
+          row.avgCadence != null ? Cadence(row.avgCadence!) : null,
+      cachedAvgHr:
+          row.avgHr != null ? HeartRate(row.avgHr!.round()) : null,
+      cachedMaxHr:
+          row.maxHr != null ? HeartRate(row.maxHr!.round()) : null,
+      cachedTotalDistance:
+          row.totalDistance != null ? Distance(row.totalDistance!) : null,
+      cachedTss: row.tss,
+      cachedIntensityFactor: row.intensityFactor,
     );
   }
 

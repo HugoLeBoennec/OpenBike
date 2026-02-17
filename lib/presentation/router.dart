@@ -1,13 +1,91 @@
+import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
-import 'screens/screens.dart';
 
-final appRouter = GoRouter(
-  initialLocation: '/ride',
-  routes: [
-    GoRoute(path: '/ride', builder: (_, __) => const RideScreen()),
-    GoRoute(path: '/workouts', builder: (_, __) => const WorkoutBuilderScreen()),
-    GoRoute(path: '/history', builder: (_, __) => const HistoryScreen()),
-    GoRoute(path: '/settings', builder: (_, __) => const SettingsScreen()),
-    GoRoute(path: '/devices', builder: (_, __) => const DeviceScanScreen()),
-  ],
-);
+import 'models/ride_extra.dart';
+import 'screens/screens.dart';
+import 'widgets/app_shell.dart';
+
+/// Creates the app router with [ShellRoute] for tab navigation.
+///
+/// Routes outside the shell (full-screen, no nav bar):
+///   /onboarding, /ride, /ride/summary/:id, /scan
+///
+/// Routes inside the shell (with bottom nav / sidebar):
+///   /, /workouts, /workouts/:id, /history, /history/:id, /settings, /dev
+GoRouter createAppRouter({required bool hasCompletedOnboarding}) {
+  return GoRouter(
+    initialLocation: hasCompletedOnboarding ? '/' : '/onboarding',
+    routes: [
+      // ── Full-screen routes (outside shell) ──────────────────────────
+      GoRoute(
+        path: '/onboarding',
+        builder: (_, __) => const OnboardingScreen(),
+      ),
+      GoRoute(
+        path: '/ride',
+        builder: (_, state) {
+          final extra = state.extra;
+          return RideScreen(
+            extra: extra is RideExtra ? extra : null,
+          );
+        },
+      ),
+      GoRoute(
+        path: '/ride/summary/:id',
+        builder: (_, state) {
+          final id = state.pathParameters['id'] ?? '';
+          return RideSummaryScreen(rideId: id);
+        },
+      ),
+      GoRoute(
+        path: '/scan',
+        pageBuilder: (context, state) => const MaterialPage(
+          fullscreenDialog: true,
+          child: DeviceScanScreen(),
+        ),
+      ),
+
+      // ── Shell routes (with bottom nav / sidebar) ────────────────────
+      ShellRoute(
+        builder: (_, __, child) => AppShell(child: child),
+        routes: [
+          GoRoute(
+            path: '/',
+            builder: (_, __) => const HomeScreen(),
+          ),
+          GoRoute(
+            path: '/workouts',
+            builder: (_, __) => const WorkoutBuilderScreen(),
+          ),
+          GoRoute(
+            path: '/workouts/:id',
+            builder: (_, state) {
+              final id =
+                  int.tryParse(state.pathParameters['id'] ?? '') ?? 0;
+              return WorkoutDetailScreen(workoutIndex: id);
+            },
+          ),
+          GoRoute(
+            path: '/history',
+            builder: (_, __) => const HistoryScreen(),
+          ),
+          GoRoute(
+            path: '/history/:id',
+            builder: (_, state) {
+              final id = state.pathParameters['id'] ?? '';
+              return RideDetailScreen(rideId: id);
+            },
+          ),
+          GoRoute(
+            path: '/settings',
+            builder: (_, __) => const SettingsScreen(),
+          ),
+          GoRoute(
+            path: '/dev',
+            builder: (_, __) => const DevToolsScreen(),
+          ),
+        ],
+      ),
+    ],
+  );
+}

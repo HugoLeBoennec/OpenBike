@@ -25,7 +25,7 @@ class RecordingEngine {
     Uuid? uuid,
   })  : _eventBus = eventBus,
         _storage = storage,
-        _uuid = uuid ?? const Uuid();
+        _uuid = uuid ?? Uuid();
 
   final EventBus _eventBus;
   final StoragePort _storage;
@@ -46,6 +46,9 @@ class RecordingEngine {
 
   SensorReading? _latestReading;
   SensorReading? get latestReading => _latestReading;
+
+  /// Number of laps recorded so far (including the auto-closed final lap on stop).
+  int get lapCount => _laps.length;
 
   // ---------------------------------------------------------------------------
   // Internal state
