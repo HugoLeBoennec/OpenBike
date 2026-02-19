@@ -31,6 +31,9 @@ abstract class ExportPlugin {
   /// Whether the user has authorized this plugin.
   bool get isAuthenticated;
 
+  /// Authenticated user's display name, if available (e.g. Strava athlete name).
+  String? get athleteName => null;
+
   /// Starts the OAuth / authentication flow.
   Future<void> authenticate();
 

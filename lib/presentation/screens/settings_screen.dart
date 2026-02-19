@@ -14,7 +14,6 @@ class SettingsScreen extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final profile = ref.watch(userProfileProvider);
-    final stravaAuth = ref.watch(stravaAuthProvider);
 
     return Scaffold(
       backgroundColor: Colors.black,
@@ -69,15 +68,7 @@ class SettingsScreen extends ConsumerWidget {
 
           // ----- Connections -----
           _SectionHeader('CONNECTIONS'),
-          _SettingsTile(
-            icon: Icons.cloud_upload_outlined,
-            title: 'Strava',
-            value: stravaAuth ? 'Connected' : 'Not connected',
-            valueColor: stravaAuth ? Colors.green : Colors.white54,
-            onTap: () {
-              // TODO: OAuth flow
-            },
-          ),
+          _StravaSettingsTile(),
 
           const SizedBox(height: 8),
 
@@ -237,6 +228,93 @@ class SettingsScreen extends ConsumerWidget {
 
   void _saveProfile(WidgetRef ref, UserProfile profile) {
     ref.read(storageProvider).saveProfile(profile);
+  }
+}
+
+// ---------------------------------------------------------------------------
+// Strava connection tile
+// ---------------------------------------------------------------------------
+
+class _StravaSettingsTile extends ConsumerWidget {
+  const _StravaSettingsTile();
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final isAuth = ref.watch(stravaAuthProvider);
+    final athleteName = ref.watch(stravaAthleteNameProvider);
+
+    final valueText = isAuth
+        ? (athleteName != null && athleteName.isNotEmpty
+            ? 'Connecté ($athleteName)'
+            : 'Connecté')
+        : 'Non connecté';
+
+    return _SettingsTile(
+      icon: Icons.cloud_upload_outlined,
+      title: 'Strava',
+      value: valueText,
+      valueColor: isAuth ? Colors.green : Colors.white54,
+      onTap: () => isAuth
+          ? _showDisconnectDialog(context, ref)
+          : _connectStrava(context, ref),
+    );
+  }
+
+  Future<void> _connectStrava(BuildContext context, WidgetRef ref) async {
+    final plugin = ref.read(exportPluginsProvider)['strava-export'];
+    if (plugin == null) {
+      if (context.mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text(
+              'Strava non configuré. Lancez l\'app avec '
+              '--dart-define=STRAVA_CLIENT_ID=…',
+            ),
+          ),
+        );
+      }
+      return;
+    }
+    try {
+      await plugin.authenticate();
+    } catch (e) {
+      if (context.mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Erreur Strava : $e')),
+        );
+      }
+    }
+  }
+
+  Future<void> _showDisconnectDialog(
+      BuildContext context, WidgetRef ref) async {
+    final confirmed = await showDialog<bool>(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        title: const Text('Déconnecter Strava'),
+        content: const Text('Supprimer les tokens Strava stockés ?'),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(ctx, false),
+            child: const Text('Annuler'),
+          ),
+          TextButton(
+            onPressed: () => Navigator.pop(ctx, true),
+            child: const Text(
+              'Déconnecter',
+              style: TextStyle(color: Colors.red),
+            ),
+          ),
+        ],
+      ),
+    );
+    if (confirmed == true) {
+      final plugin = ref.read(exportPluginsProvider)['strava-export'];
+      await plugin?.disconnect();
+      if (context.mounted) {
+        ref.read(stravaAuthStateProvider.notifier).state = false;
+      }
+    }
   }
 }
 

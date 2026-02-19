@@ -26,7 +26,7 @@ class StravaConfig {
   const StravaConfig({
     required this.clientId,
     required this.clientSecret,
-    this.redirectUri = 'pedalhub://strava/callback',
+    this.redirectUri = 'openbike://strava/callback',
   });
 }
 
@@ -54,11 +54,13 @@ class StravaExportPlugin implements ExportPlugin {
   String? _accessToken;
   String? _refreshToken;
   DateTime? _expiresAt;
+  String? _athleteName;
 
   // Secure storage keys.
   static const _keyAccessToken = 'strava_access_token';
   static const _keyRefreshToken = 'strava_refresh_token';
   static const _keyExpiresAt = 'strava_expires_at';
+  static const _keyAthleteName = 'strava_athlete_name';
 
   // API endpoints.
   static const _authorizeUrl = 'https://www.strava.com/oauth/authorize';
@@ -94,6 +96,9 @@ class StravaExportPlugin implements ExportPlugin {
       _accessToken != null &&
       (_expiresAt == null || _expiresAt!.isAfter(DateTime.now()));
 
+  @override
+  String? get athleteName => _athleteName;
+
   /// Loads previously stored tokens from secure storage.
   Future<void> restoreSession() async {
     _accessToken = await _storage.read(key: _keyAccessToken);
@@ -103,6 +108,7 @@ class StravaExportPlugin implements ExportPlugin {
       _expiresAt =
           DateTime.fromMillisecondsSinceEpoch(int.parse(expiresStr));
     }
+    _athleteName = await _storage.read(key: _keyAthleteName);
   }
 
   // ---------------------------------------------------------------------------
@@ -182,6 +188,16 @@ class StravaExportPlugin implements ExportPlugin {
     _expiresAt =
         DateTime.fromMillisecondsSinceEpoch(expiresAtEpoch * 1000);
 
+    final athlete = json['athlete'] as Map<String, dynamic>?;
+    if (athlete != null) {
+      final first = athlete['firstname'] as String? ?? '';
+      final last = athlete['lastname'] as String? ?? '';
+      _athleteName = '$first $last'.trim();
+      if (_athleteName!.isNotEmpty) {
+        await _storage.write(key: _keyAthleteName, value: _athleteName);
+      }
+    }
+
     await _storage.write(key: _keyAccessToken, value: _accessToken);
     await _storage.write(key: _keyRefreshToken, value: _refreshToken);
     await _storage.write(
@@ -205,9 +221,11 @@ class StravaExportPlugin implements ExportPlugin {
     _accessToken = null;
     _refreshToken = null;
     _expiresAt = null;
+    _athleteName = null;
     await _storage.delete(key: _keyAccessToken);
     await _storage.delete(key: _keyRefreshToken);
     await _storage.delete(key: _keyExpiresAt);
+    await _storage.delete(key: _keyAthleteName);
   }
 
   // ---------------------------------------------------------------------------

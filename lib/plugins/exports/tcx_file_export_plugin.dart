@@ -4,27 +4,24 @@ import 'package:path_provider/path_provider.dart';
 
 import '../../core/domain/entities/entities.dart';
 import '../../core/domain/ports/export_port.dart';
-import '../../infrastructure/files/fit_encoder.dart';
+import '../../infrastructure/files/tcx_encoder.dart';
 import '../plugin_interfaces.dart';
 import '../plugin_manifest.dart';
 
-/// FIT file export plugin.
+/// TCX file export plugin.
 ///
-/// Encodes the ride as a conformant FIT file and saves it to the temp directory.
-/// The caller (UI layer) is responsible for presenting a save/share dialog to
-/// the user — this plugin only produces the file and returns its path.
-///
-/// To import the resulting .fit file into Garmin Connect, visit
-/// <https://connect.garmin.com/modern/import-data> or use the Garmin Connect
-/// mobile app.
-class GarminConnectExportPlugin implements ExportPlugin {
-  GarminConnectExportPlugin({
-    FitEncoder? fitEncoder,
+/// Encodes the ride as a Training Center XML (TCX) file and saves it to the
+/// temp directory. The caller (UI layer) is responsible for presenting a
+/// save/share dialog to the user — this plugin only produces the file and
+/// returns its path.
+class TcxFileExportPlugin implements ExportPlugin {
+  TcxFileExportPlugin({
+    TcxEncoder? tcxEncoder,
     String? exportDirectory,
-  })  : _fitEncoder = fitEncoder ?? FitEncoder(),
+  })  : _tcxEncoder = tcxEncoder ?? TcxEncoder(),
         _exportDirectory = exportDirectory;
 
-  final FitEncoder _fitEncoder;
+  final TcxEncoder _tcxEncoder;
   final String? _exportDirectory;
 
   // ---------------------------------------------------------------------------
@@ -33,12 +30,12 @@ class GarminConnectExportPlugin implements ExportPlugin {
 
   @override
   PluginManifest get manifest => const PluginManifest(
-        id: 'fit-file-export',
-        name: 'Enregistrer FIT',
+        id: 'tcx-file-export',
+        name: 'Exporter TCX',
         version: '1.0.0',
         type: PluginType.export,
         author: 'OpenBike',
-        description: 'Export ride as a FIT file for manual import',
+        description: 'Export ride as a TCX file',
         capabilities: ['file-export'],
       );
 
@@ -71,16 +68,16 @@ class GarminConnectExportPlugin implements ExportPlugin {
     Ride ride, {
     ExportFormat format = ExportFormat.fit,
   }) async {
-    final bytes = _fitEncoder.encode(ride);
+    final xmlContent = _tcxEncoder.encode(ride);
 
     // Save to temp directory so the UI layer can present a save/share dialog.
     final dir = _exportDirectory ?? (await getTemporaryDirectory()).path;
     final datePrefix = _datePrefix(ride.startTime);
     final shortId = ride.id.length > 8 ? ride.id.substring(0, 8) : ride.id;
-    final filePath = '$dir/${datePrefix}_$shortId.fit';
+    final filePath = '$dir/${datePrefix}_$shortId.tcx';
 
     final file = File(filePath);
-    await file.writeAsBytes(bytes);
+    await file.writeAsString(xmlContent);
 
     return filePath;
   }

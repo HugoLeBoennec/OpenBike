@@ -30,5 +30,16 @@
 	<string>NSApplication</string>
 	<key>NSBluetoothAlwaysUsageDescription</key>
 	<string>PedalHub needs Bluetooth to connect to your smart trainer and sensors</string>
+	<key>CFBundleURLTypes</key>
+	<array>
+		<dict>
+			<key>CFBundleURLSchemes</key>
+			<array>
+				<string>openbike</string>
+			</array>
+			<key>CFBundleURLName</key>
+			<string>com.openbike.app</string>
+		</dict>
+	</array>
 </dict>
 </plist>

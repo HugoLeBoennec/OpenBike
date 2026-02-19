@@ -446,11 +446,26 @@ final exportQueueProvider = StreamProvider<List<ExportQueueItem>>((ref) {
   return ref.watch(exportQueueServiceProvider).queueStream;
 });
 
+/// Mutable source of truth for Strava authentication state.
+///
+/// Updated by [main.dart] after [restoreSession] completes and after the
+/// OAuth deep link callback is handled. The UI reads [stravaAuthProvider]
+/// which is derived from this.
+final stravaAuthStateProvider = StateProvider<bool>((ref) => false);
+
 /// Strava authentication state — `true` if the Strava plugin is authenticated.
+///
+/// Backed by [stravaAuthStateProvider] so it rebuilds whenever the auth state
+/// changes (e.g. after deep link callback or disconnect).
 final stravaAuthProvider = Provider<bool>((ref) {
+  return ref.watch(stravaAuthStateProvider);
+});
+
+/// Strava athlete display name, or `null` if not authenticated.
+final stravaAthleteNameProvider = Provider<String?>((ref) {
+  ref.watch(stravaAuthStateProvider); // rebuild when auth changes
   final plugins = ref.watch(exportPluginsProvider);
-  final strava = plugins['strava-export'];
-  return strava?.isAuthenticated ?? false;
+  return plugins['strava-export']?.athleteName;
 });
 
 /// Action provider to export a [Ride] to a given target (e.g. 'strava-export').

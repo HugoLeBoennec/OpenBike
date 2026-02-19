@@ -51,6 +51,8 @@ dependencies:
   url_launcher: ^6.3.2
   flutter_secure_storage: ^9.2.4
   connectivity_plus: ^6.1.4
+  app_links: ^6.0.0
+  share_plus: ^10.0.0
 
   # Charts
   fl_chart: ^0.70.2
