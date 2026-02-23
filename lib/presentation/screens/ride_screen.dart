@@ -2,6 +2,8 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:wakelock_plus/wakelock_plus.dart';
 
+import '../../core/domain/entities/trainer_device.dart';
+import '../../core/domain/value_objects/value_objects.dart';
 import '../models/data_field_type.dart';
 import '../models/ride_extra.dart';
 import '../state/providers.dart';
@@ -70,9 +72,17 @@ class _RideScreenState extends ConsumerState<RideScreen> {
         body: SafeArea(
           child: LayoutBuilder(
             builder: (context, constraints) {
-              if (constraints.maxWidth >= 1200) {
+              final isDesktop = constraints.maxWidth >= 1200;
+              final isLandscape = constraints.maxWidth >= 600;
+              Future.microtask(() {
+                ref.read(rideScreenConfigProvider.notifier).adaptToLayout(
+                      isDesktop: isDesktop,
+                      isLandscape: isLandscape,
+                    );
+              });
+              if (isDesktop) {
                 return _buildDesktopLayout(context, ref, constraints);
-              } else if (constraints.maxWidth >= 600) {
+              } else if (isLandscape) {
                 return _buildLandscapeLayout(context, ref, constraints);
               } else {
                 return _buildPortraitLayout(context, ref, constraints);
@@ -117,11 +127,16 @@ class _RideScreenState extends ConsumerState<RideScreen> {
   ) {
     final config = ref.watch(rideScreenConfigProvider);
     final pages = config.pages;
+    final mode = ref.watch(trainerModeProvider);
 
     return Column(
       children: [
         const RideHeaderBar(),
         const ZoneBar(),
+        if (mode == ControlMode.erg) const _ErgControls(),
+        if (mode == ControlMode.resistance) const _ResistanceControls(),
+        const _TrainerStatusBanner(),
+        if (mode == ControlMode.simulation) const _GradientDifficultySlider(),
         Expanded(
           flex: 3,
           child: _PagedDataGrid(
@@ -147,6 +162,7 @@ class _RideScreenState extends ConsumerState<RideScreen> {
     final config = ref.watch(rideScreenConfigProvider);
     final fields =
         config.pages.isNotEmpty ? config.pages.first : <DataFieldType>[];
+    final mode = ref.watch(trainerModeProvider);
 
     return Row(
       children: [
@@ -157,6 +173,11 @@ class _RideScreenState extends ConsumerState<RideScreen> {
             children: [
               const RideHeaderBar(),
               const ZoneBar(),
+              if (mode == ControlMode.erg) const _ErgControls(),
+              if (mode == ControlMode.resistance) const _ResistanceControls(),
+              const _TrainerStatusBanner(),
+              if (mode == ControlMode.simulation)
+                const _GradientDifficultySlider(),
               Expanded(
                 child: DataFieldGrid(
                   fields: fields,
@@ -198,6 +219,7 @@ class _RideScreenState extends ConsumerState<RideScreen> {
     final config = ref.watch(rideScreenConfigProvider);
     final fields =
         config.pages.isNotEmpty ? config.pages.first : <DataFieldType>[];
+    final mode = ref.watch(trainerModeProvider);
 
     return Row(
       children: [
@@ -208,6 +230,11 @@ class _RideScreenState extends ConsumerState<RideScreen> {
             children: [
               const RideHeaderBar(),
               const ZoneBar(),
+              if (mode == ControlMode.erg) const _ErgControls(),
+              if (mode == ControlMode.resistance) const _ResistanceControls(),
+              const _TrainerStatusBanner(),
+              if (mode == ControlMode.simulation)
+                const _GradientDifficultySlider(),
               Expanded(
                 child: DataFieldGrid(
                   fields: fields,
@@ -236,6 +263,184 @@ class _RideScreenState extends ConsumerState<RideScreen> {
           ),
         ),
       ],
+    );
+  }
+}
+
+// ─── Trainer status banner ─────────────────────────────────────────────
+
+class _TrainerStatusBanner extends ConsumerWidget {
+  const _TrainerStatusBanner();
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final status = ref.watch(trainerStatusProvider);
+    if (status == TrainerStatus.normal) return const SizedBox.shrink();
+
+    final (text, color) = switch (status) {
+      TrainerStatus.stoppedByUser => (
+          'Trainer paused — press resume to continue',
+          Colors.amber,
+        ),
+      TrainerStatus.safetyLimit => (
+          'Trainer stopped: safety limit reached',
+          Colors.red,
+        ),
+      TrainerStatus.normal => ('', Colors.transparent),
+    };
+
+    return Container(
+      height: 36,
+      width: double.infinity,
+      color: color.withValues(alpha: 0.15),
+      alignment: Alignment.center,
+      child: Text(
+        text,
+        style: TextStyle(color: color, fontSize: 12),
+      ),
+    );
+  }
+}
+
+// ─── ERG controls (ERG mode only) ──────────────────────────────────────
+
+class _ErgControls extends ConsumerWidget {
+  const _ErgControls();
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final watts = ref.watch(ergTargetWattsProvider);
+    final cadence = ref.watch(cadenceTargetProvider);
+
+    void adjust(int delta) {
+      ref.read(ergTargetWattsProvider.notifier).adjust(delta);
+      final w = ref.read(ergTargetWattsProvider);
+      ref
+          .read(trainerModeControllerProvider.notifier)
+          .switchMode(ControlMode.erg, power: Watts(w.toDouble()));
+    }
+
+    return Column(
+      mainAxisSize: MainAxisSize.min,
+      children: [
+        Row(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            IconButton(
+              icon: const Icon(Icons.remove, color: Colors.white54, size: 20),
+              onPressed: () => adjust(-5),
+            ),
+            Text(
+              '${watts}W',
+              style: const TextStyle(
+                color: Colors.deepOrange,
+                fontSize: 22,
+                fontWeight: FontWeight.bold,
+              ),
+            ),
+            IconButton(
+              icon: const Icon(Icons.add, color: Colors.white54, size: 20),
+              onPressed: () => adjust(5),
+            ),
+          ],
+        ),
+        if (cadence != null)
+          Row(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              const Icon(Icons.rotate_right, color: Colors.white54, size: 14),
+              const SizedBox(width: 4),
+              Text(
+                '${cadence.min}–${cadence.max} rpm',
+                style: const TextStyle(color: Colors.white54, fontSize: 12),
+              ),
+            ],
+          ),
+      ],
+    );
+  }
+}
+
+// ─── Resistance controls (Resistance mode only) ─────────────────────────
+
+class _ResistanceControls extends ConsumerWidget {
+  const _ResistanceControls();
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final level = ref.watch(resistanceLevelProvider);
+
+    void adjust(double delta) {
+      final newPct = (level + delta).clamp(0.0, 100.0);
+      ref
+          .read(trainerModeControllerProvider.notifier)
+          .switchMode(ControlMode.resistance, resistance: newPct / 10.0);
+    }
+
+    return Row(
+      mainAxisAlignment: MainAxisAlignment.center,
+      children: [
+        const Icon(Icons.tune, color: Colors.white54, size: 16),
+        IconButton(
+          icon: const Icon(Icons.remove, color: Colors.white54, size: 20),
+          onPressed: () => adjust(-5),
+        ),
+        Text(
+          '${level.round()}%',
+          style: const TextStyle(
+            color: Colors.white54,
+            fontSize: 16,
+            fontWeight: FontWeight.bold,
+          ),
+        ),
+        IconButton(
+          icon: const Icon(Icons.add, color: Colors.white54, size: 20),
+          onPressed: () => adjust(5),
+        ),
+      ],
+    );
+  }
+}
+
+// ─── Gradient difficulty slider (SIM mode only) ────────────────────────
+
+class _GradientDifficultySlider extends ConsumerWidget {
+  const _GradientDifficultySlider();
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final difficulty = ref.watch(trainerDifficultyProvider);
+    final prefs = ref.read(appPreferencesProvider);
+
+    return Padding(
+      padding: const EdgeInsets.symmetric(horizontal: 12),
+      child: Row(
+        children: [
+          const Icon(Icons.terrain, color: Colors.white54, size: 16),
+          Expanded(
+            child: Slider(
+              value: difficulty,
+              min: 0.0,
+              max: 1.0,
+              divisions: 20,
+              activeColor: Colors.deepOrange,
+              inactiveColor: Colors.white12,
+              onChanged: (v) {
+                ref.read(trainerDifficultyProvider.notifier).state = v;
+                prefs.setTrainerDifficulty(v);
+              },
+            ),
+          ),
+          SizedBox(
+            width: 36,
+            child: Text(
+              '${(difficulty * 100).round()}%',
+              style: const TextStyle(color: Colors.white54, fontSize: 12),
+              textAlign: TextAlign.right,
+            ),
+          ),
+        ],
+      ),
     );
   }
 }
@@ -311,7 +516,7 @@ class _PageDots extends StatelessWidget {
             shape: BoxShape.circle,
             color: i == current
                 ? Colors.white
-                : Colors.white.withOpacity(0.3),
+                : Colors.white.withValues(alpha: 0.3),
           ),
         );
       }),

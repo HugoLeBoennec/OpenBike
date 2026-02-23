@@ -122,6 +122,16 @@ class FtmsTrainerAdapter implements TrainerPort {
   final _dataController = StreamController<SensorReading>.broadcast();
   StreamSubscription? _dataSub;
   StreamSubscription? _connectionStateSub;
+  StreamSubscription? _statusSub;
+
+  /// Grade difficulty scalar (0.0–1.0). Applied to every [setSimulationParams]
+  /// call before forwarding to the FTMS control client. Default 0.5 (Zwift
+  /// style: half the real gradient).
+  double _difficulty = 0.5;
+
+  /// Update the gradient difficulty at runtime (e.g. from a ride-screen slider).
+  // ignore: avoid_setters_without_getters
+  set difficulty(double value) => _difficulty = value.clamp(0.0, 1.0);
 
   @override
   Stream<SensorReading> get dataStream => _dataController.stream;
@@ -167,11 +177,36 @@ class FtmsTrainerAdapter implements TrainerPort {
     _log.info('[BLE-DEBUG] FTMS control handshake complete — '
         'features: ${_controlClient.features}');
 
+    // Subscribe to Fitness Machine Status notifications (0x2ADA).
+    _statusSub = _controlClient.statusChanges.listen(_onMachineStatusChange);
+
     // Fire events.
     _eventBus.fire(TrainerEvent.connected(_device));
     _eventBus.fire(TrainerEvent.controlAcquired(_device.id));
 
     _log.info('[BLE-DEBUG] FTMS adapter fully initialized');
+  }
+
+  // ---------------------------------------------------------------------------
+  // Fitness Machine Status handler (0x2ADA)
+  // ---------------------------------------------------------------------------
+
+  void _onMachineStatusChange(FtmsMachineStatus status) {
+    _log.info('Machine status: $status');
+    switch (status) {
+      case FtmsMachineStatus.stoppedOrPausedByUser:
+        _log.info('Physical stop button pressed on ${_device.name}');
+        _eventBus.fire(TrainerEvent.physicalStop(_device.id));
+      case FtmsMachineStatus.stoppedBySafetyKey:
+        _log.warning('Safety key / limit triggered on ${_device.name}');
+        _eventBus.fire(TrainerEvent.safetyStop(_device.id));
+      case FtmsMachineStatus.targetPowerChanged:
+        _log.info('Target power changed externally on ${_device.name}');
+      case FtmsMachineStatus.controlPermissionLost:
+        _log.warning('Control permission lost on ${_device.name}');
+      default:
+        break;
+    }
   }
 
   // ---------------------------------------------------------------------------
@@ -217,9 +252,13 @@ class FtmsTrainerAdapter implements TrainerPort {
     double crr,
     double cda,
   ) async {
+    // Scale grade by difficulty (Zwift-style: half-difficulty on downhills).
+    var scaledGrade = grade.percent * _difficulty;
+    if (scaledGrade < 0) scaledGrade *= 0.5;
+
     final response = await _controlClient.setSimulationParameters(
       windSpeed: windSpeed,
-      grade: grade.percent,
+      grade: scaledGrade,
       crr: crr,
       cda: cda,
     );
@@ -248,6 +287,8 @@ class FtmsTrainerAdapter implements TrainerPort {
     _dataSub = null;
     await _connectionStateSub?.cancel();
     _connectionStateSub = null;
+    await _statusSub?.cancel();
+    _statusSub = null;
 
     // Stop the trainer before disconnecting.
     if (_controlClient.hasControl) {

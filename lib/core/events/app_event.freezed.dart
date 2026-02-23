@@ -171,6 +171,8 @@ mixin _$TrainerEvent {
     required TResult Function(String deviceId) disconnected,
     required TResult Function(String deviceId) controlAcquired,
     required TResult Function(String deviceId, ControlMode mode) modeChanged,
+    required TResult Function(String deviceId) physicalStop,
+    required TResult Function(String deviceId) safetyStop,
   }) =>
       throw _privateConstructorUsedError;
   @optionalTypeArgs
@@ -179,6 +181,8 @@ mixin _$TrainerEvent {
     TResult? Function(String deviceId)? disconnected,
     TResult? Function(String deviceId)? controlAcquired,
     TResult? Function(String deviceId, ControlMode mode)? modeChanged,
+    TResult? Function(String deviceId)? physicalStop,
+    TResult? Function(String deviceId)? safetyStop,
   }) =>
       throw _privateConstructorUsedError;
   @optionalTypeArgs
@@ -187,6 +191,8 @@ mixin _$TrainerEvent {
     TResult Function(String deviceId)? disconnected,
     TResult Function(String deviceId)? controlAcquired,
     TResult Function(String deviceId, ControlMode mode)? modeChanged,
+    TResult Function(String deviceId)? physicalStop,
+    TResult Function(String deviceId)? safetyStop,
     required TResult orElse(),
   }) =>
       throw _privateConstructorUsedError;
@@ -196,6 +202,8 @@ mixin _$TrainerEvent {
     required TResult Function(TrainerDisconnected value) disconnected,
     required TResult Function(TrainerControlAcquired value) controlAcquired,
     required TResult Function(TrainerModeChanged value) modeChanged,
+    required TResult Function(TrainerPhysicalStop value) physicalStop,
+    required TResult Function(TrainerSafetyStop value) safetyStop,
   }) =>
       throw _privateConstructorUsedError;
   @optionalTypeArgs
@@ -204,6 +212,8 @@ mixin _$TrainerEvent {
     TResult? Function(TrainerDisconnected value)? disconnected,
     TResult? Function(TrainerControlAcquired value)? controlAcquired,
     TResult? Function(TrainerModeChanged value)? modeChanged,
+    TResult? Function(TrainerPhysicalStop value)? physicalStop,
+    TResult? Function(TrainerSafetyStop value)? safetyStop,
   }) =>
       throw _privateConstructorUsedError;
   @optionalTypeArgs
@@ -212,6 +222,8 @@ mixin _$TrainerEvent {
     TResult Function(TrainerDisconnected value)? disconnected,
     TResult Function(TrainerControlAcquired value)? controlAcquired,
     TResult Function(TrainerModeChanged value)? modeChanged,
+    TResult Function(TrainerPhysicalStop value)? physicalStop,
+    TResult Function(TrainerSafetyStop value)? safetyStop,
     required TResult orElse(),
   }) =>
       throw _privateConstructorUsedError;
@@ -313,6 +325,8 @@ class _$TrainerConnected implements TrainerConnected {
     required TResult Function(String deviceId) disconnected,
     required TResult Function(String deviceId) controlAcquired,
     required TResult Function(String deviceId, ControlMode mode) modeChanged,
+    required TResult Function(String deviceId) physicalStop,
+    required TResult Function(String deviceId) safetyStop,
   }) {
     return connected(device);
   }
@@ -324,6 +338,8 @@ class _$TrainerConnected implements TrainerConnected {
     TResult? Function(String deviceId)? disconnected,
     TResult? Function(String deviceId)? controlAcquired,
     TResult? Function(String deviceId, ControlMode mode)? modeChanged,
+    TResult? Function(String deviceId)? physicalStop,
+    TResult? Function(String deviceId)? safetyStop,
   }) {
     return connected?.call(device);
   }
@@ -335,6 +351,8 @@ class _$TrainerConnected implements TrainerConnected {
     TResult Function(String deviceId)? disconnected,
     TResult Function(String deviceId)? controlAcquired,
     TResult Function(String deviceId, ControlMode mode)? modeChanged,
+    TResult Function(String deviceId)? physicalStop,
+    TResult Function(String deviceId)? safetyStop,
     required TResult orElse(),
   }) {
     if (connected != null) {
@@ -350,6 +368,8 @@ class _$TrainerConnected implements TrainerConnected {
     required TResult Function(TrainerDisconnected value) disconnected,
     required TResult Function(TrainerControlAcquired value) controlAcquired,
     required TResult Function(TrainerModeChanged value) modeChanged,
+    required TResult Function(TrainerPhysicalStop value) physicalStop,
+    required TResult Function(TrainerSafetyStop value) safetyStop,
   }) {
     return connected(this);
   }
@@ -361,6 +381,8 @@ class _$TrainerConnected implements TrainerConnected {
     TResult? Function(TrainerDisconnected value)? disconnected,
     TResult? Function(TrainerControlAcquired value)? controlAcquired,
     TResult? Function(TrainerModeChanged value)? modeChanged,
+    TResult? Function(TrainerPhysicalStop value)? physicalStop,
+    TResult? Function(TrainerSafetyStop value)? safetyStop,
   }) {
     return connected?.call(this);
   }
@@ -372,6 +394,8 @@ class _$TrainerConnected implements TrainerConnected {
     TResult Function(TrainerDisconnected value)? disconnected,
     TResult Function(TrainerControlAcquired value)? controlAcquired,
     TResult Function(TrainerModeChanged value)? modeChanged,
+    TResult Function(TrainerPhysicalStop value)? physicalStop,
+    TResult Function(TrainerSafetyStop value)? safetyStop,
     required TResult orElse(),
   }) {
     if (connected != null) {
@@ -461,6 +485,8 @@ class _$TrainerDisconnected implements TrainerDisconnected {
     required TResult Function(String deviceId) disconnected,
     required TResult Function(String deviceId) controlAcquired,
     required TResult Function(String deviceId, ControlMode mode) modeChanged,
+    required TResult Function(String deviceId) physicalStop,
+    required TResult Function(String deviceId) safetyStop,
   }) {
     return disconnected(deviceId);
   }
@@ -472,6 +498,8 @@ class _$TrainerDisconnected implements TrainerDisconnected {
     TResult? Function(String deviceId)? disconnected,
     TResult? Function(String deviceId)? controlAcquired,
     TResult? Function(String deviceId, ControlMode mode)? modeChanged,
+    TResult? Function(String deviceId)? physicalStop,
+    TResult? Function(String deviceId)? safetyStop,
   }) {
     return disconnected?.call(deviceId);
   }
@@ -483,6 +511,8 @@ class _$TrainerDisconnected implements TrainerDisconnected {
     TResult Function(String deviceId)? disconnected,
     TResult Function(String deviceId)? controlAcquired,
     TResult Function(String deviceId, ControlMode mode)? modeChanged,
+    TResult Function(String deviceId)? physicalStop,
+    TResult Function(String deviceId)? safetyStop,
     required TResult orElse(),
   }) {
     if (disconnected != null) {
@@ -498,6 +528,8 @@ class _$TrainerDisconnected implements TrainerDisconnected {
     required TResult Function(TrainerDisconnected value) disconnected,
     required TResult Function(TrainerControlAcquired value) controlAcquired,
     required TResult Function(TrainerModeChanged value) modeChanged,
+    required TResult Function(TrainerPhysicalStop value) physicalStop,
+    required TResult Function(TrainerSafetyStop value) safetyStop,
   }) {
     return disconnected(this);
   }
@@ -509,6 +541,8 @@ class _$TrainerDisconnected implements TrainerDisconnected {
     TResult? Function(TrainerDisconnected value)? disconnected,
     TResult? Function(TrainerControlAcquired value)? controlAcquired,
     TResult? Function(TrainerModeChanged value)? modeChanged,
+    TResult? Function(TrainerPhysicalStop value)? physicalStop,
+    TResult? Function(TrainerSafetyStop value)? safetyStop,
   }) {
     return disconnected?.call(this);
   }
@@ -520,6 +554,8 @@ class _$TrainerDisconnected implements TrainerDisconnected {
     TResult Function(TrainerDisconnected value)? disconnected,
     TResult Function(TrainerControlAcquired value)? controlAcquired,
     TResult Function(TrainerModeChanged value)? modeChanged,
+    TResult Function(TrainerPhysicalStop value)? physicalStop,
+    TResult Function(TrainerSafetyStop value)? safetyStop,
     required TResult orElse(),
   }) {
     if (disconnected != null) {
@@ -609,6 +645,8 @@ class _$TrainerControlAcquired implements TrainerControlAcquired {
     required TResult Function(String deviceId) disconnected,
     required TResult Function(String deviceId) controlAcquired,
     required TResult Function(String deviceId, ControlMode mode) modeChanged,
+    required TResult Function(String deviceId) physicalStop,
+    required TResult Function(String deviceId) safetyStop,
   }) {
     return controlAcquired(deviceId);
   }
@@ -620,6 +658,8 @@ class _$TrainerControlAcquired implements TrainerControlAcquired {
     TResult? Function(String deviceId)? disconnected,
     TResult? Function(String deviceId)? controlAcquired,
     TResult? Function(String deviceId, ControlMode mode)? modeChanged,
+    TResult? Function(String deviceId)? physicalStop,
+    TResult? Function(String deviceId)? safetyStop,
   }) {
     return controlAcquired?.call(deviceId);
   }
@@ -631,6 +671,8 @@ class _$TrainerControlAcquired implements TrainerControlAcquired {
     TResult Function(String deviceId)? disconnected,
     TResult Function(String deviceId)? controlAcquired,
     TResult Function(String deviceId, ControlMode mode)? modeChanged,
+    TResult Function(String deviceId)? physicalStop,
+    TResult Function(String deviceId)? safetyStop,
     required TResult orElse(),
   }) {
     if (controlAcquired != null) {
@@ -646,6 +688,8 @@ class _$TrainerControlAcquired implements TrainerControlAcquired {
     required TResult Function(TrainerDisconnected value) disconnected,
     required TResult Function(TrainerControlAcquired value) controlAcquired,
     required TResult Function(TrainerModeChanged value) modeChanged,
+    required TResult Function(TrainerPhysicalStop value) physicalStop,
+    required TResult Function(TrainerSafetyStop value) safetyStop,
   }) {
     return controlAcquired(this);
   }
@@ -657,6 +701,8 @@ class _$TrainerControlAcquired implements TrainerControlAcquired {
     TResult? Function(TrainerDisconnected value)? disconnected,
     TResult? Function(TrainerControlAcquired value)? controlAcquired,
     TResult? Function(TrainerModeChanged value)? modeChanged,
+    TResult? Function(TrainerPhysicalStop value)? physicalStop,
+    TResult? Function(TrainerSafetyStop value)? safetyStop,
   }) {
     return controlAcquired?.call(this);
   }
@@ -668,6 +714,8 @@ class _$TrainerControlAcquired implements TrainerControlAcquired {
     TResult Function(TrainerDisconnected value)? disconnected,
     TResult Function(TrainerControlAcquired value)? controlAcquired,
     TResult Function(TrainerModeChanged value)? modeChanged,
+    TResult Function(TrainerPhysicalStop value)? physicalStop,
+    TResult Function(TrainerSafetyStop value)? safetyStop,
     required TResult orElse(),
   }) {
     if (controlAcquired != null) {
@@ -765,6 +813,8 @@ class _$TrainerModeChanged implements TrainerModeChanged {
     required TResult Function(String deviceId) disconnected,
     required TResult Function(String deviceId) controlAcquired,
     required TResult Function(String deviceId, ControlMode mode) modeChanged,
+    required TResult Function(String deviceId) physicalStop,
+    required TResult Function(String deviceId) safetyStop,
   }) {
     return modeChanged(deviceId, mode);
   }
@@ -776,6 +826,8 @@ class _$TrainerModeChanged implements TrainerModeChanged {
     TResult? Function(String deviceId)? disconnected,
     TResult? Function(String deviceId)? controlAcquired,
     TResult? Function(String deviceId, ControlMode mode)? modeChanged,
+    TResult? Function(String deviceId)? physicalStop,
+    TResult? Function(String deviceId)? safetyStop,
   }) {
     return modeChanged?.call(deviceId, mode);
   }
@@ -787,6 +839,8 @@ class _$TrainerModeChanged implements TrainerModeChanged {
     TResult Function(String deviceId)? disconnected,
     TResult Function(String deviceId)? controlAcquired,
     TResult Function(String deviceId, ControlMode mode)? modeChanged,
+    TResult Function(String deviceId)? physicalStop,
+    TResult Function(String deviceId)? safetyStop,
     required TResult orElse(),
   }) {
     if (modeChanged != null) {
@@ -802,6 +856,8 @@ class _$TrainerModeChanged implements TrainerModeChanged {
     required TResult Function(TrainerDisconnected value) disconnected,
     required TResult Function(TrainerControlAcquired value) controlAcquired,
     required TResult Function(TrainerModeChanged value) modeChanged,
+    required TResult Function(TrainerPhysicalStop value) physicalStop,
+    required TResult Function(TrainerSafetyStop value) safetyStop,
   }) {
     return modeChanged(this);
   }
@@ -813,6 +869,8 @@ class _$TrainerModeChanged implements TrainerModeChanged {
     TResult? Function(TrainerDisconnected value)? disconnected,
     TResult? Function(TrainerControlAcquired value)? controlAcquired,
     TResult? Function(TrainerModeChanged value)? modeChanged,
+    TResult? Function(TrainerPhysicalStop value)? physicalStop,
+    TResult? Function(TrainerSafetyStop value)? safetyStop,
   }) {
     return modeChanged?.call(this);
   }
@@ -824,6 +882,8 @@ class _$TrainerModeChanged implements TrainerModeChanged {
     TResult Function(TrainerDisconnected value)? disconnected,
     TResult Function(TrainerControlAcquired value)? controlAcquired,
     TResult Function(TrainerModeChanged value)? modeChanged,
+    TResult Function(TrainerPhysicalStop value)? physicalStop,
+    TResult Function(TrainerSafetyStop value)? safetyStop,
     required TResult orElse(),
   }) {
     if (modeChanged != null) {
@@ -841,6 +901,324 @@ abstract class TrainerModeChanged implements TrainerEvent {
   ControlMode get mode;
   @JsonKey(ignore: true)
   _$$TrainerModeChangedCopyWith<_$TrainerModeChanged> get copyWith =>
+      throw _privateConstructorUsedError;
+}
+
+/// @nodoc
+abstract class _$$TrainerPhysicalStopCopyWith<$Res> {
+  factory _$$TrainerPhysicalStopCopyWith(_$TrainerPhysicalStop value,
+          $Res Function(_$TrainerPhysicalStop) then) =
+      __$$TrainerPhysicalStopCopyWithImpl<$Res>;
+  @useResult
+  $Res call({String deviceId});
+}
+
+/// @nodoc
+class __$$TrainerPhysicalStopCopyWithImpl<$Res>
+    extends _$TrainerEventCopyWithImpl<$Res, _$TrainerPhysicalStop>
+    implements _$$TrainerPhysicalStopCopyWith<$Res> {
+  __$$TrainerPhysicalStopCopyWithImpl(
+      _$TrainerPhysicalStop _value, $Res Function(_$TrainerPhysicalStop) _then)
+      : super(_value, _then);
+
+  @pragma('vm:prefer-inline')
+  @override
+  $Res call({
+    Object? deviceId = null,
+  }) {
+    return _then(_$TrainerPhysicalStop(
+      null == deviceId
+          ? _value.deviceId
+          : deviceId // ignore: cast_nullable_to_non_nullable
+              as String,
+    ));
+  }
+}
+
+/// @nodoc
+
+class _$TrainerPhysicalStop implements TrainerPhysicalStop {
+  const _$TrainerPhysicalStop(this.deviceId);
+
+  @override
+  final String deviceId;
+
+  @override
+  String toString() {
+    return 'TrainerEvent.physicalStop(deviceId: $deviceId)';
+  }
+
+  @override
+  bool operator ==(dynamic other) {
+    return identical(this, other) ||
+        (other.runtimeType == runtimeType &&
+            other is _$TrainerPhysicalStop &&
+            (identical(other.deviceId, deviceId) ||
+                other.deviceId == deviceId));
+  }
+
+  @override
+  int get hashCode => Object.hash(runtimeType, deviceId);
+
+  @JsonKey(ignore: true)
+  @override
+  @pragma('vm:prefer-inline')
+  _$$TrainerPhysicalStopCopyWith<_$TrainerPhysicalStop> get copyWith =>
+      __$$TrainerPhysicalStopCopyWithImpl<_$TrainerPhysicalStop>(
+          this, _$identity);
+
+  @override
+  @optionalTypeArgs
+  TResult when<TResult extends Object?>({
+    required TResult Function(TrainerDevice device) connected,
+    required TResult Function(String deviceId) disconnected,
+    required TResult Function(String deviceId) controlAcquired,
+    required TResult Function(String deviceId, ControlMode mode) modeChanged,
+    required TResult Function(String deviceId) physicalStop,
+    required TResult Function(String deviceId) safetyStop,
+  }) {
+    return physicalStop(deviceId);
+  }
+
+  @override
+  @optionalTypeArgs
+  TResult? whenOrNull<TResult extends Object?>({
+    TResult? Function(TrainerDevice device)? connected,
+    TResult? Function(String deviceId)? disconnected,
+    TResult? Function(String deviceId)? controlAcquired,
+    TResult? Function(String deviceId, ControlMode mode)? modeChanged,
+    TResult? Function(String deviceId)? physicalStop,
+    TResult? Function(String deviceId)? safetyStop,
+  }) {
+    return physicalStop?.call(deviceId);
+  }
+
+  @override
+  @optionalTypeArgs
+  TResult maybeWhen<TResult extends Object?>({
+    TResult Function(TrainerDevice device)? connected,
+    TResult Function(String deviceId)? disconnected,
+    TResult Function(String deviceId)? controlAcquired,
+    TResult Function(String deviceId, ControlMode mode)? modeChanged,
+    TResult Function(String deviceId)? physicalStop,
+    TResult Function(String deviceId)? safetyStop,
+    required TResult orElse(),
+  }) {
+    if (physicalStop != null) {
+      return physicalStop(deviceId);
+    }
+    return orElse();
+  }
+
+  @override
+  @optionalTypeArgs
+  TResult map<TResult extends Object?>({
+    required TResult Function(TrainerConnected value) connected,
+    required TResult Function(TrainerDisconnected value) disconnected,
+    required TResult Function(TrainerControlAcquired value) controlAcquired,
+    required TResult Function(TrainerModeChanged value) modeChanged,
+    required TResult Function(TrainerPhysicalStop value) physicalStop,
+    required TResult Function(TrainerSafetyStop value) safetyStop,
+  }) {
+    return physicalStop(this);
+  }
+
+  @override
+  @optionalTypeArgs
+  TResult? mapOrNull<TResult extends Object?>({
+    TResult? Function(TrainerConnected value)? connected,
+    TResult? Function(TrainerDisconnected value)? disconnected,
+    TResult? Function(TrainerControlAcquired value)? controlAcquired,
+    TResult? Function(TrainerModeChanged value)? modeChanged,
+    TResult? Function(TrainerPhysicalStop value)? physicalStop,
+    TResult? Function(TrainerSafetyStop value)? safetyStop,
+  }) {
+    return physicalStop?.call(this);
+  }
+
+  @override
+  @optionalTypeArgs
+  TResult maybeMap<TResult extends Object?>({
+    TResult Function(TrainerConnected value)? connected,
+    TResult Function(TrainerDisconnected value)? disconnected,
+    TResult Function(TrainerControlAcquired value)? controlAcquired,
+    TResult Function(TrainerModeChanged value)? modeChanged,
+    TResult Function(TrainerPhysicalStop value)? physicalStop,
+    TResult Function(TrainerSafetyStop value)? safetyStop,
+    required TResult orElse(),
+  }) {
+    if (physicalStop != null) {
+      return physicalStop(this);
+    }
+    return orElse();
+  }
+}
+
+abstract class TrainerPhysicalStop implements TrainerEvent {
+  const factory TrainerPhysicalStop(final String deviceId) =
+      _$TrainerPhysicalStop;
+
+  String get deviceId;
+  @JsonKey(ignore: true)
+  _$$TrainerPhysicalStopCopyWith<_$TrainerPhysicalStop> get copyWith =>
+      throw _privateConstructorUsedError;
+}
+
+/// @nodoc
+abstract class _$$TrainerSafetyStopCopyWith<$Res> {
+  factory _$$TrainerSafetyStopCopyWith(_$TrainerSafetyStop value,
+          $Res Function(_$TrainerSafetyStop) then) =
+      __$$TrainerSafetyStopCopyWithImpl<$Res>;
+  @useResult
+  $Res call({String deviceId});
+}
+
+/// @nodoc
+class __$$TrainerSafetyStopCopyWithImpl<$Res>
+    extends _$TrainerEventCopyWithImpl<$Res, _$TrainerSafetyStop>
+    implements _$$TrainerSafetyStopCopyWith<$Res> {
+  __$$TrainerSafetyStopCopyWithImpl(
+      _$TrainerSafetyStop _value, $Res Function(_$TrainerSafetyStop) _then)
+      : super(_value, _then);
+
+  @pragma('vm:prefer-inline')
+  @override
+  $Res call({
+    Object? deviceId = null,
+  }) {
+    return _then(_$TrainerSafetyStop(
+      null == deviceId
+          ? _value.deviceId
+          : deviceId // ignore: cast_nullable_to_non_nullable
+              as String,
+    ));
+  }
+}
+
+/// @nodoc
+
+class _$TrainerSafetyStop implements TrainerSafetyStop {
+  const _$TrainerSafetyStop(this.deviceId);
+
+  @override
+  final String deviceId;
+
+  @override
+  String toString() {
+    return 'TrainerEvent.safetyStop(deviceId: $deviceId)';
+  }
+
+  @override
+  bool operator ==(dynamic other) {
+    return identical(this, other) ||
+        (other.runtimeType == runtimeType &&
+            other is _$TrainerSafetyStop &&
+            (identical(other.deviceId, deviceId) ||
+                other.deviceId == deviceId));
+  }
+
+  @override
+  int get hashCode => Object.hash(runtimeType, deviceId);
+
+  @JsonKey(ignore: true)
+  @override
+  @pragma('vm:prefer-inline')
+  _$$TrainerSafetyStopCopyWith<_$TrainerSafetyStop> get copyWith =>
+      __$$TrainerSafetyStopCopyWithImpl<_$TrainerSafetyStop>(this, _$identity);
+
+  @override
+  @optionalTypeArgs
+  TResult when<TResult extends Object?>({
+    required TResult Function(TrainerDevice device) connected,
+    required TResult Function(String deviceId) disconnected,
+    required TResult Function(String deviceId) controlAcquired,
+    required TResult Function(String deviceId, ControlMode mode) modeChanged,
+    required TResult Function(String deviceId) physicalStop,
+    required TResult Function(String deviceId) safetyStop,
+  }) {
+    return safetyStop(deviceId);
+  }
+
+  @override
+  @optionalTypeArgs
+  TResult? whenOrNull<TResult extends Object?>({
+    TResult? Function(TrainerDevice device)? connected,
+    TResult? Function(String deviceId)? disconnected,
+    TResult? Function(String deviceId)? controlAcquired,
+    TResult? Function(String deviceId, ControlMode mode)? modeChanged,
+    TResult? Function(String deviceId)? physicalStop,
+    TResult? Function(String deviceId)? safetyStop,
+  }) {
+    return safetyStop?.call(deviceId);
+  }
+
+  @override
+  @optionalTypeArgs
+  TResult maybeWhen<TResult extends Object?>({
+    TResult Function(TrainerDevice device)? connected,
+    TResult Function(String deviceId)? disconnected,
+    TResult Function(String deviceId)? controlAcquired,
+    TResult Function(String deviceId, ControlMode mode)? modeChanged,
+    TResult Function(String deviceId)? physicalStop,
+    TResult Function(String deviceId)? safetyStop,
+    required TResult orElse(),
+  }) {
+    if (safetyStop != null) {
+      return safetyStop(deviceId);
+    }
+    return orElse();
+  }
+
+  @override
+  @optionalTypeArgs
+  TResult map<TResult extends Object?>({
+    required TResult Function(TrainerConnected value) connected,
+    required TResult Function(TrainerDisconnected value) disconnected,
+    required TResult Function(TrainerControlAcquired value) controlAcquired,
+    required TResult Function(TrainerModeChanged value) modeChanged,
+    required TResult Function(TrainerPhysicalStop value) physicalStop,
+    required TResult Function(TrainerSafetyStop value) safetyStop,
+  }) {
+    return safetyStop(this);
+  }
+
+  @override
+  @optionalTypeArgs
+  TResult? mapOrNull<TResult extends Object?>({
+    TResult? Function(TrainerConnected value)? connected,
+    TResult? Function(TrainerDisconnected value)? disconnected,
+    TResult? Function(TrainerControlAcquired value)? controlAcquired,
+    TResult? Function(TrainerModeChanged value)? modeChanged,
+    TResult? Function(TrainerPhysicalStop value)? physicalStop,
+    TResult? Function(TrainerSafetyStop value)? safetyStop,
+  }) {
+    return safetyStop?.call(this);
+  }
+
+  @override
+  @optionalTypeArgs
+  TResult maybeMap<TResult extends Object?>({
+    TResult Function(TrainerConnected value)? connected,
+    TResult Function(TrainerDisconnected value)? disconnected,
+    TResult Function(TrainerControlAcquired value)? controlAcquired,
+    TResult Function(TrainerModeChanged value)? modeChanged,
+    TResult Function(TrainerPhysicalStop value)? physicalStop,
+    TResult Function(TrainerSafetyStop value)? safetyStop,
+    required TResult orElse(),
+  }) {
+    if (safetyStop != null) {
+      return safetyStop(this);
+    }
+    return orElse();
+  }
+}
+
+abstract class TrainerSafetyStop implements TrainerEvent {
+  const factory TrainerSafetyStop(final String deviceId) = _$TrainerSafetyStop;
+
+  String get deviceId;
+  @JsonKey(ignore: true)
+  _$$TrainerSafetyStopCopyWith<_$TrainerSafetyStop> get copyWith =>
       throw _privateConstructorUsedError;
 }
 

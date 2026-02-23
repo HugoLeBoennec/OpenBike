@@ -24,6 +24,16 @@ class BleConstants {
   static final ftmsFeature =
       Guid('00002acc-0000-1000-8000-00805f9b34fb');
 
+  /// Supported Resistance Level Range (0x2AD6): SINT16 min, SINT16 max,
+  /// UINT16 increment — all × 0.1, little-endian.
+  static final ftmsSupportedResistanceLevelRange =
+      Guid('00002ad6-0000-1000-8000-00805f9b34fb');
+
+  /// Supported Power Range (0x2AD8): SINT16 min W, SINT16 max W,
+  /// UINT16 increment W — all little-endian.
+  static final ftmsSupportedPowerRange =
+      Guid('00002ad8-0000-1000-8000-00805f9b34fb');
+
   // ---------------------------------------------------------------------------
   // CPS — Cycling Power Service (0x1818)
   // ---------------------------------------------------------------------------

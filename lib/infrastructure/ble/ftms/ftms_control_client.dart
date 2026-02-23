@@ -6,6 +6,80 @@ import 'package:logging/logging.dart';
 import '../ble_connection.dart';
 import '../ble_constants.dart';
 
+// ---------------------------------------------------------------------------
+// Trainer capability ranges (from 0x2AD8 / 0x2AD6)
+// ---------------------------------------------------------------------------
+
+/// Supported power range parsed from characteristic 0x2AD8.
+///
+/// Format: SINT16 min (W), SINT16 max (W), UINT16 increment (W) — LE.
+class PowerRange {
+  const PowerRange({
+    required this.minWatts,
+    required this.maxWatts,
+    required this.incrementWatts,
+  });
+
+  final int minWatts;
+  final int maxWatts;
+  final int incrementWatts;
+
+  static const defaultRange =
+      PowerRange(minWatts: 0, maxWatts: 4000, incrementWatts: 1);
+
+  /// Parses 6 raw bytes from characteristic 0x2AD8.
+  static PowerRange fromBytes(List<int> raw) {
+    if (raw.length < 6) return defaultRange;
+    final bd = ByteData.sublistView(Uint8List.fromList(raw));
+    return PowerRange(
+      minWatts: bd.getInt16(0, Endian.little),
+      maxWatts: bd.getInt16(2, Endian.little),
+      incrementWatts: bd.getUint16(4, Endian.little),
+    );
+  }
+
+  int clamp(int watts) => watts.clamp(minWatts, maxWatts);
+
+  @override
+  String toString() =>
+      'PowerRange($minWatts–$maxWatts W, step $incrementWatts W)';
+}
+
+/// Supported resistance level range parsed from characteristic 0x2AD6.
+///
+/// Format: SINT16 min × 0.1, SINT16 max × 0.1, UINT16 inc × 0.1 — LE.
+class ResistanceLevelRange {
+  const ResistanceLevelRange({
+    required this.min,
+    required this.max,
+    required this.increment,
+  });
+
+  final double min;
+  final double max;
+  final double increment;
+
+  static const defaultRange =
+      ResistanceLevelRange(min: 0, max: 25.5, increment: 0.1);
+
+  /// Parses 6 raw bytes from characteristic 0x2AD6.
+  static ResistanceLevelRange fromBytes(List<int> raw) {
+    if (raw.length < 6) return defaultRange;
+    final bd = ByteData.sublistView(Uint8List.fromList(raw));
+    return ResistanceLevelRange(
+      min: bd.getInt16(0, Endian.little) * 0.1,
+      max: bd.getInt16(2, Endian.little) * 0.1,
+      increment: bd.getUint16(4, Endian.little) * 0.1,
+    );
+  }
+
+  double clamp(double level) => level.clamp(min, max);
+
+  @override
+  String toString() =>
+      'ResistanceLevelRange($min–$max, step $increment)';
+}
+
 final _log = Logger('FtmsControlClient');
 
 // ---------------------------------------------------------------------------
@@ -144,6 +218,7 @@ class FtmsFeatures {
   bool get supportsTargetResistance => targetFeatures & 0x00000004 != 0;
   bool get supportsTargetPower => targetFeatures & 0x00000008 != 0;
   bool get supportsSimulationParams => targetFeatures & 0x00002000 != 0;
+  bool get supportsSpinDown => targetFeatures & 0x00004000 != 0;
 
   @override
   String toString() => 'FtmsFeatures(machine=0x${machineFeatures.toRadixString(16)}, '
@@ -190,6 +265,9 @@ class FtmsControlClient {
   final BleConnection _connection;
 
   FtmsFeatures? _features;
+  PowerRange _powerRange = PowerRange.defaultRange;
+  ResistanceLevelRange _resistanceRange = ResistanceLevelRange.defaultRange;
+
   StreamSubscription? _controlPointSub;
   StreamSubscription? _statusSub;
 
@@ -206,6 +284,12 @@ class FtmsControlClient {
 
   /// The features read from the trainer, available after [initialize].
   FtmsFeatures? get features => _features;
+
+  /// Supported power range, read from 0x2AD8 during [initialize].
+  PowerRange get powerRange => _powerRange;
+
+  /// Supported resistance level range, read from 0x2AD6 during [initialize].
+  ResistanceLevelRange get resistanceRange => _resistanceRange;
 
   /// Whether control has been successfully acquired.
   bool get hasControl => _hasControl;
@@ -249,10 +333,16 @@ class FtmsControlClient {
       _log.warning('[BLE-DEBUG] Step 2 SKIP — Status char not found: $e');
     }
 
-    // Step 3: Read Fitness Machine Feature.
+    // Step 3: Read Fitness Machine Feature + capability ranges.
     _log.info('[BLE-DEBUG] Step 3: Reading Fitness Machine Feature');
     _features = await _readFeatures();
     _log.info('[BLE-DEBUG] Step 3 OK — features: $_features');
+
+    _powerRange = await _readPowerRange();
+    _log.info('[BLE-DEBUG] Step 3b OK — $_powerRange');
+
+    _resistanceRange = await _readResistanceRange();
+    _log.info('[BLE-DEBUG] Step 3c OK — $_resistanceRange');
 
     // Step 4: Request Control.
     _log.info('[BLE-DEBUG] Step 4: Requesting control');
@@ -290,9 +380,17 @@ class FtmsControlClient {
 
   /// Sets target power in ERG mode.
   ///
-  /// [watts] is clamped to 0–4000 W.
+  /// Skipped with a warning if 0x2ACC reports power targeting is unsupported.
+  /// [watts] is clamped to the range from 0x2AD8.
   Future<FtmsControlResponse> setTargetPower(int watts) async {
-    final clamped = watts.clamp(0, 4000);
+    if (_features != null && !_features!.supportsTargetPower) {
+      _log.warning('setTargetPower: trainer does not support ERG — skipping');
+      return FtmsControlResponse(
+        requestOpCode: FtmsOpCode.setTargetPower,
+        resultCode: FtmsResultCode.opcodeNotSupported,
+      );
+    }
+    final clamped = _powerRange.clamp(watts);
     _log.fine('setTargetPower(${clamped}W)');
 
     final data = ByteData(3);
@@ -307,6 +405,7 @@ class FtmsControlClient {
 
   /// Sets simulation parameters for SIM mode.
   ///
+  /// Skipped with a warning if 0x2ACC reports simulation is unsupported.
   /// - [windSpeed]: m/s, resolution 0.001 (SINT16)
   /// - [grade]: %, resolution 0.01 (SINT16)
   /// - [crr]: coefficient, resolution 0.0001 (UINT8)
@@ -317,6 +416,14 @@ class FtmsControlClient {
     required double crr,
     required double cda,
   }) async {
+    if (_features != null && !_features!.supportsSimulationParams) {
+      _log.warning(
+          'setSimulationParameters: trainer does not support SIM — skipping');
+      return FtmsControlResponse(
+        requestOpCode: FtmsOpCode.setSimulationParameters,
+        resultCode: FtmsResultCode.opcodeNotSupported,
+      );
+    }
     _log.fine('setSimulationParameters(wind=$windSpeed, grade=$grade, '
         'crr=$crr, cda=$cda)');
 
@@ -335,13 +442,24 @@ class FtmsControlClient {
 
   /// Sets target resistance level.
   ///
-  /// [level]: unitless, resolution 0.1 (UINT8).
+  /// Skipped with a warning if 0x2ACC reports resistance targeting is
+  /// unsupported. [level] is clamped to the range from 0x2AD6.
+  /// Resolution 0.1 → byte value = level × 10 (UINT8).
   Future<FtmsControlResponse> setTargetResistance(double level) async {
-    _log.fine('setTargetResistance($level)');
+    if (_features != null && !_features!.supportsTargetResistance) {
+      _log.warning(
+          'setTargetResistance: trainer does not support resistance — skipping');
+      return FtmsControlResponse(
+        requestOpCode: FtmsOpCode.setTargetResistance,
+        resultCode: FtmsResultCode.opcodeNotSupported,
+      );
+    }
+    final clamped = _resistanceRange.clamp(level);
+    _log.fine('setTargetResistance($clamped)');
 
     final data = ByteData(2);
     data.setUint8(0, FtmsOpCode.setTargetResistance);
-    data.setUint8(1, (level * 10).round().clamp(0, 255));
+    data.setUint8(1, (clamped * 10).round().clamp(0, 255));
 
     return _writeAndWaitResponse(
       FtmsOpCode.setTargetResistance,
@@ -376,6 +494,33 @@ class FtmsControlClient {
   // Feature read
   // ---------------------------------------------------------------------------
 
+  Future<PowerRange> _readPowerRange() async {
+    try {
+      final raw = await _connection.read(
+        BleConstants.ftmsService,
+        BleConstants.ftmsSupportedPowerRange,
+      );
+      return PowerRange.fromBytes(raw);
+    } catch (e) {
+      _log.warning('Failed to read Supported Power Range (0x2AD8): $e');
+      return PowerRange.defaultRange;
+    }
+  }
+
+  Future<ResistanceLevelRange> _readResistanceRange() async {
+    try {
+      final raw = await _connection.read(
+        BleConstants.ftmsService,
+        BleConstants.ftmsSupportedResistanceLevelRange,
+      );
+      return ResistanceLevelRange.fromBytes(raw);
+    } catch (e) {
+      _log.warning(
+          'Failed to read Supported Resistance Level Range (0x2AD6): $e');
+      return ResistanceLevelRange.defaultRange;
+    }
+  }
+
   Future<FtmsFeatures> _readFeatures() async {
     try {
       final raw = await _connection.read(
@@ -405,31 +550,53 @@ class FtmsControlClient {
   // ---------------------------------------------------------------------------
 
   /// Writes a command and waits for the matching response indication.
+  ///
+  /// Retries once on timeout (3 s per attempt). Returns an
+  /// [FtmsResultCode.operationFailed] response after both attempts time out.
   Future<FtmsControlResponse> _writeAndWaitResponse(
     int expectedOpCode,
     List<int> data, {
-    Duration timeout = const Duration(seconds: 5),
+    int maxAttempts = 2,
   }) async {
-    // Set up a future that resolves on the first matching response.
-    final responseFuture = _responseController.stream
-        .where((r) => r.requestOpCode == expectedOpCode)
-        .first
-        .timeout(timeout, onTimeout: () {
-      _log.warning('Timeout waiting for response to opcode '
-          '0x${expectedOpCode.toRadixString(16)}');
-      return FtmsControlResponse(
-        requestOpCode: expectedOpCode,
-        resultCode: FtmsResultCode.operationFailed,
+    const timeout = Duration(seconds: 3);
+    final hex = '0x${expectedOpCode.toRadixString(16).padLeft(2, '0')}';
+
+    for (var attempt = 1; attempt <= maxAttempts; attempt++) {
+      // Set up the response future *before* writing to avoid a race.
+      final responseFuture = _responseController.stream
+          .where((r) => r.requestOpCode == expectedOpCode)
+          .first
+          .timeout(timeout);
+
+      _log.fine('→ opcode $hex attempt $attempt/$maxAttempts '
+          '[${data.map((b) => '0x${b.toRadixString(16).padLeft(2, '0')}').join(', ')}]');
+
+      await _connection.write(
+        BleConstants.ftmsService,
+        BleConstants.ftmsControlPoint,
+        data,
       );
-    });
 
-    await _connection.write(
-      BleConstants.ftmsService,
-      BleConstants.ftmsControlPoint,
-      data,
+      try {
+        return await responseFuture;
+      } on TimeoutException {
+        if (attempt == maxAttempts) {
+          _log.warning('commandTimeout: no response to $hex '
+              'after $maxAttempts attempt(s)');
+          return FtmsControlResponse(
+            requestOpCode: expectedOpCode,
+            resultCode: FtmsResultCode.operationFailed,
+          );
+        }
+        _log.warning('Attempt $attempt timed out for $hex — retrying…');
+      }
+    }
+
+    // Unreachable, but Dart requires a return statement.
+    return FtmsControlResponse(
+      requestOpCode: expectedOpCode,
+      resultCode: FtmsResultCode.operationFailed,
     );
-
-    return responseFuture;
   }
 
   // ---------------------------------------------------------------------------

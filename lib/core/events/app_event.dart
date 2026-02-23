@@ -29,6 +29,12 @@ class TrainerEvent with _$TrainerEvent {
       TrainerControlAcquired;
   const factory TrainerEvent.modeChanged(String deviceId, ControlMode mode) =
       TrainerModeChanged;
+
+  /// Trainer stopped/paused via its physical button (0x2ADA status 0x02).
+  const factory TrainerEvent.physicalStop(String deviceId) = TrainerPhysicalStop;
+
+  /// Trainer stopped by safety key / limit (0x2ADA status 0x04).
+  const factory TrainerEvent.safetyStop(String deviceId) = TrainerSafetyStop;
 }
 
 // ---------------------------------------------------------------------------

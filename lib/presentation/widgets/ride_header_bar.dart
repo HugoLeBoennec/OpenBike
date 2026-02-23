@@ -4,6 +4,7 @@ import 'package:go_router/go_router.dart';
 import 'package:wakelock_plus/wakelock_plus.dart';
 
 import '../../core/application/services/recording_engine.dart';
+import '../../core/domain/entities/trainer_device.dart';
 import '../state/providers.dart';
 
 /// Header bar showing the ride timer and control buttons (pause, lap, stop).
@@ -108,6 +109,8 @@ class RideHeaderBar extends ConsumerWidget {
               },
             ),
           ],
+          const SizedBox(width: 4),
+          const _ModeBadge(),
         ],
       ),
     );
@@ -151,5 +154,103 @@ class RideHeaderBar extends ConsumerWidget {
     final m = (d.inMinutes % 60).toString().padLeft(2, '0');
     final s = (d.inSeconds % 60).toString().padLeft(2, '0');
     return '$h:$m:$s';
+  }
+}
+
+// ─── Mode badge ────────────────────────────────────────────────────────────
+
+class _ModeBadge extends ConsumerWidget {
+  const _ModeBadge();
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final mode = ref.watch(trainerModeProvider);
+    final (label, color) = switch (mode) {
+      ControlMode.erg => ('ERG', Colors.deepOrange),
+      ControlMode.simulation => ('SIM', Colors.lightBlue),
+      ControlMode.resistance => ('RES', Colors.white54),
+    };
+    return GestureDetector(
+      onLongPress: () => _showModeSwitcher(context, ref, mode),
+      child: Container(
+        width: 40,
+        height: 20,
+        alignment: Alignment.center,
+        decoration: BoxDecoration(
+          color: color.withValues(alpha: 0.15),
+          borderRadius: BorderRadius.circular(4),
+          border: Border.all(color: color, width: 1),
+        ),
+        child: Text(
+          label,
+          style: TextStyle(
+            color: color,
+            fontSize: 10,
+            fontWeight: FontWeight.bold,
+            letterSpacing: 0.5,
+          ),
+        ),
+      ),
+    );
+  }
+
+  void _showModeSwitcher(
+      BuildContext context, WidgetRef ref, ControlMode current) {
+    showModalBottomSheet<void>(
+      context: context,
+      backgroundColor: const Color(0xFF1A1A1A),
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(16)),
+      ),
+      builder: (ctx) => _ModeSwitcherSheet(current: current, ref: ref),
+    );
+  }
+}
+
+class _ModeSwitcherSheet extends StatelessWidget {
+  const _ModeSwitcherSheet({required this.current, required this.ref});
+
+  final ControlMode current;
+  final WidgetRef ref;
+
+  @override
+  Widget build(BuildContext context) {
+    return SafeArea(
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          const SizedBox(height: 16),
+          const Text(
+            'TRAINER MODE',
+            style: TextStyle(color: Colors.white54, fontSize: 12),
+          ),
+          const SizedBox(height: 8),
+          _modeItem(context, ControlMode.erg, 'ERG',
+              Icons.bolt, Colors.deepOrange),
+          _modeItem(context, ControlMode.simulation, 'Simulation',
+              Icons.terrain, Colors.lightBlue),
+          _modeItem(context, ControlMode.resistance, 'Resistance',
+              Icons.tune, Colors.white54),
+          const SizedBox(height: 8),
+        ],
+      ),
+    );
+  }
+
+  Widget _modeItem(BuildContext context, ControlMode mode, String label,
+      IconData icon, Color color) {
+    return ListTile(
+      leading: Icon(icon, color: color),
+      title: Text(label, style: const TextStyle(color: Colors.white)),
+      trailing: current == mode
+          ? const Icon(Icons.check, color: Colors.deepOrange, size: 18)
+          : null,
+      onTap: () {
+        ref
+            .read(trainerModeControllerProvider.notifier)
+            .switchMode(mode);
+        Navigator.of(context).pop();
+      },
+    );
   }
 }

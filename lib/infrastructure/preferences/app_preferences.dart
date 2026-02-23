@@ -14,6 +14,7 @@ class AppPreferences {
   static const _kSavedDeviceIds = 'saved_device_ids';
   static const _kUnitSystem = 'unit_system';
   static const _kThemeMode = 'theme_mode';
+  static const _kTrainerDifficulty = 'trainer_difficulty';
 
   // -------------------------------------------------------------------------
   // Onboarding
@@ -52,4 +53,14 @@ class AppPreferences {
 
   Future<void> setThemeMode(String value) =>
       _prefs.setString(_kThemeMode, value);
+
+  // -------------------------------------------------------------------------
+  // Trainer difficulty — gradient scaling for SIM mode (0.0–1.0, default 0.5)
+  // -------------------------------------------------------------------------
+
+  double get trainerDifficulty =>
+      (_prefs.getDouble(_kTrainerDifficulty) ?? 0.5).clamp(0.0, 1.0);
+
+  Future<void> setTrainerDifficulty(double value) =>
+      _prefs.setDouble(_kTrainerDifficulty, value.clamp(0.0, 1.0));
 }

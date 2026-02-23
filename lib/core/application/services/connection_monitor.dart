@@ -49,6 +49,8 @@ class ConnectionMonitor {
       disconnected: (e) => _handleDisconnect(e.deviceId),
       controlAcquired: (_) {},
       modeChanged: (_) {},
+      physicalStop: (_) {},
+      safetyStop: (_) {},
     );
   }
 

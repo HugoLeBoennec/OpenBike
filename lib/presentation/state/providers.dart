@@ -13,6 +13,7 @@ import '../../core/application/services/connection_monitor.dart';
 import '../../core/application/services/services.dart';
 import '../../infrastructure/ant/ant_usb_transport.dart';
 import '../../infrastructure/ble/ble_transport.dart';
+import '../../infrastructure/ble/ftms/ftms_device_plugin.dart';
 import '../../infrastructure/preferences/app_preferences.dart';
 import '../../infrastructure/simulator/simulator.dart';
 import '../../infrastructure/persistence/persistence.dart';
@@ -475,3 +476,136 @@ final exportRideProvider = Provider<Future<void> Function(String rideId, String 
   final queueService = ref.watch(exportQueueServiceProvider);
   return queueService.enqueue;
 });
+
+// ---------------------------------------------------------------------------
+// Trainer difficulty (gradient scaling for SIM mode)
+// ---------------------------------------------------------------------------
+
+/// Gradient difficulty scalar (0.0–1.0).
+///
+/// Seeded from [AppPreferences] at startup. When changed, the new value is
+/// propagated to any connected [FtmsTrainerAdapter] and must also be persisted
+/// via [AppPreferences.setTrainerDifficulty].
+final trainerDifficultyProvider = StateProvider<double>((ref) {
+  return ref.read(appPreferencesProvider).trainerDifficulty;
+});
+
+// ---------------------------------------------------------------------------
+// Trainer mode orchestration
+// ---------------------------------------------------------------------------
+
+/// Single source of truth for the current trainer control mode.
+///
+/// Listens to [WorkoutEvent] / [SimulationEvent] on the [EventBus] and
+/// switches modes automatically. Exposed to the UI via [trainerModeProvider].
+final trainerModeControllerProvider =
+    StateNotifierProvider<TrainerModeController, TrainerModeState>((ref) {
+  final eventBus = ref.watch(eventBusProvider);
+
+  final controller = TrainerModeController(
+    eventBus: eventBus,
+    // Supply difficulty as a live callback so it always reflects the slider.
+    getDefaultResistance: () => ref.read(trainerDifficultyProvider) * 10.0,
+  );
+
+  // Sync the trainer port whenever it changes.
+  controller.setTrainerPort(ref.read(activeTrainerPortProvider));
+  ref.listen(activeTrainerPortProvider, (_, port) {
+    controller.setTrainerPort(port);
+    // Propagate current difficulty immediately to any new FTMS adapter.
+    if (port is FtmsTrainerAdapter) {
+      port.difficulty = ref.read(trainerDifficultyProvider);
+    }
+  });
+
+  // Propagate difficulty changes to the currently connected FTMS adapter.
+  ref.listen(trainerDifficultyProvider, (_, difficulty) {
+    final port = ref.read(activeTrainerPortProvider);
+    if (port is FtmsTrainerAdapter) port.difficulty = difficulty;
+  });
+
+  ref.onDispose(controller.dispose);
+  return controller;
+});
+
+/// The current [ControlMode] — convenient shorthand for widgets.
+final trainerModeProvider = Provider<ControlMode>((ref) {
+  return ref.watch(trainerModeControllerProvider).mode;
+});
+
+// ---------------------------------------------------------------------------
+// Trainer status (physicalStop / safetyStop events)
+// ---------------------------------------------------------------------------
+
+/// Reflects stop events fired by the trainer hardware.
+enum TrainerStatus { normal, stoppedByUser, safetyLimit }
+
+final trainerStatusProvider =
+    StateNotifierProvider<_TrainerStatusNotifier, TrainerStatus>((ref) {
+  return _TrainerStatusNotifier(ref.watch(eventBusProvider));
+});
+
+class _TrainerStatusNotifier extends StateNotifier<TrainerStatus> {
+  _TrainerStatusNotifier(EventBus eventBus) : super(TrainerStatus.normal) {
+    _sub = eventBus.on<TrainerEvent>().listen(_onTrainerEvent);
+  }
+
+  StreamSubscription<TrainerEvent>? _sub;
+
+  void _onTrainerEvent(TrainerEvent event) {
+    event.maybeWhen(
+      physicalStop: (_) => state = TrainerStatus.stoppedByUser,
+      safetyStop: (_) => state = TrainerStatus.safetyLimit,
+      connected: (_) => state = TrainerStatus.normal,
+      orElse: () {},
+    );
+  }
+
+  @override
+  void dispose() {
+    _sub?.cancel();
+    super.dispose();
+  }
+}
+
+// ---------------------------------------------------------------------------
+// Resistance level — display helper (0–100 %)
+// ---------------------------------------------------------------------------
+
+/// Current resistance level as a display percentage (0–100).
+///
+/// Maps [TrainerModeState.resistanceLevel] (0–10 internal range) to
+/// a 0–100 value suitable for showing in the UI.
+final resistanceLevelProvider = Provider<double>((ref) {
+  final level = ref.watch(trainerModeControllerProvider).resistanceLevel;
+  return (level / 10.0 * 100).clamp(0.0, 100.0);
+});
+
+// ---------------------------------------------------------------------------
+// Cadence target (set by WorkoutEngine in future; null = no target shown)
+// ---------------------------------------------------------------------------
+
+/// A min/max cadence target range displayed in ERG mode.
+class CadenceRange {
+  const CadenceRange({required this.min, required this.max});
+  final int min;
+  final int max;
+}
+
+final cadenceTargetProvider = StateProvider<CadenceRange?>((ref) => null);
+
+// ---------------------------------------------------------------------------
+// ERG target watts — UI-writable, sent to trainer via switchMode
+// ---------------------------------------------------------------------------
+
+class _ErgWattsNotifier extends StateNotifier<int> {
+  _ErgWattsNotifier() : super(150);
+
+  static const _min = 0;
+  static const _max = 2000;
+
+  void adjust(int delta) => state = (state + delta).clamp(_min, _max);
+}
+
+final ergTargetWattsProvider =
+    StateNotifierProvider<_ErgWattsNotifier, int>((ref) => _ErgWattsNotifier());
