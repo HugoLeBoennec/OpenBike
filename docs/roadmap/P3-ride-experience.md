@@ -1,7 +1,7 @@
 ---
 phase: P3
 title: Ride experience — workout HUD, route profile, in-ride guidance
-status: NOT_STARTED
+status: IN_PROGRESS
 depends_on: [P1]
 validation:
   - flutter analyze
