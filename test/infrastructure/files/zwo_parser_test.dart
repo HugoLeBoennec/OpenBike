@@ -70,7 +70,7 @@ const _mixedSteps = '''
 </workout_file>
 ''';
 
-/// Minimal file without <workout_file> root (just <workout>).
+/// Minimal file without a `<workout_file>` root (just `<workout>`).
 const _minimalZwo = '''
 <workout>
   <Warmup Duration="120" PowerLow="0.50" PowerHigh="0.75"/>

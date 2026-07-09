@@ -4,7 +4,7 @@ publish_to: 'none'
 version: 0.1.0+1
 
 environment:
-  sdk: '>=3.0.0 <4.0.0'
+  sdk: '>=3.10.0 <4.0.0'
 
 dependencies:
   flutter:
@@ -78,12 +78,6 @@ dev_dependencies:
   # App icon & splash
   flutter_launcher_icons: ^0.14.3
   flutter_native_splash: ^2.4.4
-
-dependency_overrides:
-  # Pin drift + sqlite3 for pre-Dart 3.6 compatibility
-  # (sqlite3 >=2.5 uses Allocator.nativeFree, drift >=2.22 uses sqlite3.jsonb)
-  drift: 2.20.3
-  sqlite3: 2.4.6
 
 flutter:
   uses-material-design: true

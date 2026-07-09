@@ -20,7 +20,7 @@ class DataFieldCell extends ConsumerWidget {
     return Container(
       decoration: BoxDecoration(
         color: zoneColor != null
-            ? zoneColor.withOpacity(0.15)
+            ? zoneColor.withValues(alpha: 0.15)
             : const Color(0xFF1A1A1A),
         border: Border.all(color: const Color(0xFF333333), width: 0.5),
       ),

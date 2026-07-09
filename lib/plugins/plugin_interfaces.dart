@@ -2,6 +2,7 @@ import 'package:flutter/widgets.dart';
 import '../core/domain/entities/entities.dart';
 import '../core/domain/ports/export_port.dart';
 import '../core/domain/ports/trainer_port.dart';
+import '../core/domain/value_objects/value_objects.dart';
 import 'plugin_manifest.dart';
 
 // ---------------------------------------------------------------------------
@@ -39,7 +40,9 @@ abstract class ExportPlugin {
 
   /// Exports [ride] and returns a platform-specific identifier
   /// (e.g. Strava activity ID, local file path).
-  Future<String> export(Ride ride, {ExportFormat format});
+  ///
+  /// [ftp] is forwarded to the FIT encoder for threshold_power/TSS/IF.
+  Future<String> export(Ride ride, {ExportFormat format, Watts? ftp});
 }
 
 // ---------------------------------------------------------------------------

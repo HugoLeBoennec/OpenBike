@@ -12,13 +12,16 @@ part of 'heart_rate.dart';
 T _$identity<T>(T value) => value;
 
 final _privateConstructorUsedError = UnsupportedError(
-    'It seems like you constructed your class using `MyClass._()`. This constructor is only meant to be used by freezed and you are not supposed to need it nor use it.\nPlease check the documentation here for more information: https://github.com/rrousselGit/freezed#custom-getters-and-methods');
+  'It seems like you constructed your class using `MyClass._()`. This constructor is only meant to be used by freezed and you are not supposed to need it nor use it.\nPlease check the documentation here for more information: https://github.com/rrousselGit/freezed#adding-getters-and-methods-to-our-models',
+);
 
 /// @nodoc
 mixin _$HeartRate {
   int get bpm => throw _privateConstructorUsedError;
 
-  @JsonKey(ignore: true)
+  /// Create a copy of HeartRate
+  /// with the given fields replaced by the non-null parameter values.
+  @JsonKey(includeFromJson: false, includeToJson: false)
   $HeartRateCopyWith<HeartRate> get copyWith =>
       throw _privateConstructorUsedError;
 }
@@ -41,56 +44,64 @@ class _$HeartRateCopyWithImpl<$Res, $Val extends HeartRate>
   // ignore: unused_field
   final $Res Function($Val) _then;
 
+  /// Create a copy of HeartRate
+  /// with the given fields replaced by the non-null parameter values.
   @pragma('vm:prefer-inline')
   @override
-  $Res call({
-    Object? bpm = null,
-  }) {
-    return _then(_value.copyWith(
-      bpm: null == bpm
-          ? _value.bpm
-          : bpm // ignore: cast_nullable_to_non_nullable
-              as int,
-    ) as $Val);
+  $Res call({Object? bpm = null}) {
+    return _then(
+      _value.copyWith(
+            bpm: null == bpm
+                ? _value.bpm
+                : bpm // ignore: cast_nullable_to_non_nullable
+                      as int,
+          )
+          as $Val,
+    );
   }
 }
 
 /// @nodoc
-abstract class _$$_HeartRateCopyWith<$Res> implements $HeartRateCopyWith<$Res> {
-  factory _$$_HeartRateCopyWith(
-          _$_HeartRate value, $Res Function(_$_HeartRate) then) =
-      __$$_HeartRateCopyWithImpl<$Res>;
+abstract class _$$HeartRateImplCopyWith<$Res>
+    implements $HeartRateCopyWith<$Res> {
+  factory _$$HeartRateImplCopyWith(
+    _$HeartRateImpl value,
+    $Res Function(_$HeartRateImpl) then,
+  ) = __$$HeartRateImplCopyWithImpl<$Res>;
   @override
   @useResult
   $Res call({int bpm});
 }
 
 /// @nodoc
-class __$$_HeartRateCopyWithImpl<$Res>
-    extends _$HeartRateCopyWithImpl<$Res, _$_HeartRate>
-    implements _$$_HeartRateCopyWith<$Res> {
-  __$$_HeartRateCopyWithImpl(
-      _$_HeartRate _value, $Res Function(_$_HeartRate) _then)
-      : super(_value, _then);
+class __$$HeartRateImplCopyWithImpl<$Res>
+    extends _$HeartRateCopyWithImpl<$Res, _$HeartRateImpl>
+    implements _$$HeartRateImplCopyWith<$Res> {
+  __$$HeartRateImplCopyWithImpl(
+    _$HeartRateImpl _value,
+    $Res Function(_$HeartRateImpl) _then,
+  ) : super(_value, _then);
 
+  /// Create a copy of HeartRate
+  /// with the given fields replaced by the non-null parameter values.
   @pragma('vm:prefer-inline')
   @override
-  $Res call({
-    Object? bpm = null,
-  }) {
-    return _then(_$_HeartRate(
-      null == bpm
-          ? _value.bpm
-          : bpm // ignore: cast_nullable_to_non_nullable
-              as int,
-    ));
+  $Res call({Object? bpm = null}) {
+    return _then(
+      _$HeartRateImpl(
+        null == bpm
+            ? _value.bpm
+            : bpm // ignore: cast_nullable_to_non_nullable
+                  as int,
+      ),
+    );
   }
 }
 
 /// @nodoc
 
-class _$_HeartRate extends _HeartRate {
-  const _$_HeartRate(this.bpm) : super._();
+class _$HeartRateImpl extends _HeartRate {
+  const _$HeartRateImpl(this.bpm) : super._();
 
   @override
   final int bpm;
@@ -101,31 +112,36 @@ class _$_HeartRate extends _HeartRate {
   }
 
   @override
-  bool operator ==(dynamic other) {
+  bool operator ==(Object other) {
     return identical(this, other) ||
         (other.runtimeType == runtimeType &&
-            other is _$_HeartRate &&
+            other is _$HeartRateImpl &&
             (identical(other.bpm, bpm) || other.bpm == bpm));
   }
 
   @override
   int get hashCode => Object.hash(runtimeType, bpm);
 
-  @JsonKey(ignore: true)
+  /// Create a copy of HeartRate
+  /// with the given fields replaced by the non-null parameter values.
+  @JsonKey(includeFromJson: false, includeToJson: false)
   @override
   @pragma('vm:prefer-inline')
-  _$$_HeartRateCopyWith<_$_HeartRate> get copyWith =>
-      __$$_HeartRateCopyWithImpl<_$_HeartRate>(this, _$identity);
+  _$$HeartRateImplCopyWith<_$HeartRateImpl> get copyWith =>
+      __$$HeartRateImplCopyWithImpl<_$HeartRateImpl>(this, _$identity);
 }
 
 abstract class _HeartRate extends HeartRate {
-  const factory _HeartRate(final int bpm) = _$_HeartRate;
+  const factory _HeartRate(final int bpm) = _$HeartRateImpl;
   const _HeartRate._() : super._();
 
   @override
   int get bpm;
+
+  /// Create a copy of HeartRate
+  /// with the given fields replaced by the non-null parameter values.
   @override
-  @JsonKey(ignore: true)
-  _$$_HeartRateCopyWith<_$_HeartRate> get copyWith =>
+  @JsonKey(includeFromJson: false, includeToJson: false)
+  _$$HeartRateImplCopyWith<_$HeartRateImpl> get copyWith =>
       throw _privateConstructorUsedError;
 }

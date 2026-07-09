@@ -12,7 +12,8 @@ part of 'workout_step.dart';
 T _$identity<T>(T value) => value;
 
 final _privateConstructorUsedError = UnsupportedError(
-    'It seems like you constructed your class using `MyClass._()`. This constructor is only meant to be used by freezed and you are not supposed to need it nor use it.\nPlease check the documentation here for more information: https://github.com/rrousselGit/freezed#custom-getters-and-methods');
+  'It seems like you constructed your class using `MyClass._()`. This constructor is only meant to be used by freezed and you are not supposed to need it nor use it.\nPlease check the documentation here for more information: https://github.com/rrousselGit/freezed#adding-getters-and-methods-to-our-models',
+);
 
 /// @nodoc
 mixin _$WorkoutStep {
@@ -30,7 +31,9 @@ mixin _$WorkoutStep {
   /// Cadence target during the rest phase of interval steps.
   int? get cadenceResting => throw _privateConstructorUsedError;
 
-  @JsonKey(ignore: true)
+  /// Create a copy of WorkoutStep
+  /// with the given fields replaced by the non-null parameter values.
+  @JsonKey(includeFromJson: false, includeToJson: false)
   $WorkoutStepCopyWith<WorkoutStep> get copyWith =>
       throw _privateConstructorUsedError;
 }
@@ -38,19 +41,21 @@ mixin _$WorkoutStep {
 /// @nodoc
 abstract class $WorkoutStepCopyWith<$Res> {
   factory $WorkoutStepCopyWith(
-          WorkoutStep value, $Res Function(WorkoutStep) then) =
-      _$WorkoutStepCopyWithImpl<$Res, WorkoutStep>;
+    WorkoutStep value,
+    $Res Function(WorkoutStep) then,
+  ) = _$WorkoutStepCopyWithImpl<$Res, WorkoutStep>;
   @useResult
-  $Res call(
-      {StepType type,
-      int durationSeconds,
-      double powerTargetPercent,
-      double? powerLowPercent,
-      double? powerHighPercent,
-      int? cadenceTarget,
-      int? repeat,
-      int? offDurationSeconds,
-      int? cadenceResting});
+  $Res call({
+    StepType type,
+    int durationSeconds,
+    double powerTargetPercent,
+    double? powerLowPercent,
+    double? powerHighPercent,
+    int? cadenceTarget,
+    int? repeat,
+    int? offDurationSeconds,
+    int? cadenceResting,
+  });
 }
 
 /// @nodoc
@@ -63,6 +68,8 @@ class _$WorkoutStepCopyWithImpl<$Res, $Val extends WorkoutStep>
   // ignore: unused_field
   final $Res Function($Val) _then;
 
+  /// Create a copy of WorkoutStep
+  /// with the given fields replaced by the non-null parameter values.
   @pragma('vm:prefer-inline')
   @override
   $Res call({
@@ -76,75 +83,83 @@ class _$WorkoutStepCopyWithImpl<$Res, $Val extends WorkoutStep>
     Object? offDurationSeconds = freezed,
     Object? cadenceResting = freezed,
   }) {
-    return _then(_value.copyWith(
-      type: null == type
-          ? _value.type
-          : type // ignore: cast_nullable_to_non_nullable
-              as StepType,
-      durationSeconds: null == durationSeconds
-          ? _value.durationSeconds
-          : durationSeconds // ignore: cast_nullable_to_non_nullable
-              as int,
-      powerTargetPercent: null == powerTargetPercent
-          ? _value.powerTargetPercent
-          : powerTargetPercent // ignore: cast_nullable_to_non_nullable
-              as double,
-      powerLowPercent: freezed == powerLowPercent
-          ? _value.powerLowPercent
-          : powerLowPercent // ignore: cast_nullable_to_non_nullable
-              as double?,
-      powerHighPercent: freezed == powerHighPercent
-          ? _value.powerHighPercent
-          : powerHighPercent // ignore: cast_nullable_to_non_nullable
-              as double?,
-      cadenceTarget: freezed == cadenceTarget
-          ? _value.cadenceTarget
-          : cadenceTarget // ignore: cast_nullable_to_non_nullable
-              as int?,
-      repeat: freezed == repeat
-          ? _value.repeat
-          : repeat // ignore: cast_nullable_to_non_nullable
-              as int?,
-      offDurationSeconds: freezed == offDurationSeconds
-          ? _value.offDurationSeconds
-          : offDurationSeconds // ignore: cast_nullable_to_non_nullable
-              as int?,
-      cadenceResting: freezed == cadenceResting
-          ? _value.cadenceResting
-          : cadenceResting // ignore: cast_nullable_to_non_nullable
-              as int?,
-    ) as $Val);
+    return _then(
+      _value.copyWith(
+            type: null == type
+                ? _value.type
+                : type // ignore: cast_nullable_to_non_nullable
+                      as StepType,
+            durationSeconds: null == durationSeconds
+                ? _value.durationSeconds
+                : durationSeconds // ignore: cast_nullable_to_non_nullable
+                      as int,
+            powerTargetPercent: null == powerTargetPercent
+                ? _value.powerTargetPercent
+                : powerTargetPercent // ignore: cast_nullable_to_non_nullable
+                      as double,
+            powerLowPercent: freezed == powerLowPercent
+                ? _value.powerLowPercent
+                : powerLowPercent // ignore: cast_nullable_to_non_nullable
+                      as double?,
+            powerHighPercent: freezed == powerHighPercent
+                ? _value.powerHighPercent
+                : powerHighPercent // ignore: cast_nullable_to_non_nullable
+                      as double?,
+            cadenceTarget: freezed == cadenceTarget
+                ? _value.cadenceTarget
+                : cadenceTarget // ignore: cast_nullable_to_non_nullable
+                      as int?,
+            repeat: freezed == repeat
+                ? _value.repeat
+                : repeat // ignore: cast_nullable_to_non_nullable
+                      as int?,
+            offDurationSeconds: freezed == offDurationSeconds
+                ? _value.offDurationSeconds
+                : offDurationSeconds // ignore: cast_nullable_to_non_nullable
+                      as int?,
+            cadenceResting: freezed == cadenceResting
+                ? _value.cadenceResting
+                : cadenceResting // ignore: cast_nullable_to_non_nullable
+                      as int?,
+          )
+          as $Val,
+    );
   }
 }
 
 /// @nodoc
-abstract class _$$_WorkoutStepCopyWith<$Res>
+abstract class _$$WorkoutStepImplCopyWith<$Res>
     implements $WorkoutStepCopyWith<$Res> {
-  factory _$$_WorkoutStepCopyWith(
-          _$_WorkoutStep value, $Res Function(_$_WorkoutStep) then) =
-      __$$_WorkoutStepCopyWithImpl<$Res>;
+  factory _$$WorkoutStepImplCopyWith(
+    _$WorkoutStepImpl value,
+    $Res Function(_$WorkoutStepImpl) then,
+  ) = __$$WorkoutStepImplCopyWithImpl<$Res>;
   @override
   @useResult
-  $Res call(
-      {StepType type,
-      int durationSeconds,
-      double powerTargetPercent,
-      double? powerLowPercent,
-      double? powerHighPercent,
-      int? cadenceTarget,
-      int? repeat,
-      int? offDurationSeconds,
-      int? cadenceResting});
+  $Res call({
+    StepType type,
+    int durationSeconds,
+    double powerTargetPercent,
+    double? powerLowPercent,
+    double? powerHighPercent,
+    int? cadenceTarget,
+    int? repeat,
+    int? offDurationSeconds,
+    int? cadenceResting,
+  });
 }
 
 /// @nodoc
-class __$$_WorkoutStepCopyWithImpl<$Res>
-    extends _$WorkoutStepCopyWithImpl<$Res, _$_WorkoutStep>
-    implements _$$_WorkoutStepCopyWith<$Res> {
-  __$$_WorkoutStepCopyWithImpl(
-      _$_WorkoutStep _value, $Res Function(_$_WorkoutStep) _then)
-      : super(_value, _then);
+class __$$WorkoutStepImplCopyWithImpl<$Res>
+    extends _$WorkoutStepCopyWithImpl<$Res, _$WorkoutStepImpl>
+    implements _$$WorkoutStepImplCopyWith<$Res> {
+  __$$WorkoutStepImplCopyWithImpl(
+    _$WorkoutStepImpl _value,
+    $Res Function(_$WorkoutStepImpl) _then,
+  ) : super(_value, _then);
 
+  /// Create a copy of WorkoutStep
+  /// with the given fields replaced by the non-null parameter values.
   @pragma('vm:prefer-inline')
   @override
   $Res call({
@@ -158,61 +173,63 @@ class __$$_WorkoutStepCopyWithImpl<$Res>
     Object? offDurationSeconds = freezed,
     Object? cadenceResting = freezed,
   }) {
-    return _then(_$_WorkoutStep(
-      type: null == type
-          ? _value.type
-          : type // ignore: cast_nullable_to_non_nullable
-              as StepType,
-      durationSeconds: null == durationSeconds
-          ? _value.durationSeconds
-          : durationSeconds // ignore: cast_nullable_to_non_nullable
-              as int,
-      powerTargetPercent: null == powerTargetPercent
-          ? _value.powerTargetPercent
-          : powerTargetPercent // ignore: cast_nullable_to_non_nullable
-              as double,
-      powerLowPercent: freezed == powerLowPercent
-          ? _value.powerLowPercent
-          : powerLowPercent // ignore: cast_nullable_to_non_nullable
-              as double?,
-      powerHighPercent: freezed == powerHighPercent
-          ? _value.powerHighPercent
-          : powerHighPercent // ignore: cast_nullable_to_non_nullable
-              as double?,
-      cadenceTarget: freezed == cadenceTarget
-          ? _value.cadenceTarget
-          : cadenceTarget // ignore: cast_nullable_to_non_nullable
-              as int?,
-      repeat: freezed == repeat
-          ? _value.repeat
-          : repeat // ignore: cast_nullable_to_non_nullable
-              as int?,
-      offDurationSeconds: freezed == offDurationSeconds
-          ? _value.offDurationSeconds
-          : offDurationSeconds // ignore: cast_nullable_to_non_nullable
-              as int?,
-      cadenceResting: freezed == cadenceResting
-          ? _value.cadenceResting
-          : cadenceResting // ignore: cast_nullable_to_non_nullable
-              as int?,
-    ));
+    return _then(
+      _$WorkoutStepImpl(
+        type: null == type
+            ? _value.type
+            : type // ignore: cast_nullable_to_non_nullable
+                  as StepType,
+        durationSeconds: null == durationSeconds
+            ? _value.durationSeconds
+            : durationSeconds // ignore: cast_nullable_to_non_nullable
+                  as int,
+        powerTargetPercent: null == powerTargetPercent
+            ? _value.powerTargetPercent
+            : powerTargetPercent // ignore: cast_nullable_to_non_nullable
+                  as double,
+        powerLowPercent: freezed == powerLowPercent
+            ? _value.powerLowPercent
+            : powerLowPercent // ignore: cast_nullable_to_non_nullable
+                  as double?,
+        powerHighPercent: freezed == powerHighPercent
+            ? _value.powerHighPercent
+            : powerHighPercent // ignore: cast_nullable_to_non_nullable
+                  as double?,
+        cadenceTarget: freezed == cadenceTarget
+            ? _value.cadenceTarget
+            : cadenceTarget // ignore: cast_nullable_to_non_nullable
+                  as int?,
+        repeat: freezed == repeat
+            ? _value.repeat
+            : repeat // ignore: cast_nullable_to_non_nullable
+                  as int?,
+        offDurationSeconds: freezed == offDurationSeconds
+            ? _value.offDurationSeconds
+            : offDurationSeconds // ignore: cast_nullable_to_non_nullable
+                  as int?,
+        cadenceResting: freezed == cadenceResting
+            ? _value.cadenceResting
+            : cadenceResting // ignore: cast_nullable_to_non_nullable
+                  as int?,
+      ),
+    );
   }
 }
 
 /// @nodoc
 
-class _$_WorkoutStep extends _WorkoutStep {
-  const _$_WorkoutStep(
-      {required this.type,
-      required this.durationSeconds,
-      required this.powerTargetPercent,
-      this.powerLowPercent,
-      this.powerHighPercent,
-      this.cadenceTarget,
-      this.repeat,
-      this.offDurationSeconds,
-      this.cadenceResting})
-      : super._();
+class _$WorkoutStepImpl extends _WorkoutStep {
+  const _$WorkoutStepImpl({
+    required this.type,
+    required this.durationSeconds,
+    required this.powerTargetPercent,
+    this.powerLowPercent,
+    this.powerHighPercent,
+    this.cadenceTarget,
+    this.repeat,
+    this.offDurationSeconds,
+    this.cadenceResting,
+  }) : super._();
 
   @override
   final StepType type;
@@ -243,10 +260,10 @@ class _$_WorkoutStep extends _WorkoutStep {
   }
 
   @override
-  bool operator ==(dynamic other) {
+  bool operator ==(Object other) {
     return identical(this, other) ||
         (other.runtimeType == runtimeType &&
-            other is _$_WorkoutStep &&
+            other is _$WorkoutStepImpl &&
             (identical(other.type, type) || other.type == type) &&
             (identical(other.durationSeconds, durationSeconds) ||
                 other.durationSeconds == durationSeconds) &&
@@ -267,35 +284,39 @@ class _$_WorkoutStep extends _WorkoutStep {
 
   @override
   int get hashCode => Object.hash(
-      runtimeType,
-      type,
-      durationSeconds,
-      powerTargetPercent,
-      powerLowPercent,
-      powerHighPercent,
-      cadenceTarget,
-      repeat,
-      offDurationSeconds,
-      cadenceResting);
+    runtimeType,
+    type,
+    durationSeconds,
+    powerTargetPercent,
+    powerLowPercent,
+    powerHighPercent,
+    cadenceTarget,
+    repeat,
+    offDurationSeconds,
+    cadenceResting,
+  );
 
-  @JsonKey(ignore: true)
+  /// Create a copy of WorkoutStep
+  /// with the given fields replaced by the non-null parameter values.
+  @JsonKey(includeFromJson: false, includeToJson: false)
   @override
   @pragma('vm:prefer-inline')
-  _$$_WorkoutStepCopyWith<_$_WorkoutStep> get copyWith =>
-      __$$_WorkoutStepCopyWithImpl<_$_WorkoutStep>(this, _$identity);
+  _$$WorkoutStepImplCopyWith<_$WorkoutStepImpl> get copyWith =>
+      __$$WorkoutStepImplCopyWithImpl<_$WorkoutStepImpl>(this, _$identity);
 }
 
 abstract class _WorkoutStep extends WorkoutStep {
-  const factory _WorkoutStep(
-      {required final StepType type,
-      required final int durationSeconds,
-      required final double powerTargetPercent,
-      final double? powerLowPercent,
-      final double? powerHighPercent,
-      final int? cadenceTarget,
-      final int? repeat,
-      final int? offDurationSeconds,
-      final int? cadenceResting}) = _$_WorkoutStep;
+  const factory _WorkoutStep({
+    required final StepType type,
+    required final int durationSeconds,
+    required final double powerTargetPercent,
+    final double? powerLowPercent,
+    final double? powerHighPercent,
+    final int? cadenceTarget,
+    final int? repeat,
+    final int? offDurationSeconds,
+    final int? cadenceResting,
+  }) = _$WorkoutStepImpl;
   const _WorkoutStep._() : super._();
 
   @override
@@ -312,16 +333,19 @@ abstract class _WorkoutStep extends WorkoutStep {
   int? get cadenceTarget;
   @override
   int? get repeat;
-  @override
 
   /// Duration of the "off" / rest phase for interval steps (seconds).
-  int? get offDurationSeconds;
   @override
+  int? get offDurationSeconds;
 
   /// Cadence target during the rest phase of interval steps.
-  int? get cadenceResting;
   @override
-  @JsonKey(ignore: true)
-  _$$_WorkoutStepCopyWith<_$_WorkoutStep> get copyWith =>
+  int? get cadenceResting;
+
+  /// Create a copy of WorkoutStep
+  /// with the given fields replaced by the non-null parameter values.
+  @override
+  @JsonKey(includeFromJson: false, includeToJson: false)
+  _$$WorkoutStepImplCopyWith<_$WorkoutStepImpl> get copyWith =>
       throw _privateConstructorUsedError;
 }

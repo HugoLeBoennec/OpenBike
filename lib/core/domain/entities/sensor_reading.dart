@@ -12,5 +12,6 @@ class SensorReading with _$SensorReading {
     HeartRate? heartRate,
     Speed? speed,
     Distance? distance,
+    Grade? grade,
   }) = _SensorReading;
 }

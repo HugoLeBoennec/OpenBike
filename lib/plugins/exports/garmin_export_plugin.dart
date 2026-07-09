@@ -4,6 +4,7 @@ import 'package:path_provider/path_provider.dart';
 
 import '../../core/domain/entities/entities.dart';
 import '../../core/domain/ports/export_port.dart';
+import '../../core/domain/value_objects/value_objects.dart';
 import '../../infrastructure/files/fit_encoder.dart';
 import '../plugin_interfaces.dart';
 import '../plugin_manifest.dart';
@@ -71,8 +72,9 @@ class GarminConnectExportPlugin implements ExportPlugin {
   Future<String> export(
     Ride ride, {
     ExportFormat format = ExportFormat.fit,
+    Watts? ftp,
   }) async {
-    final bytes = _fitEncoder.encode(ride);
+    final bytes = _fitEncoder.encode(ride, ftp: ftp);
 
     final dir = _exportDirectory ?? await _defaultDirectory();
     final datePrefix = _datePrefix(ride.startTime);

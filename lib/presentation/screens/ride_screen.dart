@@ -311,7 +311,7 @@ class _PageDots extends StatelessWidget {
             shape: BoxShape.circle,
             color: i == current
                 ? Colors.white
-                : Colors.white.withOpacity(0.3),
+                : Colors.white.withValues(alpha: 0.3),
           ),
         );
       }),

@@ -12,7 +12,8 @@ part of 'workout.dart';
 T _$identity<T>(T value) => value;
 
 final _privateConstructorUsedError = UnsupportedError(
-    'It seems like you constructed your class using `MyClass._()`. This constructor is only meant to be used by freezed and you are not supposed to need it nor use it.\nPlease check the documentation here for more information: https://github.com/rrousselGit/freezed#custom-getters-and-methods');
+  'It seems like you constructed your class using `MyClass._()`. This constructor is only meant to be used by freezed and you are not supposed to need it nor use it.\nPlease check the documentation here for more information: https://github.com/rrousselGit/freezed#adding-getters-and-methods-to-our-models',
+);
 
 /// @nodoc
 mixin _$Workout {
@@ -23,7 +24,9 @@ mixin _$Workout {
   String? get source => throw _privateConstructorUsedError;
   List<TextEvent> get textEvents => throw _privateConstructorUsedError;
 
-  @JsonKey(ignore: true)
+  /// Create a copy of Workout
+  /// with the given fields replaced by the non-null parameter values.
+  @JsonKey(includeFromJson: false, includeToJson: false)
   $WorkoutCopyWith<Workout> get copyWith => throw _privateConstructorUsedError;
 }
 
@@ -32,13 +35,14 @@ abstract class $WorkoutCopyWith<$Res> {
   factory $WorkoutCopyWith(Workout value, $Res Function(Workout) then) =
       _$WorkoutCopyWithImpl<$Res, Workout>;
   @useResult
-  $Res call(
-      {String id,
-      String name,
-      String? description,
-      List<WorkoutStep> steps,
-      String? source,
-      List<TextEvent> textEvents});
+  $Res call({
+    String id,
+    String name,
+    String? description,
+    List<WorkoutStep> steps,
+    String? source,
+    List<TextEvent> textEvents,
+  });
 }
 
 /// @nodoc
@@ -51,6 +55,8 @@ class _$WorkoutCopyWithImpl<$Res, $Val extends Workout>
   // ignore: unused_field
   final $Res Function($Val) _then;
 
+  /// Create a copy of Workout
+  /// with the given fields replaced by the non-null parameter values.
   @pragma('vm:prefer-inline')
   @override
   $Res call({
@@ -61,58 +67,67 @@ class _$WorkoutCopyWithImpl<$Res, $Val extends Workout>
     Object? source = freezed,
     Object? textEvents = null,
   }) {
-    return _then(_value.copyWith(
-      id: null == id
-          ? _value.id
-          : id // ignore: cast_nullable_to_non_nullable
-              as String,
-      name: null == name
-          ? _value.name
-          : name // ignore: cast_nullable_to_non_nullable
-              as String,
-      description: freezed == description
-          ? _value.description
-          : description // ignore: cast_nullable_to_non_nullable
-              as String?,
-      steps: null == steps
-          ? _value.steps
-          : steps // ignore: cast_nullable_to_non_nullable
-              as List<WorkoutStep>,
-      source: freezed == source
-          ? _value.source
-          : source // ignore: cast_nullable_to_non_nullable
-              as String?,
-      textEvents: null == textEvents
-          ? _value.textEvents
-          : textEvents // ignore: cast_nullable_to_non_nullable
-              as List<TextEvent>,
-    ) as $Val);
+    return _then(
+      _value.copyWith(
+            id: null == id
+                ? _value.id
+                : id // ignore: cast_nullable_to_non_nullable
+                      as String,
+            name: null == name
+                ? _value.name
+                : name // ignore: cast_nullable_to_non_nullable
+                      as String,
+            description: freezed == description
+                ? _value.description
+                : description // ignore: cast_nullable_to_non_nullable
+                      as String?,
+            steps: null == steps
+                ? _value.steps
+                : steps // ignore: cast_nullable_to_non_nullable
+                      as List<WorkoutStep>,
+            source: freezed == source
+                ? _value.source
+                : source // ignore: cast_nullable_to_non_nullable
+                      as String?,
+            textEvents: null == textEvents
+                ? _value.textEvents
+                : textEvents // ignore: cast_nullable_to_non_nullable
+                      as List<TextEvent>,
+          )
+          as $Val,
+    );
   }
 }
 
 /// @nodoc
-abstract class _$$_WorkoutCopyWith<$Res> implements $WorkoutCopyWith<$Res> {
-  factory _$$_WorkoutCopyWith(
-          _$_Workout value, $Res Function(_$_Workout) then) =
-      __$$_WorkoutCopyWithImpl<$Res>;
+abstract class _$$WorkoutImplCopyWith<$Res> implements $WorkoutCopyWith<$Res> {
+  factory _$$WorkoutImplCopyWith(
+    _$WorkoutImpl value,
+    $Res Function(_$WorkoutImpl) then,
+  ) = __$$WorkoutImplCopyWithImpl<$Res>;
   @override
   @useResult
-  $Res call(
-      {String id,
-      String name,
-      String? description,
-      List<WorkoutStep> steps,
-      String? source,
-      List<TextEvent> textEvents});
+  $Res call({
+    String id,
+    String name,
+    String? description,
+    List<WorkoutStep> steps,
+    String? source,
+    List<TextEvent> textEvents,
+  });
 }
 
 /// @nodoc
-class __$$_WorkoutCopyWithImpl<$Res>
-    extends _$WorkoutCopyWithImpl<$Res, _$_Workout>
-    implements _$$_WorkoutCopyWith<$Res> {
-  __$$_WorkoutCopyWithImpl(_$_Workout _value, $Res Function(_$_Workout) _then)
-      : super(_value, _then);
+class __$$WorkoutImplCopyWithImpl<$Res>
+    extends _$WorkoutCopyWithImpl<$Res, _$WorkoutImpl>
+    implements _$$WorkoutImplCopyWith<$Res> {
+  __$$WorkoutImplCopyWithImpl(
+    _$WorkoutImpl _value,
+    $Res Function(_$WorkoutImpl) _then,
+  ) : super(_value, _then);
 
+  /// Create a copy of Workout
+  /// with the given fields replaced by the non-null parameter values.
   @pragma('vm:prefer-inline')
   @override
   $Res call({
@@ -123,48 +138,50 @@ class __$$_WorkoutCopyWithImpl<$Res>
     Object? source = freezed,
     Object? textEvents = null,
   }) {
-    return _then(_$_Workout(
-      id: null == id
-          ? _value.id
-          : id // ignore: cast_nullable_to_non_nullable
-              as String,
-      name: null == name
-          ? _value.name
-          : name // ignore: cast_nullable_to_non_nullable
-              as String,
-      description: freezed == description
-          ? _value.description
-          : description // ignore: cast_nullable_to_non_nullable
-              as String?,
-      steps: null == steps
-          ? _value._steps
-          : steps // ignore: cast_nullable_to_non_nullable
-              as List<WorkoutStep>,
-      source: freezed == source
-          ? _value.source
-          : source // ignore: cast_nullable_to_non_nullable
-              as String?,
-      textEvents: null == textEvents
-          ? _value._textEvents
-          : textEvents // ignore: cast_nullable_to_non_nullable
-              as List<TextEvent>,
-    ));
+    return _then(
+      _$WorkoutImpl(
+        id: null == id
+            ? _value.id
+            : id // ignore: cast_nullable_to_non_nullable
+                  as String,
+        name: null == name
+            ? _value.name
+            : name // ignore: cast_nullable_to_non_nullable
+                  as String,
+        description: freezed == description
+            ? _value.description
+            : description // ignore: cast_nullable_to_non_nullable
+                  as String?,
+        steps: null == steps
+            ? _value._steps
+            : steps // ignore: cast_nullable_to_non_nullable
+                  as List<WorkoutStep>,
+        source: freezed == source
+            ? _value.source
+            : source // ignore: cast_nullable_to_non_nullable
+                  as String?,
+        textEvents: null == textEvents
+            ? _value._textEvents
+            : textEvents // ignore: cast_nullable_to_non_nullable
+                  as List<TextEvent>,
+      ),
+    );
   }
 }
 
 /// @nodoc
 
-class _$_Workout extends _Workout {
-  const _$_Workout(
-      {required this.id,
-      required this.name,
-      this.description,
-      required final List<WorkoutStep> steps,
-      this.source,
-      final List<TextEvent> textEvents = const []})
-      : _steps = steps,
-        _textEvents = textEvents,
-        super._();
+class _$WorkoutImpl extends _Workout {
+  const _$WorkoutImpl({
+    required this.id,
+    required this.name,
+    this.description,
+    required final List<WorkoutStep> steps,
+    this.source,
+    final List<TextEvent> textEvents = const [],
+  }) : _steps = steps,
+       _textEvents = textEvents,
+       super._();
 
   @override
   final String id;
@@ -197,45 +214,51 @@ class _$_Workout extends _Workout {
   }
 
   @override
-  bool operator ==(dynamic other) {
+  bool operator ==(Object other) {
     return identical(this, other) ||
         (other.runtimeType == runtimeType &&
-            other is _$_Workout &&
+            other is _$WorkoutImpl &&
             (identical(other.id, id) || other.id == id) &&
             (identical(other.name, name) || other.name == name) &&
             (identical(other.description, description) ||
                 other.description == description) &&
             const DeepCollectionEquality().equals(other._steps, _steps) &&
             (identical(other.source, source) || other.source == source) &&
-            const DeepCollectionEquality()
-                .equals(other._textEvents, _textEvents));
+            const DeepCollectionEquality().equals(
+              other._textEvents,
+              _textEvents,
+            ));
   }
 
   @override
   int get hashCode => Object.hash(
-      runtimeType,
-      id,
-      name,
-      description,
-      const DeepCollectionEquality().hash(_steps),
-      source,
-      const DeepCollectionEquality().hash(_textEvents));
+    runtimeType,
+    id,
+    name,
+    description,
+    const DeepCollectionEquality().hash(_steps),
+    source,
+    const DeepCollectionEquality().hash(_textEvents),
+  );
 
-  @JsonKey(ignore: true)
+  /// Create a copy of Workout
+  /// with the given fields replaced by the non-null parameter values.
+  @JsonKey(includeFromJson: false, includeToJson: false)
   @override
   @pragma('vm:prefer-inline')
-  _$$_WorkoutCopyWith<_$_Workout> get copyWith =>
-      __$$_WorkoutCopyWithImpl<_$_Workout>(this, _$identity);
+  _$$WorkoutImplCopyWith<_$WorkoutImpl> get copyWith =>
+      __$$WorkoutImplCopyWithImpl<_$WorkoutImpl>(this, _$identity);
 }
 
 abstract class _Workout extends Workout {
-  const factory _Workout(
-      {required final String id,
-      required final String name,
-      final String? description,
-      required final List<WorkoutStep> steps,
-      final String? source,
-      final List<TextEvent> textEvents}) = _$_Workout;
+  const factory _Workout({
+    required final String id,
+    required final String name,
+    final String? description,
+    required final List<WorkoutStep> steps,
+    final String? source,
+    final List<TextEvent> textEvents,
+  }) = _$WorkoutImpl;
   const _Workout._() : super._();
 
   @override
@@ -250,8 +273,11 @@ abstract class _Workout extends Workout {
   String? get source;
   @override
   List<TextEvent> get textEvents;
+
+  /// Create a copy of Workout
+  /// with the given fields replaced by the non-null parameter values.
   @override
-  @JsonKey(ignore: true)
-  _$$_WorkoutCopyWith<_$_Workout> get copyWith =>
+  @JsonKey(includeFromJson: false, includeToJson: false)
+  _$$WorkoutImplCopyWith<_$WorkoutImpl> get copyWith =>
       throw _privateConstructorUsedError;
 }

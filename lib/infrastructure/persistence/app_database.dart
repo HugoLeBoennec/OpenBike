@@ -1,5 +1,7 @@
 import 'package:drift/drift.dart';
 
+import 'generated_migrations/schema_versions.dart';
+
 part 'app_database.g.dart';
 
 // ---------------------------------------------------------------------------
@@ -147,23 +149,33 @@ class ExportQueue extends Table {
   ExportQueue,
 ])
 class AppDatabase extends _$AppDatabase {
-  AppDatabase(QueryExecutor e) : super(e);
+  AppDatabase(super.e);
 
   @override
-  int get schemaVersion => 2;
+  int get schemaVersion => 3;
 
   @override
   MigrationStrategy get migration => MigrationStrategy(
-        onCreate: (m) => m.createAll(),
+        onCreate: (m) async {
+          await m.createAll();
+          await createIndices();
+        },
         onUpgrade: (m, from, to) async {
-          // Pre-release: drop everything and recreate.
-          // Replace with incremental migrations once shipped.
           if (from < 2) {
+            // No incremental path exists for these pre-release schemas —
+            // safe to rebuild since no released version ever shipped them.
             for (final table in allTables) {
               await m.deleteTable(table.actualTableName);
             }
             await m.createAll();
+          } else {
+            await stepByStep(
+              from2To3: (m, schema) async {
+                // No column/table changes between v2 and v3.
+              },
+            )(m, from, to);
           }
+          await createIndices();
         },
       );
 

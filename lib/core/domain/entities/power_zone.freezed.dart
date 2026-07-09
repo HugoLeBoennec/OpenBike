@@ -12,7 +12,8 @@ part of 'power_zone.dart';
 T _$identity<T>(T value) => value;
 
 final _privateConstructorUsedError = UnsupportedError(
-    'It seems like you constructed your class using `MyClass._()`. This constructor is only meant to be used by freezed and you are not supposed to need it nor use it.\nPlease check the documentation here for more information: https://github.com/rrousselGit/freezed#custom-getters-and-methods');
+  'It seems like you constructed your class using `MyClass._()`. This constructor is only meant to be used by freezed and you are not supposed to need it nor use it.\nPlease check the documentation here for more information: https://github.com/rrousselGit/freezed#adding-getters-and-methods-to-our-models',
+);
 
 /// @nodoc
 mixin _$PowerZone {
@@ -21,7 +22,9 @@ mixin _$PowerZone {
   double get maxPercent => throw _privateConstructorUsedError;
   Color get color => throw _privateConstructorUsedError;
 
-  @JsonKey(ignore: true)
+  /// Create a copy of PowerZone
+  /// with the given fields replaced by the non-null parameter values.
+  @JsonKey(includeFromJson: false, includeToJson: false)
   $PowerZoneCopyWith<PowerZone> get copyWith =>
       throw _privateConstructorUsedError;
 }
@@ -44,6 +47,8 @@ class _$PowerZoneCopyWithImpl<$Res, $Val extends PowerZone>
   // ignore: unused_field
   final $Res Function($Val) _then;
 
+  /// Create a copy of PowerZone
+  /// with the given fields replaced by the non-null parameter values.
   @pragma('vm:prefer-inline')
   @override
   $Res call({
@@ -52,45 +57,53 @@ class _$PowerZoneCopyWithImpl<$Res, $Val extends PowerZone>
     Object? maxPercent = null,
     Object? color = null,
   }) {
-    return _then(_value.copyWith(
-      name: null == name
-          ? _value.name
-          : name // ignore: cast_nullable_to_non_nullable
-              as String,
-      minPercent: null == minPercent
-          ? _value.minPercent
-          : minPercent // ignore: cast_nullable_to_non_nullable
-              as double,
-      maxPercent: null == maxPercent
-          ? _value.maxPercent
-          : maxPercent // ignore: cast_nullable_to_non_nullable
-              as double,
-      color: null == color
-          ? _value.color
-          : color // ignore: cast_nullable_to_non_nullable
-              as Color,
-    ) as $Val);
+    return _then(
+      _value.copyWith(
+            name: null == name
+                ? _value.name
+                : name // ignore: cast_nullable_to_non_nullable
+                      as String,
+            minPercent: null == minPercent
+                ? _value.minPercent
+                : minPercent // ignore: cast_nullable_to_non_nullable
+                      as double,
+            maxPercent: null == maxPercent
+                ? _value.maxPercent
+                : maxPercent // ignore: cast_nullable_to_non_nullable
+                      as double,
+            color: null == color
+                ? _value.color
+                : color // ignore: cast_nullable_to_non_nullable
+                      as Color,
+          )
+          as $Val,
+    );
   }
 }
 
 /// @nodoc
-abstract class _$$_PowerZoneCopyWith<$Res> implements $PowerZoneCopyWith<$Res> {
-  factory _$$_PowerZoneCopyWith(
-          _$_PowerZone value, $Res Function(_$_PowerZone) then) =
-      __$$_PowerZoneCopyWithImpl<$Res>;
+abstract class _$$PowerZoneImplCopyWith<$Res>
+    implements $PowerZoneCopyWith<$Res> {
+  factory _$$PowerZoneImplCopyWith(
+    _$PowerZoneImpl value,
+    $Res Function(_$PowerZoneImpl) then,
+  ) = __$$PowerZoneImplCopyWithImpl<$Res>;
   @override
   @useResult
   $Res call({String name, double minPercent, double maxPercent, Color color});
 }
 
 /// @nodoc
-class __$$_PowerZoneCopyWithImpl<$Res>
-    extends _$PowerZoneCopyWithImpl<$Res, _$_PowerZone>
-    implements _$$_PowerZoneCopyWith<$Res> {
-  __$$_PowerZoneCopyWithImpl(
-      _$_PowerZone _value, $Res Function(_$_PowerZone) _then)
-      : super(_value, _then);
+class __$$PowerZoneImplCopyWithImpl<$Res>
+    extends _$PowerZoneCopyWithImpl<$Res, _$PowerZoneImpl>
+    implements _$$PowerZoneImplCopyWith<$Res> {
+  __$$PowerZoneImplCopyWithImpl(
+    _$PowerZoneImpl _value,
+    $Res Function(_$PowerZoneImpl) _then,
+  ) : super(_value, _then);
 
+  /// Create a copy of PowerZone
+  /// with the given fields replaced by the non-null parameter values.
   @pragma('vm:prefer-inline')
   @override
   $Res call({
@@ -99,36 +112,38 @@ class __$$_PowerZoneCopyWithImpl<$Res>
     Object? maxPercent = null,
     Object? color = null,
   }) {
-    return _then(_$_PowerZone(
-      name: null == name
-          ? _value.name
-          : name // ignore: cast_nullable_to_non_nullable
-              as String,
-      minPercent: null == minPercent
-          ? _value.minPercent
-          : minPercent // ignore: cast_nullable_to_non_nullable
-              as double,
-      maxPercent: null == maxPercent
-          ? _value.maxPercent
-          : maxPercent // ignore: cast_nullable_to_non_nullable
-              as double,
-      color: null == color
-          ? _value.color
-          : color // ignore: cast_nullable_to_non_nullable
-              as Color,
-    ));
+    return _then(
+      _$PowerZoneImpl(
+        name: null == name
+            ? _value.name
+            : name // ignore: cast_nullable_to_non_nullable
+                  as String,
+        minPercent: null == minPercent
+            ? _value.minPercent
+            : minPercent // ignore: cast_nullable_to_non_nullable
+                  as double,
+        maxPercent: null == maxPercent
+            ? _value.maxPercent
+            : maxPercent // ignore: cast_nullable_to_non_nullable
+                  as double,
+        color: null == color
+            ? _value.color
+            : color // ignore: cast_nullable_to_non_nullable
+                  as Color,
+      ),
+    );
   }
 }
 
 /// @nodoc
 
-class _$_PowerZone extends _PowerZone {
-  const _$_PowerZone(
-      {required this.name,
-      required this.minPercent,
-      required this.maxPercent,
-      required this.color})
-      : super._();
+class _$PowerZoneImpl extends _PowerZone {
+  const _$PowerZoneImpl({
+    required this.name,
+    required this.minPercent,
+    required this.maxPercent,
+    required this.color,
+  }) : super._();
 
   @override
   final String name;
@@ -145,10 +160,10 @@ class _$_PowerZone extends _PowerZone {
   }
 
   @override
-  bool operator ==(dynamic other) {
+  bool operator ==(Object other) {
     return identical(this, other) ||
         (other.runtimeType == runtimeType &&
-            other is _$_PowerZone &&
+            other is _$PowerZoneImpl &&
             (identical(other.name, name) || other.name == name) &&
             (identical(other.minPercent, minPercent) ||
                 other.minPercent == minPercent) &&
@@ -161,19 +176,22 @@ class _$_PowerZone extends _PowerZone {
   int get hashCode =>
       Object.hash(runtimeType, name, minPercent, maxPercent, color);
 
-  @JsonKey(ignore: true)
+  /// Create a copy of PowerZone
+  /// with the given fields replaced by the non-null parameter values.
+  @JsonKey(includeFromJson: false, includeToJson: false)
   @override
   @pragma('vm:prefer-inline')
-  _$$_PowerZoneCopyWith<_$_PowerZone> get copyWith =>
-      __$$_PowerZoneCopyWithImpl<_$_PowerZone>(this, _$identity);
+  _$$PowerZoneImplCopyWith<_$PowerZoneImpl> get copyWith =>
+      __$$PowerZoneImplCopyWithImpl<_$PowerZoneImpl>(this, _$identity);
 }
 
 abstract class _PowerZone extends PowerZone {
-  const factory _PowerZone(
-      {required final String name,
-      required final double minPercent,
-      required final double maxPercent,
-      required final Color color}) = _$_PowerZone;
+  const factory _PowerZone({
+    required final String name,
+    required final double minPercent,
+    required final double maxPercent,
+    required final Color color,
+  }) = _$PowerZoneImpl;
   const _PowerZone._() : super._();
 
   @override
@@ -184,8 +202,11 @@ abstract class _PowerZone extends PowerZone {
   double get maxPercent;
   @override
   Color get color;
+
+  /// Create a copy of PowerZone
+  /// with the given fields replaced by the non-null parameter values.
   @override
-  @JsonKey(ignore: true)
-  _$$_PowerZoneCopyWith<_$_PowerZone> get copyWith =>
+  @JsonKey(includeFromJson: false, includeToJson: false)
+  _$$PowerZoneImplCopyWith<_$PowerZoneImpl> get copyWith =>
       throw _privateConstructorUsedError;
 }

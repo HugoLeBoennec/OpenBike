@@ -12,7 +12,8 @@ part of 'route.dart';
 T _$identity<T>(T value) => value;
 
 final _privateConstructorUsedError = UnsupportedError(
-    'It seems like you constructed your class using `MyClass._()`. This constructor is only meant to be used by freezed and you are not supposed to need it nor use it.\nPlease check the documentation here for more information: https://github.com/rrousselGit/freezed#custom-getters-and-methods');
+  'It seems like you constructed your class using `MyClass._()`. This constructor is only meant to be used by freezed and you are not supposed to need it nor use it.\nPlease check the documentation here for more information: https://github.com/rrousselGit/freezed#adding-getters-and-methods-to-our-models',
+);
 
 /// @nodoc
 mixin _$Route {
@@ -21,7 +22,9 @@ mixin _$Route {
   String? get description => throw _privateConstructorUsedError;
   List<RoutePoint> get points => throw _privateConstructorUsedError;
 
-  @JsonKey(ignore: true)
+  /// Create a copy of Route
+  /// with the given fields replaced by the non-null parameter values.
+  @JsonKey(includeFromJson: false, includeToJson: false)
   $RouteCopyWith<Route> get copyWith => throw _privateConstructorUsedError;
 }
 
@@ -30,8 +33,12 @@ abstract class $RouteCopyWith<$Res> {
   factory $RouteCopyWith(Route value, $Res Function(Route) then) =
       _$RouteCopyWithImpl<$Res, Route>;
   @useResult
-  $Res call(
-      {String id, String name, String? description, List<RoutePoint> points});
+  $Res call({
+    String id,
+    String name,
+    String? description,
+    List<RoutePoint> points,
+  });
 }
 
 /// @nodoc
@@ -44,6 +51,8 @@ class _$RouteCopyWithImpl<$Res, $Val extends Route>
   // ignore: unused_field
   final $Res Function($Val) _then;
 
+  /// Create a copy of Route
+  /// with the given fields replaced by the non-null parameter values.
   @pragma('vm:prefer-inline')
   @override
   $Res call({
@@ -52,43 +61,57 @@ class _$RouteCopyWithImpl<$Res, $Val extends Route>
     Object? description = freezed,
     Object? points = null,
   }) {
-    return _then(_value.copyWith(
-      id: null == id
-          ? _value.id
-          : id // ignore: cast_nullable_to_non_nullable
-              as String,
-      name: null == name
-          ? _value.name
-          : name // ignore: cast_nullable_to_non_nullable
-              as String,
-      description: freezed == description
-          ? _value.description
-          : description // ignore: cast_nullable_to_non_nullable
-              as String?,
-      points: null == points
-          ? _value.points
-          : points // ignore: cast_nullable_to_non_nullable
-              as List<RoutePoint>,
-    ) as $Val);
+    return _then(
+      _value.copyWith(
+            id: null == id
+                ? _value.id
+                : id // ignore: cast_nullable_to_non_nullable
+                      as String,
+            name: null == name
+                ? _value.name
+                : name // ignore: cast_nullable_to_non_nullable
+                      as String,
+            description: freezed == description
+                ? _value.description
+                : description // ignore: cast_nullable_to_non_nullable
+                      as String?,
+            points: null == points
+                ? _value.points
+                : points // ignore: cast_nullable_to_non_nullable
+                      as List<RoutePoint>,
+          )
+          as $Val,
+    );
   }
 }
 
 /// @nodoc
-abstract class _$$_RouteCopyWith<$Res> implements $RouteCopyWith<$Res> {
-  factory _$$_RouteCopyWith(_$_Route value, $Res Function(_$_Route) then) =
-      __$$_RouteCopyWithImpl<$Res>;
+abstract class _$$RouteImplCopyWith<$Res> implements $RouteCopyWith<$Res> {
+  factory _$$RouteImplCopyWith(
+    _$RouteImpl value,
+    $Res Function(_$RouteImpl) then,
+  ) = __$$RouteImplCopyWithImpl<$Res>;
   @override
   @useResult
-  $Res call(
-      {String id, String name, String? description, List<RoutePoint> points});
+  $Res call({
+    String id,
+    String name,
+    String? description,
+    List<RoutePoint> points,
+  });
 }
 
 /// @nodoc
-class __$$_RouteCopyWithImpl<$Res> extends _$RouteCopyWithImpl<$Res, _$_Route>
-    implements _$$_RouteCopyWith<$Res> {
-  __$$_RouteCopyWithImpl(_$_Route _value, $Res Function(_$_Route) _then)
-      : super(_value, _then);
+class __$$RouteImplCopyWithImpl<$Res>
+    extends _$RouteCopyWithImpl<$Res, _$RouteImpl>
+    implements _$$RouteImplCopyWith<$Res> {
+  __$$RouteImplCopyWithImpl(
+    _$RouteImpl _value,
+    $Res Function(_$RouteImpl) _then,
+  ) : super(_value, _then);
 
+  /// Create a copy of Route
+  /// with the given fields replaced by the non-null parameter values.
   @pragma('vm:prefer-inline')
   @override
   $Res call({
@@ -97,37 +120,39 @@ class __$$_RouteCopyWithImpl<$Res> extends _$RouteCopyWithImpl<$Res, _$_Route>
     Object? description = freezed,
     Object? points = null,
   }) {
-    return _then(_$_Route(
-      id: null == id
-          ? _value.id
-          : id // ignore: cast_nullable_to_non_nullable
-              as String,
-      name: null == name
-          ? _value.name
-          : name // ignore: cast_nullable_to_non_nullable
-              as String,
-      description: freezed == description
-          ? _value.description
-          : description // ignore: cast_nullable_to_non_nullable
-              as String?,
-      points: null == points
-          ? _value._points
-          : points // ignore: cast_nullable_to_non_nullable
-              as List<RoutePoint>,
-    ));
+    return _then(
+      _$RouteImpl(
+        id: null == id
+            ? _value.id
+            : id // ignore: cast_nullable_to_non_nullable
+                  as String,
+        name: null == name
+            ? _value.name
+            : name // ignore: cast_nullable_to_non_nullable
+                  as String,
+        description: freezed == description
+            ? _value.description
+            : description // ignore: cast_nullable_to_non_nullable
+                  as String?,
+        points: null == points
+            ? _value._points
+            : points // ignore: cast_nullable_to_non_nullable
+                  as List<RoutePoint>,
+      ),
+    );
   }
 }
 
 /// @nodoc
 
-class _$_Route extends _Route {
-  const _$_Route(
-      {required this.id,
-      required this.name,
-      this.description,
-      required final List<RoutePoint> points})
-      : _points = points,
-        super._();
+class _$RouteImpl extends _Route {
+  const _$RouteImpl({
+    required this.id,
+    required this.name,
+    this.description,
+    required final List<RoutePoint> points,
+  }) : _points = points,
+       super._();
 
   @override
   final String id;
@@ -149,10 +174,10 @@ class _$_Route extends _Route {
   }
 
   @override
-  bool operator ==(dynamic other) {
+  bool operator ==(Object other) {
     return identical(this, other) ||
         (other.runtimeType == runtimeType &&
-            other is _$_Route &&
+            other is _$RouteImpl &&
             (identical(other.id, id) || other.id == id) &&
             (identical(other.name, name) || other.name == name) &&
             (identical(other.description, description) ||
@@ -161,22 +186,30 @@ class _$_Route extends _Route {
   }
 
   @override
-  int get hashCode => Object.hash(runtimeType, id, name, description,
-      const DeepCollectionEquality().hash(_points));
+  int get hashCode => Object.hash(
+    runtimeType,
+    id,
+    name,
+    description,
+    const DeepCollectionEquality().hash(_points),
+  );
 
-  @JsonKey(ignore: true)
+  /// Create a copy of Route
+  /// with the given fields replaced by the non-null parameter values.
+  @JsonKey(includeFromJson: false, includeToJson: false)
   @override
   @pragma('vm:prefer-inline')
-  _$$_RouteCopyWith<_$_Route> get copyWith =>
-      __$$_RouteCopyWithImpl<_$_Route>(this, _$identity);
+  _$$RouteImplCopyWith<_$RouteImpl> get copyWith =>
+      __$$RouteImplCopyWithImpl<_$RouteImpl>(this, _$identity);
 }
 
 abstract class _Route extends Route {
-  const factory _Route(
-      {required final String id,
-      required final String name,
-      final String? description,
-      required final List<RoutePoint> points}) = _$_Route;
+  const factory _Route({
+    required final String id,
+    required final String name,
+    final String? description,
+    required final List<RoutePoint> points,
+  }) = _$RouteImpl;
   const _Route._() : super._();
 
   @override
@@ -187,8 +220,11 @@ abstract class _Route extends Route {
   String? get description;
   @override
   List<RoutePoint> get points;
+
+  /// Create a copy of Route
+  /// with the given fields replaced by the non-null parameter values.
   @override
-  @JsonKey(ignore: true)
-  _$$_RouteCopyWith<_$_Route> get copyWith =>
+  @JsonKey(includeFromJson: false, includeToJson: false)
+  _$$RouteImplCopyWith<_$RouteImpl> get copyWith =>
       throw _privateConstructorUsedError;
 }

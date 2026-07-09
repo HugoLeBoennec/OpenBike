@@ -12,7 +12,8 @@ part of 'geo_point.dart';
 T _$identity<T>(T value) => value;
 
 final _privateConstructorUsedError = UnsupportedError(
-    'It seems like you constructed your class using `MyClass._()`. This constructor is only meant to be used by freezed and you are not supposed to need it nor use it.\nPlease check the documentation here for more information: https://github.com/rrousselGit/freezed#custom-getters-and-methods');
+  'It seems like you constructed your class using `MyClass._()`. This constructor is only meant to be used by freezed and you are not supposed to need it nor use it.\nPlease check the documentation here for more information: https://github.com/rrousselGit/freezed#adding-getters-and-methods-to-our-models',
+);
 
 /// @nodoc
 mixin _$GeoPoint {
@@ -20,7 +21,9 @@ mixin _$GeoPoint {
   double get lon => throw _privateConstructorUsedError;
   double? get elevation => throw _privateConstructorUsedError;
 
-  @JsonKey(ignore: true)
+  /// Create a copy of GeoPoint
+  /// with the given fields replaced by the non-null parameter values.
+  @JsonKey(includeFromJson: false, includeToJson: false)
   $GeoPointCopyWith<GeoPoint> get copyWith =>
       throw _privateConstructorUsedError;
 }
@@ -43,6 +46,8 @@ class _$GeoPointCopyWithImpl<$Res, $Val extends GeoPoint>
   // ignore: unused_field
   final $Res Function($Val) _then;
 
+  /// Create a copy of GeoPoint
+  /// with the given fields replaced by the non-null parameter values.
   @pragma('vm:prefer-inline')
   @override
   $Res call({
@@ -50,41 +55,49 @@ class _$GeoPointCopyWithImpl<$Res, $Val extends GeoPoint>
     Object? lon = null,
     Object? elevation = freezed,
   }) {
-    return _then(_value.copyWith(
-      lat: null == lat
-          ? _value.lat
-          : lat // ignore: cast_nullable_to_non_nullable
-              as double,
-      lon: null == lon
-          ? _value.lon
-          : lon // ignore: cast_nullable_to_non_nullable
-              as double,
-      elevation: freezed == elevation
-          ? _value.elevation
-          : elevation // ignore: cast_nullable_to_non_nullable
-              as double?,
-    ) as $Val);
+    return _then(
+      _value.copyWith(
+            lat: null == lat
+                ? _value.lat
+                : lat // ignore: cast_nullable_to_non_nullable
+                      as double,
+            lon: null == lon
+                ? _value.lon
+                : lon // ignore: cast_nullable_to_non_nullable
+                      as double,
+            elevation: freezed == elevation
+                ? _value.elevation
+                : elevation // ignore: cast_nullable_to_non_nullable
+                      as double?,
+          )
+          as $Val,
+    );
   }
 }
 
 /// @nodoc
-abstract class _$$_GeoPointCopyWith<$Res> implements $GeoPointCopyWith<$Res> {
-  factory _$$_GeoPointCopyWith(
-          _$_GeoPoint value, $Res Function(_$_GeoPoint) then) =
-      __$$_GeoPointCopyWithImpl<$Res>;
+abstract class _$$GeoPointImplCopyWith<$Res>
+    implements $GeoPointCopyWith<$Res> {
+  factory _$$GeoPointImplCopyWith(
+    _$GeoPointImpl value,
+    $Res Function(_$GeoPointImpl) then,
+  ) = __$$GeoPointImplCopyWithImpl<$Res>;
   @override
   @useResult
   $Res call({double lat, double lon, double? elevation});
 }
 
 /// @nodoc
-class __$$_GeoPointCopyWithImpl<$Res>
-    extends _$GeoPointCopyWithImpl<$Res, _$_GeoPoint>
-    implements _$$_GeoPointCopyWith<$Res> {
-  __$$_GeoPointCopyWithImpl(
-      _$_GeoPoint _value, $Res Function(_$_GeoPoint) _then)
-      : super(_value, _then);
+class __$$GeoPointImplCopyWithImpl<$Res>
+    extends _$GeoPointCopyWithImpl<$Res, _$GeoPointImpl>
+    implements _$$GeoPointImplCopyWith<$Res> {
+  __$$GeoPointImplCopyWithImpl(
+    _$GeoPointImpl _value,
+    $Res Function(_$GeoPointImpl) _then,
+  ) : super(_value, _then);
 
+  /// Create a copy of GeoPoint
+  /// with the given fields replaced by the non-null parameter values.
   @pragma('vm:prefer-inline')
   @override
   $Res call({
@@ -92,28 +105,30 @@ class __$$_GeoPointCopyWithImpl<$Res>
     Object? lon = null,
     Object? elevation = freezed,
   }) {
-    return _then(_$_GeoPoint(
-      lat: null == lat
-          ? _value.lat
-          : lat // ignore: cast_nullable_to_non_nullable
-              as double,
-      lon: null == lon
-          ? _value.lon
-          : lon // ignore: cast_nullable_to_non_nullable
-              as double,
-      elevation: freezed == elevation
-          ? _value.elevation
-          : elevation // ignore: cast_nullable_to_non_nullable
-              as double?,
-    ));
+    return _then(
+      _$GeoPointImpl(
+        lat: null == lat
+            ? _value.lat
+            : lat // ignore: cast_nullable_to_non_nullable
+                  as double,
+        lon: null == lon
+            ? _value.lon
+            : lon // ignore: cast_nullable_to_non_nullable
+                  as double,
+        elevation: freezed == elevation
+            ? _value.elevation
+            : elevation // ignore: cast_nullable_to_non_nullable
+                  as double?,
+      ),
+    );
   }
 }
 
 /// @nodoc
 
-class _$_GeoPoint extends _GeoPoint {
-  const _$_GeoPoint({required this.lat, required this.lon, this.elevation})
-      : super._();
+class _$GeoPointImpl extends _GeoPoint {
+  const _$GeoPointImpl({required this.lat, required this.lon, this.elevation})
+    : super._();
 
   @override
   final double lat;
@@ -128,10 +143,10 @@ class _$_GeoPoint extends _GeoPoint {
   }
 
   @override
-  bool operator ==(dynamic other) {
+  bool operator ==(Object other) {
     return identical(this, other) ||
         (other.runtimeType == runtimeType &&
-            other is _$_GeoPoint &&
+            other is _$GeoPointImpl &&
             (identical(other.lat, lat) || other.lat == lat) &&
             (identical(other.lon, lon) || other.lon == lon) &&
             (identical(other.elevation, elevation) ||
@@ -141,18 +156,21 @@ class _$_GeoPoint extends _GeoPoint {
   @override
   int get hashCode => Object.hash(runtimeType, lat, lon, elevation);
 
-  @JsonKey(ignore: true)
+  /// Create a copy of GeoPoint
+  /// with the given fields replaced by the non-null parameter values.
+  @JsonKey(includeFromJson: false, includeToJson: false)
   @override
   @pragma('vm:prefer-inline')
-  _$$_GeoPointCopyWith<_$_GeoPoint> get copyWith =>
-      __$$_GeoPointCopyWithImpl<_$_GeoPoint>(this, _$identity);
+  _$$GeoPointImplCopyWith<_$GeoPointImpl> get copyWith =>
+      __$$GeoPointImplCopyWithImpl<_$GeoPointImpl>(this, _$identity);
 }
 
 abstract class _GeoPoint extends GeoPoint {
-  const factory _GeoPoint(
-      {required final double lat,
-      required final double lon,
-      final double? elevation}) = _$_GeoPoint;
+  const factory _GeoPoint({
+    required final double lat,
+    required final double lon,
+    final double? elevation,
+  }) = _$GeoPointImpl;
   const _GeoPoint._() : super._();
 
   @override
@@ -161,8 +179,11 @@ abstract class _GeoPoint extends GeoPoint {
   double get lon;
   @override
   double? get elevation;
+
+  /// Create a copy of GeoPoint
+  /// with the given fields replaced by the non-null parameter values.
   @override
-  @JsonKey(ignore: true)
-  _$$_GeoPointCopyWith<_$_GeoPoint> get copyWith =>
+  @JsonKey(includeFromJson: false, includeToJson: false)
+  _$$GeoPointImplCopyWith<_$GeoPointImpl> get copyWith =>
       throw _privateConstructorUsedError;
 }

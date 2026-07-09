@@ -28,7 +28,7 @@ class ZoneBar extends ConsumerWidget {
               child: Container(
                 margin: const EdgeInsets.symmetric(horizontal: 1),
                 decoration: BoxDecoration(
-                  color: isActive ? zone.color : zone.color.withOpacity(0.25),
+                  color: isActive ? zone.color : zone.color.withValues(alpha: 0.25),
                   borderRadius: BorderRadius.circular(4),
                 ),
                 child: Center(

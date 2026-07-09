@@ -54,7 +54,7 @@ class _ElevationPainter extends CustomPainter {
     final elevRange = (maxElev - minElev).clamp(1.0, double.infinity);
 
     final fillPaint = Paint()
-      ..color = color.withOpacity(0.3)
+      ..color = color.withValues(alpha: 0.3)
       ..style = PaintingStyle.fill;
 
     final linePaint = Paint()

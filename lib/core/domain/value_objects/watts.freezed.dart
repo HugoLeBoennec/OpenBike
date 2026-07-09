@@ -12,13 +12,16 @@ part of 'watts.dart';
 T _$identity<T>(T value) => value;
 
 final _privateConstructorUsedError = UnsupportedError(
-    'It seems like you constructed your class using `MyClass._()`. This constructor is only meant to be used by freezed and you are not supposed to need it nor use it.\nPlease check the documentation here for more information: https://github.com/rrousselGit/freezed#custom-getters-and-methods');
+  'It seems like you constructed your class using `MyClass._()`. This constructor is only meant to be used by freezed and you are not supposed to need it nor use it.\nPlease check the documentation here for more information: https://github.com/rrousselGit/freezed#adding-getters-and-methods-to-our-models',
+);
 
 /// @nodoc
 mixin _$Watts {
   double get value => throw _privateConstructorUsedError;
 
-  @JsonKey(ignore: true)
+  /// Create a copy of Watts
+  /// with the given fields replaced by the non-null parameter values.
+  @JsonKey(includeFromJson: false, includeToJson: false)
   $WattsCopyWith<Watts> get copyWith => throw _privateConstructorUsedError;
 }
 
@@ -40,53 +43,63 @@ class _$WattsCopyWithImpl<$Res, $Val extends Watts>
   // ignore: unused_field
   final $Res Function($Val) _then;
 
+  /// Create a copy of Watts
+  /// with the given fields replaced by the non-null parameter values.
   @pragma('vm:prefer-inline')
   @override
-  $Res call({
-    Object? value = null,
-  }) {
-    return _then(_value.copyWith(
-      value: null == value
-          ? _value.value
-          : value // ignore: cast_nullable_to_non_nullable
-              as double,
-    ) as $Val);
+  $Res call({Object? value = null}) {
+    return _then(
+      _value.copyWith(
+            value: null == value
+                ? _value.value
+                : value // ignore: cast_nullable_to_non_nullable
+                      as double,
+          )
+          as $Val,
+    );
   }
 }
 
 /// @nodoc
-abstract class _$$_WattsCopyWith<$Res> implements $WattsCopyWith<$Res> {
-  factory _$$_WattsCopyWith(_$_Watts value, $Res Function(_$_Watts) then) =
-      __$$_WattsCopyWithImpl<$Res>;
+abstract class _$$WattsImplCopyWith<$Res> implements $WattsCopyWith<$Res> {
+  factory _$$WattsImplCopyWith(
+    _$WattsImpl value,
+    $Res Function(_$WattsImpl) then,
+  ) = __$$WattsImplCopyWithImpl<$Res>;
   @override
   @useResult
   $Res call({double value});
 }
 
 /// @nodoc
-class __$$_WattsCopyWithImpl<$Res> extends _$WattsCopyWithImpl<$Res, _$_Watts>
-    implements _$$_WattsCopyWith<$Res> {
-  __$$_WattsCopyWithImpl(_$_Watts _value, $Res Function(_$_Watts) _then)
-      : super(_value, _then);
+class __$$WattsImplCopyWithImpl<$Res>
+    extends _$WattsCopyWithImpl<$Res, _$WattsImpl>
+    implements _$$WattsImplCopyWith<$Res> {
+  __$$WattsImplCopyWithImpl(
+    _$WattsImpl _value,
+    $Res Function(_$WattsImpl) _then,
+  ) : super(_value, _then);
 
+  /// Create a copy of Watts
+  /// with the given fields replaced by the non-null parameter values.
   @pragma('vm:prefer-inline')
   @override
-  $Res call({
-    Object? value = null,
-  }) {
-    return _then(_$_Watts(
-      null == value
-          ? _value.value
-          : value // ignore: cast_nullable_to_non_nullable
-              as double,
-    ));
+  $Res call({Object? value = null}) {
+    return _then(
+      _$WattsImpl(
+        null == value
+            ? _value.value
+            : value // ignore: cast_nullable_to_non_nullable
+                  as double,
+      ),
+    );
   }
 }
 
 /// @nodoc
 
-class _$_Watts extends _Watts {
-  const _$_Watts(this.value) : super._();
+class _$WattsImpl extends _Watts {
+  const _$WattsImpl(this.value) : super._();
 
   @override
   final double value;
@@ -97,31 +110,36 @@ class _$_Watts extends _Watts {
   }
 
   @override
-  bool operator ==(dynamic other) {
+  bool operator ==(Object other) {
     return identical(this, other) ||
         (other.runtimeType == runtimeType &&
-            other is _$_Watts &&
+            other is _$WattsImpl &&
             (identical(other.value, value) || other.value == value));
   }
 
   @override
   int get hashCode => Object.hash(runtimeType, value);
 
-  @JsonKey(ignore: true)
+  /// Create a copy of Watts
+  /// with the given fields replaced by the non-null parameter values.
+  @JsonKey(includeFromJson: false, includeToJson: false)
   @override
   @pragma('vm:prefer-inline')
-  _$$_WattsCopyWith<_$_Watts> get copyWith =>
-      __$$_WattsCopyWithImpl<_$_Watts>(this, _$identity);
+  _$$WattsImplCopyWith<_$WattsImpl> get copyWith =>
+      __$$WattsImplCopyWithImpl<_$WattsImpl>(this, _$identity);
 }
 
 abstract class _Watts extends Watts {
-  const factory _Watts(final double value) = _$_Watts;
+  const factory _Watts(final double value) = _$WattsImpl;
   const _Watts._() : super._();
 
   @override
   double get value;
+
+  /// Create a copy of Watts
+  /// with the given fields replaced by the non-null parameter values.
   @override
-  @JsonKey(ignore: true)
-  _$$_WattsCopyWith<_$_Watts> get copyWith =>
+  @JsonKey(includeFromJson: false, includeToJson: false)
+  _$$WattsImplCopyWith<_$WattsImpl> get copyWith =>
       throw _privateConstructorUsedError;
 }

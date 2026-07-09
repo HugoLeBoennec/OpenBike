@@ -12,7 +12,8 @@ part of 'user_profile.dart';
 T _$identity<T>(T value) => value;
 
 final _privateConstructorUsedError = UnsupportedError(
-    'It seems like you constructed your class using `MyClass._()`. This constructor is only meant to be used by freezed and you are not supposed to need it nor use it.\nPlease check the documentation here for more information: https://github.com/rrousselGit/freezed#custom-getters-and-methods');
+  'It seems like you constructed your class using `MyClass._()`. This constructor is only meant to be used by freezed and you are not supposed to need it nor use it.\nPlease check the documentation here for more information: https://github.com/rrousselGit/freezed#adding-getters-and-methods-to-our-models',
+);
 
 /// @nodoc
 mixin _$UserProfile {
@@ -23,7 +24,9 @@ mixin _$UserProfile {
   HeartRate get maxHr => throw _privateConstructorUsedError;
   String get name => throw _privateConstructorUsedError;
 
-  @JsonKey(ignore: true)
+  /// Create a copy of UserProfile
+  /// with the given fields replaced by the non-null parameter values.
+  @JsonKey(includeFromJson: false, includeToJson: false)
   $UserProfileCopyWith<UserProfile> get copyWith =>
       throw _privateConstructorUsedError;
 }
@@ -31,16 +34,18 @@ mixin _$UserProfile {
 /// @nodoc
 abstract class $UserProfileCopyWith<$Res> {
   factory $UserProfileCopyWith(
-          UserProfile value, $Res Function(UserProfile) then) =
-      _$UserProfileCopyWithImpl<$Res, UserProfile>;
+    UserProfile value,
+    $Res Function(UserProfile) then,
+  ) = _$UserProfileCopyWithImpl<$Res, UserProfile>;
   @useResult
-  $Res call(
-      {Watts ftp,
-      double weight,
-      double height,
-      HeartRate restingHr,
-      HeartRate maxHr,
-      String name});
+  $Res call({
+    Watts ftp,
+    double weight,
+    double height,
+    HeartRate restingHr,
+    HeartRate maxHr,
+    String name,
+  });
 
   $WattsCopyWith<$Res> get ftp;
   $HeartRateCopyWith<$Res> get restingHr;
@@ -57,6 +62,8 @@ class _$UserProfileCopyWithImpl<$Res, $Val extends UserProfile>
   // ignore: unused_field
   final $Res Function($Val) _then;
 
+  /// Create a copy of UserProfile
+  /// with the given fields replaced by the non-null parameter values.
   @pragma('vm:prefer-inline')
   @override
   $Res call({
@@ -67,34 +74,39 @@ class _$UserProfileCopyWithImpl<$Res, $Val extends UserProfile>
     Object? maxHr = null,
     Object? name = null,
   }) {
-    return _then(_value.copyWith(
-      ftp: null == ftp
-          ? _value.ftp
-          : ftp // ignore: cast_nullable_to_non_nullable
-              as Watts,
-      weight: null == weight
-          ? _value.weight
-          : weight // ignore: cast_nullable_to_non_nullable
-              as double,
-      height: null == height
-          ? _value.height
-          : height // ignore: cast_nullable_to_non_nullable
-              as double,
-      restingHr: null == restingHr
-          ? _value.restingHr
-          : restingHr // ignore: cast_nullable_to_non_nullable
-              as HeartRate,
-      maxHr: null == maxHr
-          ? _value.maxHr
-          : maxHr // ignore: cast_nullable_to_non_nullable
-              as HeartRate,
-      name: null == name
-          ? _value.name
-          : name // ignore: cast_nullable_to_non_nullable
-              as String,
-    ) as $Val);
+    return _then(
+      _value.copyWith(
+            ftp: null == ftp
+                ? _value.ftp
+                : ftp // ignore: cast_nullable_to_non_nullable
+                      as Watts,
+            weight: null == weight
+                ? _value.weight
+                : weight // ignore: cast_nullable_to_non_nullable
+                      as double,
+            height: null == height
+                ? _value.height
+                : height // ignore: cast_nullable_to_non_nullable
+                      as double,
+            restingHr: null == restingHr
+                ? _value.restingHr
+                : restingHr // ignore: cast_nullable_to_non_nullable
+                      as HeartRate,
+            maxHr: null == maxHr
+                ? _value.maxHr
+                : maxHr // ignore: cast_nullable_to_non_nullable
+                      as HeartRate,
+            name: null == name
+                ? _value.name
+                : name // ignore: cast_nullable_to_non_nullable
+                      as String,
+          )
+          as $Val,
+    );
   }
 
+  /// Create a copy of UserProfile
+  /// with the given fields replaced by the non-null parameter values.
   @override
   @pragma('vm:prefer-inline')
   $WattsCopyWith<$Res> get ftp {
@@ -103,6 +115,8 @@ class _$UserProfileCopyWithImpl<$Res, $Val extends UserProfile>
     });
   }
 
+  /// Create a copy of UserProfile
+  /// with the given fields replaced by the non-null parameter values.
   @override
   @pragma('vm:prefer-inline')
   $HeartRateCopyWith<$Res> get restingHr {
@@ -111,6 +125,8 @@ class _$UserProfileCopyWithImpl<$Res, $Val extends UserProfile>
     });
   }
 
+  /// Create a copy of UserProfile
+  /// with the given fields replaced by the non-null parameter values.
   @override
   @pragma('vm:prefer-inline')
   $HeartRateCopyWith<$Res> get maxHr {
@@ -121,20 +137,22 @@ class _$UserProfileCopyWithImpl<$Res, $Val extends UserProfile>
 }
 
 /// @nodoc
-abstract class _$$_UserProfileCopyWith<$Res>
+abstract class _$$UserProfileImplCopyWith<$Res>
     implements $UserProfileCopyWith<$Res> {
-  factory _$$_UserProfileCopyWith(
-          _$_UserProfile value, $Res Function(_$_UserProfile) then) =
-      __$$_UserProfileCopyWithImpl<$Res>;
+  factory _$$UserProfileImplCopyWith(
+    _$UserProfileImpl value,
+    $Res Function(_$UserProfileImpl) then,
+  ) = __$$UserProfileImplCopyWithImpl<$Res>;
   @override
   @useResult
-  $Res call(
-      {Watts ftp,
-      double weight,
-      double height,
-      HeartRate restingHr,
-      HeartRate maxHr,
-      String name});
+  $Res call({
+    Watts ftp,
+    double weight,
+    double height,
+    HeartRate restingHr,
+    HeartRate maxHr,
+    String name,
+  });
 
   @override
   $WattsCopyWith<$Res> get ftp;
@@ -145,13 +163,16 @@ abstract class _$$_UserProfileCopyWith<$Res>
 }
 
 /// @nodoc
-class __$$_UserProfileCopyWithImpl<$Res>
-    extends _$UserProfileCopyWithImpl<$Res, _$_UserProfile>
-    implements _$$_UserProfileCopyWith<$Res> {
-  __$$_UserProfileCopyWithImpl(
-      _$_UserProfile _value, $Res Function(_$_UserProfile) _then)
-      : super(_value, _then);
+class __$$UserProfileImplCopyWithImpl<$Res>
+    extends _$UserProfileCopyWithImpl<$Res, _$UserProfileImpl>
+    implements _$$UserProfileImplCopyWith<$Res> {
+  __$$UserProfileImplCopyWithImpl(
+    _$UserProfileImpl _value,
+    $Res Function(_$UserProfileImpl) _then,
+  ) : super(_value, _then);
 
+  /// Create a copy of UserProfile
+  /// with the given fields replaced by the non-null parameter values.
   @pragma('vm:prefer-inline')
   @override
   $Res call({
@@ -162,45 +183,48 @@ class __$$_UserProfileCopyWithImpl<$Res>
     Object? maxHr = null,
     Object? name = null,
   }) {
-    return _then(_$_UserProfile(
-      ftp: null == ftp
-          ? _value.ftp
-          : ftp // ignore: cast_nullable_to_non_nullable
-              as Watts,
-      weight: null == weight
-          ? _value.weight
-          : weight // ignore: cast_nullable_to_non_nullable
-              as double,
-      height: null == height
-          ? _value.height
-          : height // ignore: cast_nullable_to_non_nullable
-              as double,
-      restingHr: null == restingHr
-          ? _value.restingHr
-          : restingHr // ignore: cast_nullable_to_non_nullable
-              as HeartRate,
-      maxHr: null == maxHr
-          ? _value.maxHr
-          : maxHr // ignore: cast_nullable_to_non_nullable
-              as HeartRate,
-      name: null == name
-          ? _value.name
-          : name // ignore: cast_nullable_to_non_nullable
-              as String,
-    ));
+    return _then(
+      _$UserProfileImpl(
+        ftp: null == ftp
+            ? _value.ftp
+            : ftp // ignore: cast_nullable_to_non_nullable
+                  as Watts,
+        weight: null == weight
+            ? _value.weight
+            : weight // ignore: cast_nullable_to_non_nullable
+                  as double,
+        height: null == height
+            ? _value.height
+            : height // ignore: cast_nullable_to_non_nullable
+                  as double,
+        restingHr: null == restingHr
+            ? _value.restingHr
+            : restingHr // ignore: cast_nullable_to_non_nullable
+                  as HeartRate,
+        maxHr: null == maxHr
+            ? _value.maxHr
+            : maxHr // ignore: cast_nullable_to_non_nullable
+                  as HeartRate,
+        name: null == name
+            ? _value.name
+            : name // ignore: cast_nullable_to_non_nullable
+                  as String,
+      ),
+    );
   }
 }
 
 /// @nodoc
 
-class _$_UserProfile implements _UserProfile {
-  const _$_UserProfile(
-      {required this.ftp,
-      required this.weight,
-      required this.height,
-      required this.restingHr,
-      required this.maxHr,
-      required this.name});
+class _$UserProfileImpl implements _UserProfile {
+  const _$UserProfileImpl({
+    required this.ftp,
+    required this.weight,
+    required this.height,
+    required this.restingHr,
+    required this.maxHr,
+    required this.name,
+  });
 
   @override
   final Watts ftp;
@@ -221,10 +245,10 @@ class _$_UserProfile implements _UserProfile {
   }
 
   @override
-  bool operator ==(dynamic other) {
+  bool operator ==(Object other) {
     return identical(this, other) ||
         (other.runtimeType == runtimeType &&
-            other is _$_UserProfile &&
+            other is _$UserProfileImpl &&
             (identical(other.ftp, ftp) || other.ftp == ftp) &&
             (identical(other.weight, weight) || other.weight == weight) &&
             (identical(other.height, height) || other.height == height) &&
@@ -238,21 +262,24 @@ class _$_UserProfile implements _UserProfile {
   int get hashCode =>
       Object.hash(runtimeType, ftp, weight, height, restingHr, maxHr, name);
 
-  @JsonKey(ignore: true)
+  /// Create a copy of UserProfile
+  /// with the given fields replaced by the non-null parameter values.
+  @JsonKey(includeFromJson: false, includeToJson: false)
   @override
   @pragma('vm:prefer-inline')
-  _$$_UserProfileCopyWith<_$_UserProfile> get copyWith =>
-      __$$_UserProfileCopyWithImpl<_$_UserProfile>(this, _$identity);
+  _$$UserProfileImplCopyWith<_$UserProfileImpl> get copyWith =>
+      __$$UserProfileImplCopyWithImpl<_$UserProfileImpl>(this, _$identity);
 }
 
 abstract class _UserProfile implements UserProfile {
-  const factory _UserProfile(
-      {required final Watts ftp,
-      required final double weight,
-      required final double height,
-      required final HeartRate restingHr,
-      required final HeartRate maxHr,
-      required final String name}) = _$_UserProfile;
+  const factory _UserProfile({
+    required final Watts ftp,
+    required final double weight,
+    required final double height,
+    required final HeartRate restingHr,
+    required final HeartRate maxHr,
+    required final String name,
+  }) = _$UserProfileImpl;
 
   @override
   Watts get ftp;
@@ -266,8 +293,11 @@ abstract class _UserProfile implements UserProfile {
   HeartRate get maxHr;
   @override
   String get name;
+
+  /// Create a copy of UserProfile
+  /// with the given fields replaced by the non-null parameter values.
   @override
-  @JsonKey(ignore: true)
-  _$$_UserProfileCopyWith<_$_UserProfile> get copyWith =>
+  @JsonKey(includeFromJson: false, includeToJson: false)
+  _$$UserProfileImplCopyWith<_$UserProfileImpl> get copyWith =>
       throw _privateConstructorUsedError;
 }

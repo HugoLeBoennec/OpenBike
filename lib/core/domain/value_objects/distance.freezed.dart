@@ -12,13 +12,16 @@ part of 'distance.dart';
 T _$identity<T>(T value) => value;
 
 final _privateConstructorUsedError = UnsupportedError(
-    'It seems like you constructed your class using `MyClass._()`. This constructor is only meant to be used by freezed and you are not supposed to need it nor use it.\nPlease check the documentation here for more information: https://github.com/rrousselGit/freezed#custom-getters-and-methods');
+  'It seems like you constructed your class using `MyClass._()`. This constructor is only meant to be used by freezed and you are not supposed to need it nor use it.\nPlease check the documentation here for more information: https://github.com/rrousselGit/freezed#adding-getters-and-methods-to-our-models',
+);
 
 /// @nodoc
 mixin _$Distance {
   double get meters => throw _privateConstructorUsedError;
 
-  @JsonKey(ignore: true)
+  /// Create a copy of Distance
+  /// with the given fields replaced by the non-null parameter values.
+  @JsonKey(includeFromJson: false, includeToJson: false)
   $DistanceCopyWith<Distance> get copyWith =>
       throw _privateConstructorUsedError;
 }
@@ -41,56 +44,64 @@ class _$DistanceCopyWithImpl<$Res, $Val extends Distance>
   // ignore: unused_field
   final $Res Function($Val) _then;
 
+  /// Create a copy of Distance
+  /// with the given fields replaced by the non-null parameter values.
   @pragma('vm:prefer-inline')
   @override
-  $Res call({
-    Object? meters = null,
-  }) {
-    return _then(_value.copyWith(
-      meters: null == meters
-          ? _value.meters
-          : meters // ignore: cast_nullable_to_non_nullable
-              as double,
-    ) as $Val);
+  $Res call({Object? meters = null}) {
+    return _then(
+      _value.copyWith(
+            meters: null == meters
+                ? _value.meters
+                : meters // ignore: cast_nullable_to_non_nullable
+                      as double,
+          )
+          as $Val,
+    );
   }
 }
 
 /// @nodoc
-abstract class _$$_DistanceCopyWith<$Res> implements $DistanceCopyWith<$Res> {
-  factory _$$_DistanceCopyWith(
-          _$_Distance value, $Res Function(_$_Distance) then) =
-      __$$_DistanceCopyWithImpl<$Res>;
+abstract class _$$DistanceImplCopyWith<$Res>
+    implements $DistanceCopyWith<$Res> {
+  factory _$$DistanceImplCopyWith(
+    _$DistanceImpl value,
+    $Res Function(_$DistanceImpl) then,
+  ) = __$$DistanceImplCopyWithImpl<$Res>;
   @override
   @useResult
   $Res call({double meters});
 }
 
 /// @nodoc
-class __$$_DistanceCopyWithImpl<$Res>
-    extends _$DistanceCopyWithImpl<$Res, _$_Distance>
-    implements _$$_DistanceCopyWith<$Res> {
-  __$$_DistanceCopyWithImpl(
-      _$_Distance _value, $Res Function(_$_Distance) _then)
-      : super(_value, _then);
+class __$$DistanceImplCopyWithImpl<$Res>
+    extends _$DistanceCopyWithImpl<$Res, _$DistanceImpl>
+    implements _$$DistanceImplCopyWith<$Res> {
+  __$$DistanceImplCopyWithImpl(
+    _$DistanceImpl _value,
+    $Res Function(_$DistanceImpl) _then,
+  ) : super(_value, _then);
 
+  /// Create a copy of Distance
+  /// with the given fields replaced by the non-null parameter values.
   @pragma('vm:prefer-inline')
   @override
-  $Res call({
-    Object? meters = null,
-  }) {
-    return _then(_$_Distance(
-      null == meters
-          ? _value.meters
-          : meters // ignore: cast_nullable_to_non_nullable
-              as double,
-    ));
+  $Res call({Object? meters = null}) {
+    return _then(
+      _$DistanceImpl(
+        null == meters
+            ? _value.meters
+            : meters // ignore: cast_nullable_to_non_nullable
+                  as double,
+      ),
+    );
   }
 }
 
 /// @nodoc
 
-class _$_Distance extends _Distance {
-  const _$_Distance(this.meters) : super._();
+class _$DistanceImpl extends _Distance {
+  const _$DistanceImpl(this.meters) : super._();
 
   @override
   final double meters;
@@ -101,31 +112,36 @@ class _$_Distance extends _Distance {
   }
 
   @override
-  bool operator ==(dynamic other) {
+  bool operator ==(Object other) {
     return identical(this, other) ||
         (other.runtimeType == runtimeType &&
-            other is _$_Distance &&
+            other is _$DistanceImpl &&
             (identical(other.meters, meters) || other.meters == meters));
   }
 
   @override
   int get hashCode => Object.hash(runtimeType, meters);
 
-  @JsonKey(ignore: true)
+  /// Create a copy of Distance
+  /// with the given fields replaced by the non-null parameter values.
+  @JsonKey(includeFromJson: false, includeToJson: false)
   @override
   @pragma('vm:prefer-inline')
-  _$$_DistanceCopyWith<_$_Distance> get copyWith =>
-      __$$_DistanceCopyWithImpl<_$_Distance>(this, _$identity);
+  _$$DistanceImplCopyWith<_$DistanceImpl> get copyWith =>
+      __$$DistanceImplCopyWithImpl<_$DistanceImpl>(this, _$identity);
 }
 
 abstract class _Distance extends Distance {
-  const factory _Distance(final double meters) = _$_Distance;
+  const factory _Distance(final double meters) = _$DistanceImpl;
   const _Distance._() : super._();
 
   @override
   double get meters;
+
+  /// Create a copy of Distance
+  /// with the given fields replaced by the non-null parameter values.
   @override
-  @JsonKey(ignore: true)
-  _$$_DistanceCopyWith<_$_Distance> get copyWith =>
+  @JsonKey(includeFromJson: false, includeToJson: false)
+  _$$DistanceImplCopyWith<_$DistanceImpl> get copyWith =>
       throw _privateConstructorUsedError;
 }

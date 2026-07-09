@@ -12,7 +12,8 @@ part of 'sensor_reading.dart';
 T _$identity<T>(T value) => value;
 
 final _privateConstructorUsedError = UnsupportedError(
-    'It seems like you constructed your class using `MyClass._()`. This constructor is only meant to be used by freezed and you are not supposed to need it nor use it.\nPlease check the documentation here for more information: https://github.com/rrousselGit/freezed#custom-getters-and-methods');
+  'It seems like you constructed your class using `MyClass._()`. This constructor is only meant to be used by freezed and you are not supposed to need it nor use it.\nPlease check the documentation here for more information: https://github.com/rrousselGit/freezed#adding-getters-and-methods-to-our-models',
+);
 
 /// @nodoc
 mixin _$SensorReading {
@@ -22,8 +23,11 @@ mixin _$SensorReading {
   HeartRate? get heartRate => throw _privateConstructorUsedError;
   Speed? get speed => throw _privateConstructorUsedError;
   Distance? get distance => throw _privateConstructorUsedError;
+  Grade? get grade => throw _privateConstructorUsedError;
 
-  @JsonKey(ignore: true)
+  /// Create a copy of SensorReading
+  /// with the given fields replaced by the non-null parameter values.
+  @JsonKey(includeFromJson: false, includeToJson: false)
   $SensorReadingCopyWith<SensorReading> get copyWith =>
       throw _privateConstructorUsedError;
 }
@@ -31,22 +35,26 @@ mixin _$SensorReading {
 /// @nodoc
 abstract class $SensorReadingCopyWith<$Res> {
   factory $SensorReadingCopyWith(
-          SensorReading value, $Res Function(SensorReading) then) =
-      _$SensorReadingCopyWithImpl<$Res, SensorReading>;
+    SensorReading value,
+    $Res Function(SensorReading) then,
+  ) = _$SensorReadingCopyWithImpl<$Res, SensorReading>;
   @useResult
-  $Res call(
-      {DateTime timestamp,
-      Watts? power,
-      Cadence? cadence,
-      HeartRate? heartRate,
-      Speed? speed,
-      Distance? distance});
+  $Res call({
+    DateTime timestamp,
+    Watts? power,
+    Cadence? cadence,
+    HeartRate? heartRate,
+    Speed? speed,
+    Distance? distance,
+    Grade? grade,
+  });
 
   $WattsCopyWith<$Res>? get power;
   $CadenceCopyWith<$Res>? get cadence;
   $HeartRateCopyWith<$Res>? get heartRate;
   $SpeedCopyWith<$Res>? get speed;
   $DistanceCopyWith<$Res>? get distance;
+  $GradeCopyWith<$Res>? get grade;
 }
 
 /// @nodoc
@@ -59,6 +67,8 @@ class _$SensorReadingCopyWithImpl<$Res, $Val extends SensorReading>
   // ignore: unused_field
   final $Res Function($Val) _then;
 
+  /// Create a copy of SensorReading
+  /// with the given fields replaced by the non-null parameter values.
   @pragma('vm:prefer-inline')
   @override
   $Res call({
@@ -68,35 +78,45 @@ class _$SensorReadingCopyWithImpl<$Res, $Val extends SensorReading>
     Object? heartRate = freezed,
     Object? speed = freezed,
     Object? distance = freezed,
+    Object? grade = freezed,
   }) {
-    return _then(_value.copyWith(
-      timestamp: null == timestamp
-          ? _value.timestamp
-          : timestamp // ignore: cast_nullable_to_non_nullable
-              as DateTime,
-      power: freezed == power
-          ? _value.power
-          : power // ignore: cast_nullable_to_non_nullable
-              as Watts?,
-      cadence: freezed == cadence
-          ? _value.cadence
-          : cadence // ignore: cast_nullable_to_non_nullable
-              as Cadence?,
-      heartRate: freezed == heartRate
-          ? _value.heartRate
-          : heartRate // ignore: cast_nullable_to_non_nullable
-              as HeartRate?,
-      speed: freezed == speed
-          ? _value.speed
-          : speed // ignore: cast_nullable_to_non_nullable
-              as Speed?,
-      distance: freezed == distance
-          ? _value.distance
-          : distance // ignore: cast_nullable_to_non_nullable
-              as Distance?,
-    ) as $Val);
+    return _then(
+      _value.copyWith(
+            timestamp: null == timestamp
+                ? _value.timestamp
+                : timestamp // ignore: cast_nullable_to_non_nullable
+                      as DateTime,
+            power: freezed == power
+                ? _value.power
+                : power // ignore: cast_nullable_to_non_nullable
+                      as Watts?,
+            cadence: freezed == cadence
+                ? _value.cadence
+                : cadence // ignore: cast_nullable_to_non_nullable
+                      as Cadence?,
+            heartRate: freezed == heartRate
+                ? _value.heartRate
+                : heartRate // ignore: cast_nullable_to_non_nullable
+                      as HeartRate?,
+            speed: freezed == speed
+                ? _value.speed
+                : speed // ignore: cast_nullable_to_non_nullable
+                      as Speed?,
+            distance: freezed == distance
+                ? _value.distance
+                : distance // ignore: cast_nullable_to_non_nullable
+                      as Distance?,
+            grade: freezed == grade
+                ? _value.grade
+                : grade // ignore: cast_nullable_to_non_nullable
+                      as Grade?,
+          )
+          as $Val,
+    );
   }
 
+  /// Create a copy of SensorReading
+  /// with the given fields replaced by the non-null parameter values.
   @override
   @pragma('vm:prefer-inline')
   $WattsCopyWith<$Res>? get power {
@@ -109,6 +129,8 @@ class _$SensorReadingCopyWithImpl<$Res, $Val extends SensorReading>
     });
   }
 
+  /// Create a copy of SensorReading
+  /// with the given fields replaced by the non-null parameter values.
   @override
   @pragma('vm:prefer-inline')
   $CadenceCopyWith<$Res>? get cadence {
@@ -121,6 +143,8 @@ class _$SensorReadingCopyWithImpl<$Res, $Val extends SensorReading>
     });
   }
 
+  /// Create a copy of SensorReading
+  /// with the given fields replaced by the non-null parameter values.
   @override
   @pragma('vm:prefer-inline')
   $HeartRateCopyWith<$Res>? get heartRate {
@@ -133,6 +157,8 @@ class _$SensorReadingCopyWithImpl<$Res, $Val extends SensorReading>
     });
   }
 
+  /// Create a copy of SensorReading
+  /// with the given fields replaced by the non-null parameter values.
   @override
   @pragma('vm:prefer-inline')
   $SpeedCopyWith<$Res>? get speed {
@@ -145,6 +171,8 @@ class _$SensorReadingCopyWithImpl<$Res, $Val extends SensorReading>
     });
   }
 
+  /// Create a copy of SensorReading
+  /// with the given fields replaced by the non-null parameter values.
   @override
   @pragma('vm:prefer-inline')
   $DistanceCopyWith<$Res>? get distance {
@@ -156,23 +184,40 @@ class _$SensorReadingCopyWithImpl<$Res, $Val extends SensorReading>
       return _then(_value.copyWith(distance: value) as $Val);
     });
   }
+
+  /// Create a copy of SensorReading
+  /// with the given fields replaced by the non-null parameter values.
+  @override
+  @pragma('vm:prefer-inline')
+  $GradeCopyWith<$Res>? get grade {
+    if (_value.grade == null) {
+      return null;
+    }
+
+    return $GradeCopyWith<$Res>(_value.grade!, (value) {
+      return _then(_value.copyWith(grade: value) as $Val);
+    });
+  }
 }
 
 /// @nodoc
-abstract class _$$_SensorReadingCopyWith<$Res>
+abstract class _$$SensorReadingImplCopyWith<$Res>
     implements $SensorReadingCopyWith<$Res> {
-  factory _$$_SensorReadingCopyWith(
-          _$_SensorReading value, $Res Function(_$_SensorReading) then) =
-      __$$_SensorReadingCopyWithImpl<$Res>;
+  factory _$$SensorReadingImplCopyWith(
+    _$SensorReadingImpl value,
+    $Res Function(_$SensorReadingImpl) then,
+  ) = __$$SensorReadingImplCopyWithImpl<$Res>;
   @override
   @useResult
-  $Res call(
-      {DateTime timestamp,
-      Watts? power,
-      Cadence? cadence,
-      HeartRate? heartRate,
-      Speed? speed,
-      Distance? distance});
+  $Res call({
+    DateTime timestamp,
+    Watts? power,
+    Cadence? cadence,
+    HeartRate? heartRate,
+    Speed? speed,
+    Distance? distance,
+    Grade? grade,
+  });
 
   @override
   $WattsCopyWith<$Res>? get power;
@@ -184,16 +229,21 @@ abstract class _$$_SensorReadingCopyWith<$Res>
   $SpeedCopyWith<$Res>? get speed;
   @override
   $DistanceCopyWith<$Res>? get distance;
+  @override
+  $GradeCopyWith<$Res>? get grade;
 }
 
 /// @nodoc
-class __$$_SensorReadingCopyWithImpl<$Res>
-    extends _$SensorReadingCopyWithImpl<$Res, _$_SensorReading>
-    implements _$$_SensorReadingCopyWith<$Res> {
-  __$$_SensorReadingCopyWithImpl(
-      _$_SensorReading _value, $Res Function(_$_SensorReading) _then)
-      : super(_value, _then);
+class __$$SensorReadingImplCopyWithImpl<$Res>
+    extends _$SensorReadingCopyWithImpl<$Res, _$SensorReadingImpl>
+    implements _$$SensorReadingImplCopyWith<$Res> {
+  __$$SensorReadingImplCopyWithImpl(
+    _$SensorReadingImpl _value,
+    $Res Function(_$SensorReadingImpl) _then,
+  ) : super(_value, _then);
 
+  /// Create a copy of SensorReading
+  /// with the given fields replaced by the non-null parameter values.
   @pragma('vm:prefer-inline')
   @override
   $Res call({
@@ -203,46 +253,55 @@ class __$$_SensorReadingCopyWithImpl<$Res>
     Object? heartRate = freezed,
     Object? speed = freezed,
     Object? distance = freezed,
+    Object? grade = freezed,
   }) {
-    return _then(_$_SensorReading(
-      timestamp: null == timestamp
-          ? _value.timestamp
-          : timestamp // ignore: cast_nullable_to_non_nullable
-              as DateTime,
-      power: freezed == power
-          ? _value.power
-          : power // ignore: cast_nullable_to_non_nullable
-              as Watts?,
-      cadence: freezed == cadence
-          ? _value.cadence
-          : cadence // ignore: cast_nullable_to_non_nullable
-              as Cadence?,
-      heartRate: freezed == heartRate
-          ? _value.heartRate
-          : heartRate // ignore: cast_nullable_to_non_nullable
-              as HeartRate?,
-      speed: freezed == speed
-          ? _value.speed
-          : speed // ignore: cast_nullable_to_non_nullable
-              as Speed?,
-      distance: freezed == distance
-          ? _value.distance
-          : distance // ignore: cast_nullable_to_non_nullable
-              as Distance?,
-    ));
+    return _then(
+      _$SensorReadingImpl(
+        timestamp: null == timestamp
+            ? _value.timestamp
+            : timestamp // ignore: cast_nullable_to_non_nullable
+                  as DateTime,
+        power: freezed == power
+            ? _value.power
+            : power // ignore: cast_nullable_to_non_nullable
+                  as Watts?,
+        cadence: freezed == cadence
+            ? _value.cadence
+            : cadence // ignore: cast_nullable_to_non_nullable
+                  as Cadence?,
+        heartRate: freezed == heartRate
+            ? _value.heartRate
+            : heartRate // ignore: cast_nullable_to_non_nullable
+                  as HeartRate?,
+        speed: freezed == speed
+            ? _value.speed
+            : speed // ignore: cast_nullable_to_non_nullable
+                  as Speed?,
+        distance: freezed == distance
+            ? _value.distance
+            : distance // ignore: cast_nullable_to_non_nullable
+                  as Distance?,
+        grade: freezed == grade
+            ? _value.grade
+            : grade // ignore: cast_nullable_to_non_nullable
+                  as Grade?,
+      ),
+    );
   }
 }
 
 /// @nodoc
 
-class _$_SensorReading implements _SensorReading {
-  const _$_SensorReading(
-      {required this.timestamp,
-      this.power,
-      this.cadence,
-      this.heartRate,
-      this.speed,
-      this.distance});
+class _$SensorReadingImpl implements _SensorReading {
+  const _$SensorReadingImpl({
+    required this.timestamp,
+    this.power,
+    this.cadence,
+    this.heartRate,
+    this.speed,
+    this.distance,
+    this.grade,
+  });
 
   @override
   final DateTime timestamp;
@@ -256,17 +315,19 @@ class _$_SensorReading implements _SensorReading {
   final Speed? speed;
   @override
   final Distance? distance;
+  @override
+  final Grade? grade;
 
   @override
   String toString() {
-    return 'SensorReading(timestamp: $timestamp, power: $power, cadence: $cadence, heartRate: $heartRate, speed: $speed, distance: $distance)';
+    return 'SensorReading(timestamp: $timestamp, power: $power, cadence: $cadence, heartRate: $heartRate, speed: $speed, distance: $distance, grade: $grade)';
   }
 
   @override
-  bool operator ==(dynamic other) {
+  bool operator ==(Object other) {
     return identical(this, other) ||
         (other.runtimeType == runtimeType &&
-            other is _$_SensorReading &&
+            other is _$SensorReadingImpl &&
             (identical(other.timestamp, timestamp) ||
                 other.timestamp == timestamp) &&
             (identical(other.power, power) || other.power == power) &&
@@ -275,28 +336,41 @@ class _$_SensorReading implements _SensorReading {
                 other.heartRate == heartRate) &&
             (identical(other.speed, speed) || other.speed == speed) &&
             (identical(other.distance, distance) ||
-                other.distance == distance));
+                other.distance == distance) &&
+            (identical(other.grade, grade) || other.grade == grade));
   }
 
   @override
   int get hashCode => Object.hash(
-      runtimeType, timestamp, power, cadence, heartRate, speed, distance);
+    runtimeType,
+    timestamp,
+    power,
+    cadence,
+    heartRate,
+    speed,
+    distance,
+    grade,
+  );
 
-  @JsonKey(ignore: true)
+  /// Create a copy of SensorReading
+  /// with the given fields replaced by the non-null parameter values.
+  @JsonKey(includeFromJson: false, includeToJson: false)
   @override
   @pragma('vm:prefer-inline')
-  _$$_SensorReadingCopyWith<_$_SensorReading> get copyWith =>
-      __$$_SensorReadingCopyWithImpl<_$_SensorReading>(this, _$identity);
+  _$$SensorReadingImplCopyWith<_$SensorReadingImpl> get copyWith =>
+      __$$SensorReadingImplCopyWithImpl<_$SensorReadingImpl>(this, _$identity);
 }
 
 abstract class _SensorReading implements SensorReading {
-  const factory _SensorReading(
-      {required final DateTime timestamp,
-      final Watts? power,
-      final Cadence? cadence,
-      final HeartRate? heartRate,
-      final Speed? speed,
-      final Distance? distance}) = _$_SensorReading;
+  const factory _SensorReading({
+    required final DateTime timestamp,
+    final Watts? power,
+    final Cadence? cadence,
+    final HeartRate? heartRate,
+    final Speed? speed,
+    final Distance? distance,
+    final Grade? grade,
+  }) = _$SensorReadingImpl;
 
   @override
   DateTime get timestamp;
@@ -311,7 +385,12 @@ abstract class _SensorReading implements SensorReading {
   @override
   Distance? get distance;
   @override
-  @JsonKey(ignore: true)
-  _$$_SensorReadingCopyWith<_$_SensorReading> get copyWith =>
+  Grade? get grade;
+
+  /// Create a copy of SensorReading
+  /// with the given fields replaced by the non-null parameter values.
+  @override
+  @JsonKey(includeFromJson: false, includeToJson: false)
+  _$$SensorReadingImplCopyWith<_$SensorReadingImpl> get copyWith =>
       throw _privateConstructorUsedError;
 }

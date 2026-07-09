@@ -47,6 +47,8 @@ class RecordingEngine {
   SensorReading? _latestReading;
   SensorReading? get latestReading => _latestReading;
 
+  Grade? _latestGrade;
+
   /// Number of laps recorded so far (including the auto-closed final lap on stop).
   int get lapCount => _laps.length;
 
@@ -58,6 +60,7 @@ class RecordingEngine {
   final _laps = <Lap>[];
 
   StreamSubscription<SensorEvent>? _sensorSubscription;
+  StreamSubscription<SimulationEvent>? _simulationSubscription;
   Timer? _sampleTimer;
 
   // Pause tracking.
@@ -100,8 +103,17 @@ class RecordingEngine {
     _latestReading = null;
 
     // Listen to sensor events — buffer the latest reading.
+    _latestGrade = null;
     _sensorSubscription = _eventBus.on<SensorEvent>().listen((event) {
       _latestReading = event.reading;
+    });
+
+    // Listen to route simulation events — buffer the latest grade so SIM
+    // rides carry gradient in their recorded readings.
+    _simulationSubscription = _eventBus.on<SimulationEvent>().listen((event) {
+      if (event is SimulationPositionChanged) {
+        _latestGrade = event.point.grade;
+      }
     });
 
     // 1 Hz sample timer.
@@ -203,6 +215,8 @@ class RecordingEngine {
     _sampleTimer = null;
     await _sensorSubscription?.cancel();
     _sensorSubscription = null;
+    await _simulationSubscription?.cancel();
+    _simulationSubscription = null;
 
     final now = DateTime.now();
 
@@ -254,6 +268,7 @@ class RecordingEngine {
   Future<void> dispose() async {
     _sampleTimer?.cancel();
     await _sensorSubscription?.cancel();
+    await _simulationSubscription?.cancel();
     await _stateController.close();
   }
 
@@ -275,6 +290,7 @@ class RecordingEngine {
         heartRate: reading.heartRate,
         speed: reading.speed,
         distance: reading.distance,
+        grade: _latestGrade,
       );
       _readings.add(stamped);
     }

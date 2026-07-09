@@ -62,7 +62,10 @@ class FitEncoder {
   // ---------------------------------------------------------------------------
 
   /// Encodes [ride] into a conformant FIT binary file.
-  Uint8List encode(Ride ride) {
+  ///
+  /// [ftp] is used to compute threshold_power / TSS / IF in the session
+  /// message; falls back to 200 W when not provided.
+  Uint8List encode(Ride ride, {Watts? ftp}) {
     final data = BytesBuilder();
 
     final startTs = _garminTs(ride.startTime);
@@ -90,7 +93,7 @@ class FitEncoder {
 
     // 5. session (local type 4)
     _defineSession(data);
-    _writeSession(data, ride, startTs, endTs);
+    _writeSession(data, ride, startTs, endTs, ftp: ftp);
 
     // 6. activity (local type 5)
     _defineActivity(data);
