@@ -21,7 +21,7 @@ if (hasReleaseKeystore) {
 
 android {
     namespace = "com.openbike.open_bike"
-    compileSdk = 35
+    compileSdk = 36
     ndkVersion = flutter.ndkVersion
 
     compileOptions {
