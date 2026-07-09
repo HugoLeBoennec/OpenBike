@@ -1,7 +1,7 @@
 ---
 phase: P2
 title: Connectivity — multi-sensor pairing, background recording, Windows BLE
-status: NOT_STARTED
+status: IN_PROGRESS
 depends_on: [P1]
 validation:
   - flutter analyze
