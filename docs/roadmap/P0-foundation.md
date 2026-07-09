@@ -1,7 +1,7 @@
 ---
 phase: P0
 title: Foundation — CI green, repo hygiene, correctness fixes
-status: NOT_STARTED
+status: IN_PROGRESS
 depends_on: []
 validation:
   - flutter analyze
