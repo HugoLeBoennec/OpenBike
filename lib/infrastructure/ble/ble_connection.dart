@@ -42,7 +42,14 @@ class BleConnection {
     _stateController.add(BleConnectionState.connecting);
 
     try {
-      await _device.connect(timeout: timeout, autoConnect: false);
+      // OpenBike is nonprofit/open-source use under the FlutterBluePlus
+      // License — revisit before any commercial/monetized release (see
+      // docs/roadmap/P10-monetization-optional.md).
+      await _device.connect(
+        license: License.nonprofit,
+        timeout: timeout,
+        autoConnect: false,
+      );
       _log.info('[BLE-DEBUG] GATT connected to ${_device.remoteId}');
 
       // Listen for platform-level disconnection.
