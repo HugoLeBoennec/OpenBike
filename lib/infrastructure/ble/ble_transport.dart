@@ -30,13 +30,26 @@ class BleScannedDevice {
 /// BLE transport layer — scanning, connection management, and auto-reconnect
 /// with exponential backoff.
 ///
-/// Manages the lifecycle of a single active connection at a time.
+/// Holds **concurrent connections** keyed by device id, so a trainer, an HR
+/// strap, and a power meter can all be connected at once, each with its own
+/// independent auto-reconnect lifecycle. [connectToDevice] /
+/// [activeConnection] / [disconnectDevice] remain as a single-connection
+/// convenience API for callers (like [FtmsDevicePlugin]) that only manage
+/// one device at a time — they operate on the most-recently-connected device
+/// without disturbing other concurrent connections.
 class BleTransport {
   BleTransport({
     BlePermissionHandler? permissionHandler,
-  }) : _permissionHandler = permissionHandler ?? BlePermissionHandler();
+    BleConnection Function(String deviceId)? connectionFactory,
+    Duration Function(int attempt)? backoffCalculator,
+  })  : _permissionHandler = permissionHandler ?? BlePermissionHandler(),
+        _connectionFactory = connectionFactory ??
+            ((deviceId) => BleConnection(BluetoothDevice.fromId(deviceId))),
+        _backoffCalculator = backoffCalculator ?? _defaultBackoff;
 
   final BlePermissionHandler _permissionHandler;
+  final BleConnection Function(String deviceId) _connectionFactory;
+  final Duration Function(int attempt) _backoffCalculator;
 
   // ---------------------------------------------------------------------------
   // State
@@ -181,133 +194,172 @@ class BleTransport {
   }
 
   // ---------------------------------------------------------------------------
-  // Connection management
+  // Connection management — concurrent, keyed by device id
   // ---------------------------------------------------------------------------
 
-  BleConnection? _activeConnection;
-  String? _activeDeviceId;
-  StreamSubscription? _connectionStateSub;
+  final Map<String, BleConnection> _connections = {};
+  final Map<String, StreamSubscription> _connectionStateSubs = {};
+  final Map<String, int> _reconnectAttempts = {};
 
-  /// The currently active connection, or `null`.
-  BleConnection? get activeConnection => _activeConnection;
+  /// The device id of the most-recently connected device, for the
+  /// single-connection convenience API ([activeConnection]/[disconnectDevice]).
+  String? _lastConnectedDeviceId;
+
+  /// All currently-tracked connections, keyed by device id. A connection
+  /// remains in this map while a reconnect attempt is in progress.
+  Map<String, BleConnection> get connections => Map.unmodifiable(_connections);
+
+  /// The most-recently connected device's connection, or `null`.
+  ///
+  /// Convenience accessor for single-device callers — does not reflect
+  /// other concurrently-connected devices; use [connections] or
+  /// [connectionFor] for that.
+  BleConnection? get activeConnection =>
+      _lastConnectedDeviceId != null
+          ? _connections[_lastConnectedDeviceId]
+          : null;
+
+  /// Returns the connection for [deviceId], or `null` if not connected.
+  BleConnection? connectionFor(String deviceId) => _connections[deviceId];
+
+  /// Whether [deviceId] is currently tracked as connected (or reconnecting).
+  bool isConnected(String deviceId) => _connections.containsKey(deviceId);
+
+  /// Whether to auto-reconnect on connection loss.
+  bool autoReconnect = true;
 
   /// Connects to the device with [deviceId] and returns a [BleConnection].
   ///
-  /// If already connected to a different device, disconnects first.
+  /// Does **not** disconnect other concurrently-connected devices — multiple
+  /// roles (trainer, HR strap, power meter) can be connected simultaneously.
+  /// Reconnecting to a device id that is already connected replaces that
+  /// single connection.
   Future<BleConnection> connectToDevice(String deviceId) async {
-    if (_activeConnection != null && _activeDeviceId != deviceId) {
-      _log.info('Disconnecting from $_activeDeviceId before new connection');
-      await disconnectDevice();
+    if (_connections.containsKey(deviceId)) {
+      await disconnectDeviceId(deviceId);
     }
 
     _setState(BleTransportState.connecting);
-    _activeDeviceId = deviceId;
-    _reconnectAttempt = 0;
+    _lastConnectedDeviceId = deviceId;
+    _reconnectAttempts[deviceId] = 0;
 
-    final device = BluetoothDevice.fromId(deviceId);
-    final connection = BleConnection(device);
+    final connection = await _openConnection(deviceId);
+    _connections[deviceId] = connection;
 
-    _connectionStateSub = connection.stateStream.listen((connState) {
+    _setState(BleTransportState.connected);
+    return connection;
+  }
+
+  Future<BleConnection> _openConnection(String deviceId) async {
+    final connection = _connectionFactory(deviceId);
+
+    _connectionStateSubs[deviceId]?.cancel();
+    _connectionStateSubs[deviceId] = connection.stateStream.listen((connState) {
       if (connState == BleConnectionState.disconnected &&
-          _activeDeviceId == deviceId &&
+          _connections.containsKey(deviceId) &&
           autoReconnect) {
-        _log.info('Connection lost — starting auto-reconnect');
+        _log.info('Connection to $deviceId lost — starting auto-reconnect');
         _attemptReconnect(deviceId);
       }
     });
 
     await connection.connect();
-
-    _activeConnection = connection;
-    _setState(BleTransportState.connected);
     return connection;
   }
 
-  /// Disconnects the current device.
-  Future<void> disconnectDevice() async {
-    autoReconnect = false;
-    await _connectionStateSub?.cancel();
-    _connectionStateSub = null;
+  /// Disconnects a single device by id, leaving other connections untouched.
+  Future<void> disconnectDeviceId(String deviceId) async {
+    await _connectionStateSubs.remove(deviceId)?.cancel();
 
-    if (_activeConnection != null) {
-      await _activeConnection!.disconnect();
-      _activeConnection!.dispose();
-      _activeConnection = null;
+    final connection = _connections.remove(deviceId);
+    if (connection != null) {
+      await connection.disconnect();
+      connection.dispose();
+    }
+    _reconnectAttempts.remove(deviceId);
+
+    if (_lastConnectedDeviceId == deviceId) {
+      _lastConnectedDeviceId =
+          _connections.keys.isNotEmpty ? _connections.keys.last : null;
     }
 
-    _activeDeviceId = null;
-    _reconnectAttempt = 0;
-    _setState(BleTransportState.idle);
+    if (_connections.isEmpty) {
+      _setState(BleTransportState.idle);
+    }
+  }
+
+  /// Disconnects the most-recently connected device (single-connection
+  /// convenience API). Other concurrent connections are left untouched.
+  Future<void> disconnectDevice() async {
+    final deviceId = _lastConnectedDeviceId;
+    if (deviceId == null) {
+      _setState(BleTransportState.idle);
+      return;
+    }
+    await disconnectDeviceId(deviceId);
+  }
+
+  /// Disconnects every currently-tracked connection.
+  Future<void> disconnectAll() async {
+    for (final id in _connections.keys.toList()) {
+      await disconnectDeviceId(id);
+    }
   }
 
   // ---------------------------------------------------------------------------
-  // Auto-reconnect with exponential backoff
+  // Auto-reconnect with exponential backoff (independent per device)
   // ---------------------------------------------------------------------------
-
-  /// Whether to auto-reconnect on connection loss.
-  bool autoReconnect = true;
 
   /// Maximum number of reconnection attempts before giving up.
   static const int maxReconnectAttempts = 5;
 
-  /// Initial backoff delay.
-  static const Duration _initialBackoff = Duration(seconds: 1);
-
-  /// Maximum backoff delay.
-  static const Duration _maxBackoff = Duration(seconds: 30);
-
-  int _reconnectAttempt = 0;
-
   Future<void> _attemptReconnect(String deviceId) async {
     if (!autoReconnect) return;
-    if (_reconnectAttempt >= maxReconnectAttempts) {
+    final attempt = (_reconnectAttempts[deviceId] ?? 0) + 1;
+
+    if (attempt > maxReconnectAttempts) {
       _log.warning('Max reconnect attempts ($maxReconnectAttempts) reached '
-          '— giving up');
-      _setState(BleTransportState.idle);
-      _activeDeviceId = null;
+          'for $deviceId — giving up');
+      await _connectionStateSubs.remove(deviceId)?.cancel();
+      _connections.remove(deviceId);
+      _reconnectAttempts.remove(deviceId);
+      if (_lastConnectedDeviceId == deviceId) {
+        _lastConnectedDeviceId =
+            _connections.keys.isNotEmpty ? _connections.keys.last : null;
+      }
+      if (_connections.isEmpty) _setState(BleTransportState.idle);
       return;
     }
 
+    _reconnectAttempts[deviceId] = attempt;
     _setState(BleTransportState.reconnecting);
-    _reconnectAttempt++;
 
-    final backoff = _calculateBackoff(_reconnectAttempt);
-    _log.info('Reconnect attempt $_reconnectAttempt/$maxReconnectAttempts '
-        '— waiting ${backoff.inMilliseconds}ms');
+    final backoff = _backoffCalculator(attempt);
+    _log.info('Reconnect attempt $attempt/$maxReconnectAttempts for '
+        '$deviceId — waiting ${backoff.inMilliseconds}ms');
 
     await Future<void>.delayed(backoff);
 
-    if (!autoReconnect || _activeDeviceId != deviceId) return;
+    if (!autoReconnect || !_connections.containsKey(deviceId)) return;
 
     try {
-      final device = BluetoothDevice.fromId(deviceId);
-      final connection = BleConnection(device);
-      await connection.connect();
-
-      _activeConnection = connection;
-      _reconnectAttempt = 0;
+      final connection = await _openConnection(deviceId);
+      _connections[deviceId] = connection;
+      _reconnectAttempts[deviceId] = 0;
       _setState(BleTransportState.connected);
       _log.info('Reconnected to $deviceId');
-
-      // Re-subscribe to connection state for future losses.
-      await _connectionStateSub?.cancel();
-      _connectionStateSub = connection.stateStream.listen((connState) {
-        if (connState == BleConnectionState.disconnected &&
-            _activeDeviceId == deviceId &&
-            autoReconnect) {
-          _attemptReconnect(deviceId);
-        }
-      });
     } catch (e) {
-      _log.warning('Reconnect attempt $_reconnectAttempt failed: $e');
-      _attemptReconnect(deviceId);
+      _log.warning('Reconnect attempt $attempt for $deviceId failed: $e');
+      unawaited(_attemptReconnect(deviceId));
     }
   }
 
-  Duration _calculateBackoff(int attempt) {
+  static Duration _defaultBackoff(int attempt) {
     // Exponential backoff: 1s, 2s, 4s, 8s, 16s — capped at 30s.
-    final ms = _initialBackoff.inMilliseconds * pow(2, attempt - 1);
-    final capped = min(ms.toInt(), _maxBackoff.inMilliseconds);
+    const initial = Duration(seconds: 1);
+    const max = Duration(seconds: 30);
+    final ms = initial.inMilliseconds * pow(2, attempt - 1);
+    final capped = min(ms.toInt(), max.inMilliseconds);
     return Duration(milliseconds: capped);
   }
 
@@ -325,6 +377,9 @@ class BleTransport {
     if (serviceUuids.contains(BleConstants.cscService)) {
       return DeviceProtocol.bleCsc;
     }
+    if (serviceUuids.contains(BleConstants.hrsService)) {
+      return DeviceProtocol.bleHr;
+    }
     return DeviceProtocol.blePower; // fallback
   }
 
@@ -336,7 +391,7 @@ class BleTransport {
   Future<void> dispose() async {
     autoReconnect = false;
     await stopScan();
-    await disconnectDevice();
+    await disconnectAll();
     await _stateController.close();
     await _scanResultsController.close();
   }

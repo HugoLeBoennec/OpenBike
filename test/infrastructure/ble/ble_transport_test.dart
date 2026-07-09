@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:flutter_blue_plus/flutter_blue_plus.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:mocktail/mocktail.dart';
@@ -13,6 +15,85 @@ import 'package:open_bike/infrastructure/ble/ble_transport.dart';
 class MockPermissionHandler extends Mock implements BlePermissionHandler {}
 
 class MockBluetoothDevice extends Mock implements BluetoothDevice {}
+
+// ---------------------------------------------------------------------------
+// Fakes — a BleConnection double that never touches a real platform channel,
+// used via BleTransport's injectable connectionFactory seam to test
+// multi-connection lifecycle without real BLE hardware.
+// ---------------------------------------------------------------------------
+
+class FakeBleConnection extends BleConnection {
+  FakeBleConnection(String deviceId) : super(_mockDeviceFor(deviceId));
+
+  static BluetoothDevice _mockDeviceFor(String deviceId) {
+    final mock = MockBluetoothDevice();
+    when(() => mock.remoteId).thenReturn(DeviceIdentifier(deviceId));
+    return mock;
+  }
+
+  /// Set to `true` to make the next [connect] call throw (simulates a failed
+  /// reconnect attempt).
+  bool failNextConnect = false;
+
+  int connectCalls = 0;
+  int disconnectCalls = 0;
+
+  final _stateController = StreamController<BleConnectionState>.broadcast();
+
+  @override
+  Stream<BleConnectionState> get stateStream => _stateController.stream;
+
+  @override
+  Future<void> connect({Duration timeout = const Duration(seconds: 15)}) async {
+    connectCalls++;
+    if (failNextConnect) {
+      throw Exception('simulated connect failure');
+    }
+  }
+
+  @override
+  Future<void> disconnect() async {
+    disconnectCalls++;
+    _stateController.add(BleConnectionState.disconnecting);
+    _stateController.add(BleConnectionState.disconnected);
+  }
+
+  /// Simulates the peripheral dropping the connection unexpectedly (as
+  /// opposed to a deliberate [disconnect] call).
+  void simulateUnexpectedDrop() {
+    _stateController.add(BleConnectionState.disconnected);
+  }
+
+  @override
+  void dispose() {
+    _stateController.close();
+  }
+}
+
+/// Tracks every [FakeBleConnection] created for each device id, so tests can
+/// inspect reconnect attempts (each attempt creates a fresh instance, mirroring
+/// how [BleTransport] opens a brand new [BleConnection] per attempt).
+class FakeConnectionFactory {
+  final Map<String, List<FakeBleConnection>> instancesByDevice = {};
+
+  /// Device ids whose *next created instance* should fail to connect.
+  final Set<String> failNextFor = {};
+
+  BleConnection call(String deviceId) {
+    final conn = FakeBleConnection(deviceId);
+    if (failNextFor.contains(deviceId)) {
+      conn.failNextConnect = true;
+    }
+    instancesByDevice.putIfAbsent(deviceId, () => []).add(conn);
+    return conn;
+  }
+
+  int attemptCount(String deviceId) =>
+      instancesByDevice[deviceId]?.length ?? 0;
+
+  FakeBleConnection? latest(String deviceId) =>
+      instancesByDevice[deviceId]?.last;
+}
 
 // ---------------------------------------------------------------------------
 // Tests
@@ -188,6 +269,126 @@ void main() {
       await expectation;
 
       connection.dispose();
+    });
+  });
+
+  group('BleTransport — multi-connection lifecycle', () {
+    late FakeConnectionFactory factory;
+    late BleTransport transport;
+
+    setUp(() {
+      factory = FakeConnectionFactory();
+      transport = BleTransport(
+        permissionHandler: mockPermissions,
+        connectionFactory: factory.call,
+        // Zero backoff so reconnect tests run fast.
+        backoffCalculator: (_) => Duration.zero,
+      );
+    });
+
+    tearDown(() async {
+      await transport.dispose();
+    });
+
+    test('connects to a trainer and an HRM simultaneously', () async {
+      await transport.connectToDevice('trainer-1');
+      await transport.connectToDevice('hrm-1');
+
+      expect(transport.connections.keys, containsAll(['trainer-1', 'hrm-1']));
+      expect(transport.connections, hasLength(2));
+      expect(transport.isConnected('trainer-1'), isTrue);
+      expect(transport.isConnected('hrm-1'), isTrue);
+      expect(factory.attemptCount('trainer-1'), 1);
+      expect(factory.attemptCount('hrm-1'), 1);
+    });
+
+    test('activeConnection reflects the most-recently connected device',
+        () async {
+      await transport.connectToDevice('trainer-1');
+      await transport.connectToDevice('hrm-1');
+
+      expect(transport.activeConnection, transport.connectionFor('hrm-1'));
+    });
+
+    test('disconnecting one device leaves the other connected', () async {
+      await transport.connectToDevice('trainer-1');
+      await transport.connectToDevice('hrm-1');
+
+      await transport.disconnectDeviceId('trainer-1');
+
+      expect(transport.isConnected('trainer-1'), isFalse);
+      expect(transport.isConnected('hrm-1'), isTrue);
+      expect(factory.latest('trainer-1')!.disconnectCalls, 1);
+      expect(factory.latest('hrm-1')!.disconnectCalls, 0);
+    });
+
+    test('manual disconnect does not trigger auto-reconnect', () async {
+      await transport.connectToDevice('trainer-1');
+      await transport.disconnectDeviceId('trainer-1');
+
+      // Give any stray reconnect timers a chance to fire.
+      await Future<void>.delayed(const Duration(milliseconds: 50));
+
+      expect(transport.isConnected('trainer-1'), isFalse);
+      expect(factory.attemptCount('trainer-1'), 1);
+    });
+
+    test(
+        'unexpected drop on one device triggers its own reconnect without '
+        'touching the other device', () async {
+      await transport.connectToDevice('trainer-1');
+      await transport.connectToDevice('hrm-1');
+
+      factory.latest('trainer-1')!.simulateUnexpectedDrop();
+
+      // Allow the zero-delay reconnect timer to fire.
+      await Future<void>.delayed(const Duration(milliseconds: 50));
+
+      expect(transport.isConnected('trainer-1'), isTrue);
+      expect(factory.attemptCount('trainer-1'), 2); // initial + 1 reconnect
+      expect(factory.attemptCount('hrm-1'), 1); // untouched
+    });
+
+    test('gives up after maxReconnectAttempts and removes only that device',
+        () async {
+      await transport.connectToDevice('trainer-1');
+      await transport.connectToDevice('hrm-1');
+
+      factory.failNextFor.add('trainer-1');
+      factory.latest('trainer-1')!.simulateUnexpectedDrop();
+
+      // Each retry also fails (failNextFor keeps every new instance failing).
+      await Future<void>.delayed(const Duration(milliseconds: 200));
+
+      expect(transport.isConnected('trainer-1'), isFalse);
+      expect(
+        factory.attemptCount('trainer-1'),
+        1 + BleTransport.maxReconnectAttempts,
+      );
+      expect(transport.isConnected('hrm-1'), isTrue);
+    });
+
+    test('reconnecting to an already-connected device replaces it cleanly',
+        () async {
+      await transport.connectToDevice('trainer-1');
+      final first = factory.latest('trainer-1');
+
+      await transport.connectToDevice('trainer-1');
+      final second = factory.latest('trainer-1');
+
+      expect(first, isNot(same(second)));
+      expect(first!.disconnectCalls, 1);
+      expect(transport.connections, hasLength(1));
+    });
+
+    test('disconnectAll clears every tracked connection', () async {
+      await transport.connectToDevice('trainer-1');
+      await transport.connectToDevice('hrm-1');
+
+      await transport.disconnectAll();
+
+      expect(transport.connections, isEmpty);
+      expect(transport.state, BleTransportState.idle);
     });
   });
 }

@@ -52,7 +52,8 @@ class SensorDevicePlugin implements DevicePlugin {
   @override
   bool canHandle(TrainerDevice device) {
     return device.protocol == DeviceProtocol.blePower ||
-        device.protocol == DeviceProtocol.bleCsc;
+        device.protocol == DeviceProtocol.bleCsc ||
+        device.protocol == DeviceProtocol.bleHr;
   }
 
   @override

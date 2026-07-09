@@ -587,6 +587,8 @@ String _protocolLabel(String protocol) {
       return 'CPS';
     case 'bleCsc':
       return 'CSC';
+    case 'bleHr':
+      return 'HR';
     case 'antFec':
       return 'ANT+';
     case 'simulator':
@@ -604,6 +606,8 @@ IconData _deviceIcon(String protocol) {
       return Icons.bolt;
     case 'bleCsc':
       return Icons.rotate_right;
+    case 'bleHr':
+      return Icons.favorite;
     case 'simulator':
       return Icons.computer;
     default:

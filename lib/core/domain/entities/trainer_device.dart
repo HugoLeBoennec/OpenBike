@@ -2,7 +2,7 @@ import 'package:freezed_annotation/freezed_annotation.dart';
 
 part 'trainer_device.freezed.dart';
 
-enum DeviceProtocol { bleFtms, antFec, blePower, bleCsc, simulator }
+enum DeviceProtocol { bleFtms, antFec, blePower, bleCsc, bleHr, simulator }
 enum ControlMode { erg, simulation, resistance }
 
 @freezed
