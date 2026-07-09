@@ -1,5 +1,4 @@
-<manifest xmlns:android="http://schemas.android.com/apk/res/android"
-    package="com.openbike.open_bike">
+<manifest xmlns:android="http://schemas.android.com/apk/res/android">
    <application
         android:label="open_bike"
         android:name="${applicationName}"

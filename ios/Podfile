@@ -4,6 +4,11 @@
 # CocoaPods analytics sends network stats synchronously affecting flutter build latency.
 ENV['COCOAPODS_DISABLE_STATS'] = 'true'
 
+# Some Swift pods (sqlite3_flutter_libs -> sqlite3, DKPhotoGallery -> SDWebImage)
+# don't define Clang modules, which static-library integration requires when
+# importing them from Swift.
+use_modular_headers!
+
 project 'Runner', {
   'Debug' => :debug,
   'Profile' => :release,
