@@ -1,7 +1,7 @@
 ---
 phase: P1
 title: Platform config — permissions, signing, deep links, branding
-status: NOT_STARTED
+status: DONE
 depends_on: [P0]
 validation:
   - flutter analyze
@@ -22,7 +22,7 @@ runtime permissions — the manifests just never declared them.
 ## Tasks
 
 ### 1. Android (`android/app/src/main/AndroidManifest.xml`, `android/app/build.gradle.kts`)
-- [ ] Declare permissions:
+- [x] Declare permissions:
       ```xml
       <uses-permission android:name="android.permission.BLUETOOTH_SCAN"
                        android:usesPermissionFlags="neverForLocation" />
@@ -35,42 +35,42 @@ runtime permissions — the manifests just never declared them.
       <uses-permission android:name="android.permission.INTERNET" />
       ```
       (Foreground-service permissions are added in P2 with the service itself.)
-- [ ] App label → `OpenBike` (currently lowercase `open_bike`).
-- [ ] Pin `minSdkVersion 23` and set explicit `targetSdkVersion`/`compileSdkVersion`
+- [x] App label → `OpenBike` (currently lowercase `open_bike`).
+- [x] Pin `minSdkVersion 23` and set explicit `targetSdkVersion`/`compileSdkVersion`
       meeting current Play requirements (API 34+), instead of `flutter.minSdkVersion`.
-- [ ] Release signing: keystore loaded from `android/key.properties` (gitignored) with
+- [x] Release signing: keystore loaded from `android/key.properties` (gitignored) with
       graceful fallback to debug signing when absent; document keystore generation in
       `docs/release/android-signing.md`.
       **Accept:** `flutter build apk --debug` passes in CI; manifest contains the
       permissions above.
 
 ### 2. iOS (`ios/Runner/Info.plist`)
-- [ ] Add `NSBluetoothAlwaysUsageDescription` (+ `NSBluetoothPeripheralUsageDescription`
+- [x] Add `NSBluetoothAlwaysUsageDescription` (+ `NSBluetoothPeripheralUsageDescription`
       for older iOS): "OpenBike uses Bluetooth to connect to your smart trainer, heart
       rate monitor, and cycling sensors."
-- [ ] Add `UIBackgroundModes` → `bluetooth-central` (keeps sensor data flowing when
+- [x] Add `UIBackgroundModes` → `bluetooth-central` (keeps sensor data flowing when
       backgrounded; recording behavior itself is P2).
-- [ ] Display name `OpenBike`; set `CFBundleShortVersionString`/build from pubspec as
+- [x] Display name `OpenBike`; set `CFBundleShortVersionString`/build from pubspec as
       usual; minimum iOS 13.0 in the Podfile/project if not already.
       **Accept:** `flutter build ios --no-codesign` passes in CI; plist contains the keys.
 
 ### 3. Deep links for OAuth (`openbike://` — constant renamed in P0)
-- [ ] Android: `intent-filter` with `android:scheme="openbike"` on MainActivity.
-- [ ] iOS: `CFBundleURLTypes` with scheme `openbike`.
-- [ ] macOS: `CFBundleURLTypes` in `macos/Runner/Info.plist` (desktop OAuth may instead
+- [x] Android: `intent-filter` with `android:scheme="openbike"` on MainActivity.
+- [x] iOS: `CFBundleURLTypes` with scheme `openbike`.
+- [x] macOS: `CFBundleURLTypes` in `macos/Runner/Info.plist` (desktop OAuth may instead
       use loopback redirect — P6 decides; register the scheme anyway, it is harmless).
       **Accept:** schemes present in all three files. (End-to-end callback handling is
       wired in P6.)
 
 ### 4. macOS / Windows / Linux hygiene
-- [ ] `macos/Runner/Info.plist`: fix `NSBluetoothAlwaysUsageDescription` — it currently
+- [x] `macos/Runner/Info.plist`: fix `NSBluetoothAlwaysUsageDescription` — it currently
       says "**PedalHub** needs Bluetooth…" → OpenBike wording. Verify entitlements keep
       `com.apple.security.device.bluetooth` (already present in both
       `DebugProfile.entitlements` and `Release.entitlements`).
-- [ ] Windows/Linux: set window title and executable/app name to `OpenBike` in
+- [x] Windows/Linux: set window title and executable/app name to `OpenBike` in
       `windows/runner/main.cpp` and `linux/my_application.cc` if they still say
       `open_bike`.
-- [ ] Add `windows` (and optionally `macos` review) targets to
+- [x] Add `windows` (and optionally `macos` review) targets to
       `flutter_launcher_icons.yaml` and regenerate icons
       (`dart run flutter_launcher_icons`). Source assets exist at `assets/icon/`.
       **Accept:** all desktop builds pass in CI; `grep -ri pedalhub .` (excluding
