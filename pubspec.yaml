@@ -61,6 +61,9 @@ dependencies:
   # Screen wakelock
   wakelock_plus: ^1.2.8
 
+  # Android foreground service for background recording
+  flutter_foreground_task: ^9.2.2
+
 
 dev_dependencies:
   flutter_test:

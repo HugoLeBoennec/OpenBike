@@ -60,6 +60,8 @@ class _RideScreenState extends ConsumerState<RideScreen> {
     // Activate history updaters so ring buffers receive live data
     ref.watch(powerHistoryUpdaterProvider);
     ref.watch(hrHistoryUpdaterProvider);
+    // Starts/stops the Android foreground service with recording state.
+    ref.watch(backgroundRecordingServiceProvider);
 
     return PopScope(
       canPop: false,

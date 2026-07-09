@@ -1,4 +1,5 @@
 import 'dart:async';
+import 'dart:io' show Platform;
 
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:logging/logging.dart';
@@ -9,12 +10,14 @@ import '../../core/domain/ports/trainer_port.dart';
 import '../../core/domain/value_objects/value_objects.dart';
 import '../../core/events/app_event.dart';
 import '../../core/events/event_bus.dart';
+import '../../core/application/services/background_recording_service.dart';
 import '../../core/application/services/connection_monitor.dart';
 import '../../core/application/services/device_pairing_service.dart';
 import '../../core/application/services/services.dart';
 import '../../infrastructure/ant/ant_usb_transport.dart';
 import '../../infrastructure/ble/ble_transport.dart';
 import '../../infrastructure/ble/sensors/sensor_fusion.dart';
+import '../../infrastructure/foreground/foreground_service_controller.dart';
 import '../../infrastructure/preferences/app_preferences.dart';
 import '../../infrastructure/simulator/simulator.dart';
 import '../../infrastructure/persistence/persistence.dart';
@@ -92,6 +95,30 @@ final recordingEngineProvider = Provider<RecordingEngine>((ref) {
 
 final recordingStateProvider = StreamProvider<RecordingState>((ref) {
   return ref.watch(recordingEngineProvider).stateStream;
+});
+
+// ---------------------------------------------------------------------------
+// Background recording (Android foreground service)
+// ---------------------------------------------------------------------------
+
+/// Android uses a real foreground service; every other platform gets a
+/// no-op (iOS relies on the `bluetooth-central` background mode instead).
+final foregroundServiceControllerProvider =
+    Provider<ForegroundServiceController>((ref) {
+  if (Platform.isAndroid) return FlutterForegroundTaskController();
+  return const NoopForegroundServiceController();
+});
+
+/// Starts/stops the foreground service with [RecordingEngine]'s lifecycle.
+/// Watch this once from [RideScreen] so it's alive before recording starts.
+final backgroundRecordingServiceProvider =
+    Provider<BackgroundRecordingService>((ref) {
+  final service = BackgroundRecordingService(
+    recordingEngine: ref.watch(recordingEngineProvider),
+    controller: ref.watch(foregroundServiceControllerProvider),
+  );
+  ref.onDispose(service.dispose);
+  return service;
 });
 
 // ---------------------------------------------------------------------------
