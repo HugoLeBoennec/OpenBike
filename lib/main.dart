@@ -12,6 +12,7 @@ import 'core/application/services/physics_engine.dart';
 import 'core/events/event_bus.dart';
 import 'infrastructure/ble/ble_transport.dart';
 import 'infrastructure/ble/ftms/ftms_device_plugin.dart';
+import 'infrastructure/ble/sensors/sensor_device_plugin.dart';
 import 'infrastructure/files/erg_parser.dart';
 import 'infrastructure/files/zwo_parser.dart';
 import 'infrastructure/persistence/app_database.dart';
@@ -56,6 +57,8 @@ void main() async {
         appPreferencesProvider.overrideWithValue(appPrefs),
         // Seed saved device IDs from preferences.
         savedDeviceIdsProvider.overrideWith((ref) => appPrefs.savedDeviceIds),
+        // Seed per-role paired device assignments from preferences.
+        pairedDevicesProvider.overrideWith((ref) => appPrefs.pairedDevices),
         // Seed profile from DB so zones/FTP are available immediately.
         if (savedProfile != null)
           userProfileProvider.overrideWith((ref) => savedProfile),
@@ -74,7 +77,17 @@ void _registerPlugins(
   // ---- Device plugins ----
 
   // BLE FTMS — always available (shares BleTransport with bleTransportProvider).
+  // Registered first: PluginRegistry.getPluginForDevice() picks the first
+  // canHandle() match, so FTMS trainers must be claimed here before the
+  // sensor plugin below gets a chance to see them.
   registry.registerDevice(FtmsDevicePlugin(
+    transport: bleTransport,
+    eventBus: eventBus,
+  ));
+
+  // BLE standalone sensors (HR straps, power meters, speed/cadence) — always
+  // available. Only handles non-FTMS protocols (see SensorDevicePlugin.canHandle).
+  registry.registerDevice(SensorDevicePlugin(
     transport: bleTransport,
     eventBus: eventBus,
   ));

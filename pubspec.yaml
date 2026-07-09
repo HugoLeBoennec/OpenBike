@@ -23,8 +23,11 @@ dependencies:
   drift: ^2.20.3
   sqlite3_flutter_libs: ^0.5.24
 
-  # BLE
-  flutter_blue_plus: ^1.36.8
+  # BLE — 2.x adds native Windows (winrt) + Linux (BlueZ) platform backends,
+  # gated internally by the plugin itself via federated dependencies (no
+  # separate flutter_blue_plus_windows/universal_ble package or app-level
+  # backend-selection code needed). See docs/roadmap/P2-connectivity.md.
+  flutter_blue_plus: ^2.3.10
 
   # Permissions
   permission_handler: ^11.3.1
@@ -60,6 +63,9 @@ dependencies:
 
   # Screen wakelock
   wakelock_plus: ^1.2.8
+
+  # Android foreground service for background recording
+  flutter_foreground_task: ^9.2.2
 
 
 dev_dependencies:

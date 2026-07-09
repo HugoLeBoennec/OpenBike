@@ -18,6 +18,9 @@ class HomeScreen extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
+    // One-shot: attempts to reconnect every saved role pairing.
+    ref.watch(autoReconnectPairedRolesProvider);
+
     return Scaffold(
       backgroundColor: Colors.black,
       appBar: AppBar(

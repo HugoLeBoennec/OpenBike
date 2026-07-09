@@ -4,7 +4,9 @@ import 'package:go_router/go_router.dart';
 import 'package:wakelock_plus/wakelock_plus.dart';
 
 import '../../core/application/services/recording_engine.dart';
+import '../../core/domain/entities/entities.dart';
 import '../state/providers.dart';
+import 'sensor_role_labels.dart';
 
 /// Header bar showing the ride timer and control buttons (pause, lap, stop).
 class RideHeaderBar extends ConsumerWidget {
@@ -54,6 +56,9 @@ class RideHeaderBar extends ConsumerWidget {
               ),
             ),
           ),
+
+          const _SensorStatusDots(),
+          const SizedBox(width: 12),
 
           // Control buttons
           if (isActive) ...[
@@ -151,5 +156,57 @@ class RideHeaderBar extends ConsumerWidget {
     final m = (d.inMinutes % 60).toString().padLeft(2, '0');
     final s = (d.inSeconds % 60).toString().padLeft(2, '0');
     return '$h:$m:$s';
+  }
+}
+
+/// Small status dots for the trainer/HR/power roles: grey when nothing is
+/// paired to that role, green when connected, red when the paired device
+/// has disconnected.
+class _SensorStatusDots extends ConsumerWidget {
+  const _SensorStatusDots();
+
+  static const _roles = [
+    SensorRole.trainer,
+    SensorRole.heartRate,
+    SensorRole.power,
+  ];
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final paired = ref.watch(pairedDevicesProvider);
+    final status = ref.watch(roleConnectionStatusProvider);
+
+    return Row(
+      mainAxisSize: MainAxisSize.min,
+      children: [
+        for (final role in _roles) _dot(role, paired, status),
+      ],
+    );
+  }
+
+  Widget _dot(
+    SensorRole role,
+    PairedDevices paired,
+    Map<SensorRole, bool> status,
+  ) {
+    final isPaired = paired.forRole(role) != null;
+    final isConnected = status[role] ?? true;
+
+    final Color color;
+    if (!isPaired) {
+      color = Colors.white12;
+    } else if (isConnected) {
+      color = Colors.greenAccent;
+    } else {
+      color = Colors.redAccent;
+    }
+
+    return Padding(
+      padding: const EdgeInsets.only(left: 4),
+      child: Tooltip(
+        message: roleLabel(role),
+        child: Icon(Icons.circle, size: 9, color: color),
+      ),
+    );
   }
 }

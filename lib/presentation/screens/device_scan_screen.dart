@@ -2,17 +2,20 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:logging/logging.dart';
 
-import '../../core/domain/entities/trainer_device.dart';
+import '../../core/domain/entities/entities.dart';
 import '../../infrastructure/ble/ble_transport.dart';
 import '../../infrastructure/simulator/simulator.dart';
 import '../state/providers.dart';
+import '../widgets/sensor_role_labels.dart';
 
 final _log = Logger('DeviceScanScreen');
 
-/// BLE device scanning and connection screen.
+/// Device-management screen: per-role pairing slots (trainer, heart rate,
+/// power, cadence/speed) plus a scan list to assign devices to those roles.
 ///
 /// When `DEV_MODE=true`, shows a "Simulator Mode" toggle that replaces BLE
-/// scanning with fake devices from [SimulatorDevicePlugin].
+/// scanning with a fake trainer from [SimulatorDevicePlugin] — assigned to
+/// the trainer role like any other device.
 class DeviceScanScreen extends ConsumerStatefulWidget {
   const DeviceScanScreen({super.key});
 
@@ -25,6 +28,14 @@ class _DeviceScanScreenState extends ConsumerState<DeviceScanScreen> {
   List<TrainerDevice> _simulatorDevices = [];
   bool _scanningSimulator = false;
   String? _bleError;
+
+  /// Role currently awaiting a device assignment (set by tapping a role
+  /// slot's "assign" affordance). `null` means the next tapped device is
+  /// assigned to whichever role its protocol defaults to.
+  SensorRole? _assigningRole;
+
+  /// Roles with an assignment in flight (shows a spinner on that slot).
+  final Set<SensorRole> _connectingRoles = {};
 
   @override
   void initState() {
@@ -55,12 +66,11 @@ class _DeviceScanScreenState extends ConsumerState<DeviceScanScreen> {
 
   @override
   Widget build(BuildContext context) {
-    final connectedDevice = ref.watch(trainerDeviceProvider);
     final scanState = ref.watch(bleScanStateProvider);
     final scanResults = ref.watch(bleScanResultsProvider);
-    final isScanning =
-        scanState.valueOrNull == BleTransportState.scanning;
+    final isScanning = scanState.valueOrNull == BleTransportState.scanning;
     final devMode = ref.watch(devModeProvider);
+    final pairedDevices = ref.watch(pairedDevicesProvider);
 
     return Scaffold(
       backgroundColor: Colors.black,
@@ -71,6 +81,31 @@ class _DeviceScanScreenState extends ConsumerState<DeviceScanScreen> {
       body: ListView(
         padding: const EdgeInsets.symmetric(vertical: 8),
         children: [
+          // ----- Role pairing slots -----
+          _SectionHeader('PAIRED DEVICES'),
+          for (final role in SensorRole.values)
+            _RoleSlotTile(
+              role: role,
+              device: pairedDevices.forRole(role),
+              isAssigning: _assigningRole == role,
+              isConnecting: _connectingRoles.contains(role),
+              onTapAssign: () => setState(() {
+                _assigningRole = _assigningRole == role ? null : role;
+              }),
+              onForget: () => _forgetRole(role),
+              onRename: (name) => _renameRole(role, name),
+            ),
+          if (_assigningRole != null)
+            Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
+              child: Text(
+                'Tap a device below to assign it to '
+                '${roleLabel(_assigningRole!)}.',
+                style: const TextStyle(color: Colors.amber, fontSize: 12),
+              ),
+            ),
+          const SizedBox(height: 16),
+
           // ----- DEV_MODE: Simulator toggle -----
           if (devMode)
             _SimulatorToggle(
@@ -107,25 +142,6 @@ class _DeviceScanScreenState extends ConsumerState<DeviceScanScreen> {
               ),
             ),
 
-          // ----- Connected device section -----
-          if (connectedDevice != null) ...[
-            _SectionHeader('CONNECTED'),
-            _ConnectedDeviceTile(
-              device: connectedDevice,
-              onDisconnect: () async {
-                final port = ref.read(activeTrainerPortProvider);
-                if (port != null) {
-                  await port.disconnect();
-                  ref.read(activeTrainerPortProvider.notifier).state = null;
-                } else {
-                  await ref.read(bleTransportProvider).disconnectDevice();
-                }
-                ref.read(trainerDeviceProvider.notifier).state = null;
-              },
-            ),
-            const SizedBox(height: 16),
-          ],
-
           // ----- Simulator devices -----
           if (_simulatorMode) ...[
             _SectionHeader(
@@ -144,7 +160,10 @@ class _DeviceScanScreenState extends ConsumerState<DeviceScanScreen> {
             for (final device in _simulatorDevices)
               _SimulatorDeviceTile(
                 device: device,
-                onTap: () => _connectSimulator(device),
+                onTap: () => _assignDevice(
+                  _assigningRole ?? SensorRole.trainer,
+                  device,
+                ),
               ),
             if (_scanningSimulator)
               const Padding(
@@ -185,9 +204,12 @@ class _DeviceScanScreenState extends ConsumerState<DeviceScanScreen> {
                     for (final scanned in devices)
                       _ScannedDeviceTile(
                         scanned: scanned,
-                        isConnecting: scanState.valueOrNull ==
-                            BleTransportState.connecting,
-                        onTap: () => _connect(scanned),
+                        isConnecting: _connectingRoles.isNotEmpty,
+                        onTap: () => _assignDevice(
+                          _assigningRole ??
+                              _defaultRoleFor(scanned.device.protocol),
+                          scanned.device,
+                        ),
                       ),
                     if (isScanning)
                       const Padding(
@@ -239,58 +261,216 @@ class _DeviceScanScreenState extends ConsumerState<DeviceScanScreen> {
     }
   }
 
-  Future<void> _connect(BleScannedDevice scanned) async {
-    _log.info('[BLE-DEBUG] Connecting to ${scanned.device.name} '
-        '(${scanned.device.id}, protocol=${scanned.device.protocol})');
-
-    // Look up the correct plugin for this device.
-    final registry = ref.read(pluginRegistryProvider);
-    final plugin = registry.getPluginForDevice(scanned.device);
-
-    if (plugin == null) {
-      _log.warning('[BLE-DEBUG] No plugin found for ${scanned.device.protocol}');
-      if (mounted) {
-        setState(() => _bleError =
-            'No plugin available for ${scanned.device.name}');
-      }
-      return;
+  /// The role a device's protocol is assigned to by default when the user
+  /// taps it without first selecting a role slot.
+  static SensorRole _defaultRoleFor(DeviceProtocol protocol) {
+    switch (protocol) {
+      case DeviceProtocol.bleFtms:
+      case DeviceProtocol.antFec:
+      case DeviceProtocol.simulator:
+        return SensorRole.trainer;
+      case DeviceProtocol.bleHr:
+        return SensorRole.heartRate;
+      case DeviceProtocol.blePower:
+        return SensorRole.power;
+      case DeviceProtocol.bleCsc:
+        return SensorRole.cadenceSpeed;
     }
+  }
 
-    _log.info('[BLE-DEBUG] Using plugin ${plugin.manifest.name}');
+  Future<void> _assignDevice(SensorRole role, TrainerDevice device) async {
+    _log.info('[BLE-DEBUG] Assigning ${device.name} '
+        '(${device.id}, protocol=${device.protocol}) to role $role');
+
+    setState(() {
+      _connectingRoles.add(role);
+      _bleError = null;
+    });
 
     try {
-      // plugin.connect() handles: raw BLE connect → service discovery →
-      // FTMS subscribe → control handshake → fires TrainerEvents on EventBus.
-      final trainerPort = await plugin.connect(scanned.device);
+      final service = ref.read(devicePairingServiceProvider);
+      final port = await service.assign(role, device);
       if (!mounted) return;
 
-      _log.info('[BLE-DEBUG] Plugin connect complete — TrainerPort ready');
+      // Trainer role also drives the legacy single-trainer providers that
+      // the route simulator / workout engine send ERG/SIM commands through.
+      if (role == SensorRole.trainer) {
+        ref.read(trainerDeviceProvider.notifier).state = device;
+        ref.read(activeTrainerPortProvider.notifier).state = port;
+      }
 
-      ref.read(trainerDeviceProvider.notifier).state = scanned.device;
-      ref.read(activeTrainerPortProvider.notifier).state = trainerPort;
+      final updated = ref.read(pairedDevicesProvider).withRole(
+            role,
+            PairedDevice(
+              deviceId: device.id,
+              name: device.name,
+              protocol: device.protocol,
+            ),
+          );
+      ref.read(pairedDevicesProvider.notifier).state = updated;
+      await ref.read(appPreferencesProvider).setPairedDevices(updated);
 
       final saved = ref.read(savedDeviceIdsProvider);
-      if (!saved.contains(scanned.device.id)) {
-        final updated = [...saved, scanned.device.id];
-        ref.read(savedDeviceIdsProvider.notifier).state = updated;
-        ref.read(appPreferencesProvider).setSavedDeviceIds(updated);
+      if (!saved.contains(device.id)) {
+        ref.read(savedDeviceIdsProvider.notifier).state = [...saved, device.id];
       }
     } catch (e, st) {
-      _log.severe('[BLE-DEBUG] Plugin connect failed: $e', e, st);
+      _log.severe('[BLE-DEBUG] Assign to $role failed: $e', e, st);
       if (mounted) {
         setState(() => _bleError = 'Connection failed: $e');
+      }
+    } finally {
+      if (mounted) {
+        setState(() {
+          _connectingRoles.remove(role);
+          _assigningRole = null;
+        });
       }
     }
   }
 
-  Future<void> _connectSimulator(TrainerDevice device) async {
-    final simPlugin = ref.read(simulatorPluginProvider);
-    if (simPlugin == null) return;
+  Future<void> _forgetRole(SensorRole role) async {
+    final service = ref.read(devicePairingServiceProvider);
+    await service.release(role);
 
-    await simPlugin.connect(device);
-    if (!mounted) return;
+    if (role == SensorRole.trainer) {
+      ref.read(trainerDeviceProvider.notifier).state = null;
+      ref.read(activeTrainerPortProvider.notifier).state = null;
+    }
 
-    ref.read(trainerDeviceProvider.notifier).state = device;
+    final updated = ref.read(pairedDevicesProvider).withoutRole(role);
+    ref.read(pairedDevicesProvider.notifier).state = updated;
+    await ref.read(appPreferencesProvider).setPairedDevices(updated);
+  }
+
+  Future<void> _renameRole(SensorRole role, String newName) async {
+    final paired = ref.read(pairedDevicesProvider);
+    final existing = paired.forRole(role);
+    if (existing == null || newName.trim().isEmpty) return;
+
+    final updated = paired.withRole(role, PairedDevice(
+      deviceId: existing.deviceId,
+      name: newName.trim(),
+      protocol: existing.protocol,
+    ));
+    ref.read(pairedDevicesProvider.notifier).state = updated;
+    await ref.read(appPreferencesProvider).setPairedDevices(updated);
+  }
+}
+
+// ---------------------------------------------------------------------------
+// Role slot tile
+// ---------------------------------------------------------------------------
+
+class _RoleSlotTile extends StatelessWidget {
+  const _RoleSlotTile({
+    required this.role,
+    required this.device,
+    required this.isAssigning,
+    required this.isConnecting,
+    required this.onTapAssign,
+    required this.onForget,
+    required this.onRename,
+  });
+
+  final SensorRole role;
+  final PairedDevice? device;
+  final bool isAssigning;
+  final bool isConnecting;
+  final VoidCallback onTapAssign;
+  final VoidCallback onForget;
+  final ValueChanged<String> onRename;
+
+  @override
+  Widget build(BuildContext context) {
+    final assigned = device != null;
+
+    return Container(
+      key: ValueKey('role-slot-${role.name}'),
+      margin: const EdgeInsets.symmetric(horizontal: 12, vertical: 2),
+      decoration: BoxDecoration(
+        color: assigned
+            ? Colors.green.withValues(alpha: 0.12)
+            : isAssigning
+                ? Colors.amber.withValues(alpha: 0.12)
+                : Colors.white.withValues(alpha: 0.05),
+        borderRadius: BorderRadius.circular(12),
+        border: isAssigning
+            ? Border.all(color: Colors.amber.withValues(alpha: 0.4))
+            : null,
+      ),
+      child: ListTile(
+        leading: Icon(
+          roleIcon(role),
+          color: assigned ? Colors.green : Colors.white38,
+        ),
+        title: Text(
+          roleLabel(role),
+          style: const TextStyle(color: Colors.white, fontWeight: FontWeight.w600),
+        ),
+        subtitle: Text(
+          assigned ? device!.name : 'Tap to assign',
+          style: TextStyle(
+            color: assigned ? Colors.white70 : Colors.white38,
+            fontSize: 12,
+          ),
+        ),
+        trailing: isConnecting
+            ? const SizedBox(
+                width: 20,
+                height: 20,
+                child: CircularProgressIndicator(strokeWidth: 2),
+              )
+            : Row(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  if (assigned) ...[
+                    IconButton(
+                      key: ValueKey('rename-${role.name}'),
+                      icon: const Icon(Icons.edit, color: Colors.white38, size: 20),
+                      onPressed: () => _showRenameDialog(context),
+                    ),
+                    IconButton(
+                      key: ValueKey('forget-${role.name}'),
+                      icon: const Icon(Icons.link_off, color: Colors.white54, size: 20),
+                      onPressed: onForget,
+                    ),
+                  ] else
+                    Icon(
+                      isAssigning ? Icons.radio_button_checked : Icons.add,
+                      color: isAssigning ? Colors.amber : Colors.white24,
+                    ),
+                ],
+              ),
+        onTap: assigned ? null : onTapAssign,
+      ),
+    );
+  }
+
+  Future<void> _showRenameDialog(BuildContext context) async {
+    final controller = TextEditingController(text: device?.name ?? '');
+    final result = await showDialog<String>(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        title: Text('Rename ${roleLabel(role)} device'),
+        content: TextField(
+          controller: controller,
+          autofocus: true,
+          style: const TextStyle(color: Colors.white),
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.of(ctx).pop(),
+            child: const Text('Cancel'),
+          ),
+          TextButton(
+            onPressed: () => Navigator.of(ctx).pop(controller.text),
+            child: const Text('Save'),
+          ),
+        ],
+      ),
+    );
+    if (result != null) onRename(result);
   }
 }
 
@@ -411,48 +591,6 @@ class _SectionHeader extends StatelessWidget {
 }
 
 // ---------------------------------------------------------------------------
-// Connected device tile
-// ---------------------------------------------------------------------------
-
-class _ConnectedDeviceTile extends StatelessWidget {
-  const _ConnectedDeviceTile({
-    required this.device,
-    required this.onDisconnect,
-  });
-
-  final TrainerDevice device;
-  final VoidCallback onDisconnect;
-
-  @override
-  Widget build(BuildContext context) {
-    return Container(
-      margin: const EdgeInsets.symmetric(horizontal: 12, vertical: 2),
-      decoration: BoxDecoration(
-        color: Colors.green.withValues(alpha: 0.15),
-        borderRadius: BorderRadius.circular(12),
-        border: Border.all(color: Colors.green.withValues(alpha: 0.3)),
-      ),
-      child: ListTile(
-        leading: const Icon(Icons.bluetooth_connected, color: Colors.green),
-        title: Text(
-          device.name,
-          style: const TextStyle(
-              color: Colors.white, fontWeight: FontWeight.w600),
-        ),
-        subtitle: Text(
-          _protocolLabel(device.protocol.name),
-          style: const TextStyle(color: Colors.white54, fontSize: 12),
-        ),
-        trailing: IconButton(
-          icon: const Icon(Icons.link_off, color: Colors.white54),
-          onPressed: onDisconnect,
-        ),
-      ),
-    );
-  }
-}
-
-// ---------------------------------------------------------------------------
 // Scanned device tile
 // ---------------------------------------------------------------------------
 
@@ -495,14 +633,8 @@ class _ScannedDeviceTile extends StatelessWidget {
             _RssiIndicator(rssi: scanned.rssi),
           ],
         ),
-        trailing: isConnecting
-            ? const SizedBox(
-                width: 20,
-                height: 20,
-                child: CircularProgressIndicator(strokeWidth: 2),
-              )
-            : const Icon(Icons.chevron_right, color: Colors.white30),
-        onTap: isConnecting ? null : onTap,
+        trailing: const Icon(Icons.chevron_right, color: Colors.white30),
+        onTap: onTap,
       ),
     );
   }
@@ -587,6 +719,8 @@ String _protocolLabel(String protocol) {
       return 'CPS';
     case 'bleCsc':
       return 'CSC';
+    case 'bleHr':
+      return 'HR';
     case 'antFec':
       return 'ANT+';
     case 'simulator':
@@ -604,6 +738,8 @@ IconData _deviceIcon(String protocol) {
       return Icons.bolt;
     case 'bleCsc':
       return Icons.rotate_right;
+    case 'bleHr':
+      return Icons.favorite;
     case 'simulator':
       return Icons.computer;
     default:

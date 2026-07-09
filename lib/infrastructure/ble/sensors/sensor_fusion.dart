@@ -171,7 +171,11 @@ class SensorFusion {
     _throttleTimer?.cancel();
     _throttleTimer = null;
 
-    for (final sub in _subscriptions.values) {
+    // Snapshot before iterating: awaiting cancel() suspends this loop, and a
+    // concurrent removeSource()/addSource() call (e.g. another provider's
+    // dispose tearing down a role mid-iteration) would otherwise mutate
+    // _subscriptions while it's being iterated.
+    for (final sub in _subscriptions.values.toList()) {
       await sub.cancel();
     }
     _subscriptions.clear();
