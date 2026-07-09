@@ -1,7 +1,7 @@
 ---
 phase: P1
 title: Platform config — permissions, signing, deep links, branding
-status: NOT_STARTED
+status: IN_PROGRESS
 depends_on: [P0]
 validation:
   - flutter analyze
