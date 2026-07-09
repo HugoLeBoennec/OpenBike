@@ -90,12 +90,12 @@ BEGIN
         BLOCK "040904e4"
         BEGIN
             VALUE "CompanyName", "com.openbike" "\0"
-            VALUE "FileDescription", "open_bike" "\0"
+            VALUE "FileDescription", "OpenBike" "\0"
             VALUE "FileVersion", VERSION_AS_STRING "\0"
             VALUE "InternalName", "open_bike" "\0"
             VALUE "LegalCopyright", "Copyright (C) 2026 com.openbike. All rights reserved." "\0"
             VALUE "OriginalFilename", "open_bike.exe" "\0"
-            VALUE "ProductName", "open_bike" "\0"
+            VALUE "ProductName", "OpenBike" "\0"
             VALUE "ProductVersion", VERSION_AS_STRING "\0"
         END
     END
