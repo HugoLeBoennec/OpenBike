@@ -1,4 +1,9 @@
+import 'dart:convert';
+
 import 'package:shared_preferences/shared_preferences.dart';
+
+import '../../core/domain/entities/paired_devices.dart';
+import '../../core/domain/entities/trainer_device.dart';
 
 /// Typed wrapper around [SharedPreferences] for app-wide settings.
 class AppPreferences {
@@ -12,6 +17,7 @@ class AppPreferences {
 
   static const _kOnboardingCompleted = 'onboarding_completed';
   static const _kSavedDeviceIds = 'saved_device_ids';
+  static const _kPairedDevices = 'paired_devices_v1';
   static const _kUnitSystem = 'unit_system';
   static const _kThemeMode = 'theme_mode';
 
@@ -26,14 +32,58 @@ class AppPreferences {
       _prefs.setBool(_kOnboardingCompleted, value);
 
   // -------------------------------------------------------------------------
-  // Saved device IDs (for auto-reconnect)
+  // Saved device IDs (legacy flat list — superseded by [pairedDevices])
   // -------------------------------------------------------------------------
 
-  List<String> get savedDeviceIds =>
-      _prefs.getStringList(_kSavedDeviceIds) ?? [];
+  /// All device ids the user has ever paired (across every role) — used for
+  /// reconnect-eligibility checks that don't need to know the role.
+  List<String> get savedDeviceIds {
+    final legacy = _prefs.getStringList(_kSavedDeviceIds) ?? [];
+    final fromRoles = pairedDevices.byRole.values.map((d) => d.deviceId);
+    return {...legacy, ...fromRoles}.toList();
+  }
 
   Future<void> setSavedDeviceIds(List<String> ids) =>
       _prefs.setStringList(_kSavedDeviceIds, ids);
+
+  // -------------------------------------------------------------------------
+  // Per-role paired devices
+  // -------------------------------------------------------------------------
+
+  /// Role → paired device assignments.
+  ///
+  /// Falls back to migrating the legacy flat [savedDeviceIds] list the first
+  /// time this is read: the first saved id (if any) becomes the `trainer`
+  /// role pairing, since single-trainer auto-reconnect was the only paired
+  /// device flow that existed before per-role pairing. The migration is not
+  /// persisted automatically — it is recomputed until the caller explicitly
+  /// assigns/saves a [PairedDevices] via [setPairedDevices].
+  PairedDevices get pairedDevices {
+    final raw = _prefs.getString(_kPairedDevices);
+    if (raw == null) return _migrateLegacyPairedDevices();
+
+    try {
+      final decoded = jsonDecode(raw) as Map<String, dynamic>;
+      return PairedDevices.decode(decoded);
+    } catch (_) {
+      return _migrateLegacyPairedDevices();
+    }
+  }
+
+  Future<void> setPairedDevices(PairedDevices devices) =>
+      _prefs.setString(_kPairedDevices, jsonEncode(devices.encode()));
+
+  PairedDevices _migrateLegacyPairedDevices() {
+    final legacy = _prefs.getStringList(_kSavedDeviceIds) ?? [];
+    if (legacy.isEmpty) return const PairedDevices();
+    return PairedDevices(byRole: {
+      SensorRole.trainer: PairedDevice(
+        deviceId: legacy.first,
+        name: 'Saved device',
+        protocol: DeviceProtocol.bleFtms,
+      ),
+    });
+  }
 
   // -------------------------------------------------------------------------
   // Unit system (metric / imperial)
