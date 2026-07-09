@@ -7,7 +7,8 @@ on:
   workflow_dispatch:
 
 env:
-  FLUTTER_VERSION: '3.24.5'
+  # pubspec.lock was generated with dart >=3.10 / flutter >=3.38 — keep in sync.
+  FLUTTER_VERSION: '3.38.x'
 
 jobs:
   analyze:

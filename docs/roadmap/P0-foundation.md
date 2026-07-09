@@ -25,6 +25,13 @@ paths matters because coding agents in later phases will otherwise extend the wr
       analyzer error and test failure found. If a failure reveals a real bug, fix the bug
       (not the test).
       **Accept:** `CI` workflow green on this branch, all jobs (Linux job may be skipped/red — it is `continue-on-error`).
+- [ ] Reconcile pubspec toolchain drift: the `dependency_overrides` comment claims
+      "pre-Dart 3.6 compatibility" but `pubspec.lock` was generated with Dart ≥3.10 /
+      Flutter ≥3.38 (see `sdks:` at the bottom of the lock). Decide the supported
+      Flutter version, update the pubspec `environment:` and CI `FLUTTER_VERSION`
+      (`.github/workflows/ci.yml`) to match, and drop the drift/sqlite3 overrides if
+      they resolve cleanly on the chosen toolchain.
+      **Accept:** pubspec comment/constraints match reality; `flutter pub get` clean.
 
 ### 2. Delete superseded legacy code (verify no references first with grep)
 - [ ] `lib/infrastructure/ble/ftms_client.dart` — old FTMS client without control
