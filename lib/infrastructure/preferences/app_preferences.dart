@@ -20,6 +20,7 @@ class AppPreferences {
   static const _kPairedDevices = 'paired_devices_v1';
   static const _kUnitSystem = 'unit_system';
   static const _kThemeMode = 'theme_mode';
+  static const _kAutoPauseEnabled = 'auto_pause_enabled';
 
   // -------------------------------------------------------------------------
   // Onboarding
@@ -102,4 +103,13 @@ class AppPreferences {
 
   Future<void> setThemeMode(String value) =>
       _prefs.setString(_kThemeMode, value);
+
+  // -------------------------------------------------------------------------
+  // Auto-pause (default off)
+  // -------------------------------------------------------------------------
+
+  bool get autoPauseEnabled => _prefs.getBool(_kAutoPauseEnabled) ?? false;
+
+  Future<void> setAutoPauseEnabled(bool value) =>
+      _prefs.setBool(_kAutoPauseEnabled, value);
 }

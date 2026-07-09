@@ -1,6 +1,6 @@
 import 'dart:typed_data';
 
-import 'package:flutter/material.dart';
+import 'package:flutter/material.dart' hide Route;
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:go_router/go_router.dart';
@@ -13,6 +13,7 @@ import 'package:open_bike/core/events/app_event.dart';
 import 'package:open_bike/infrastructure/files/fit_encoder.dart';
 import 'package:open_bike/infrastructure/files/gpx_parser.dart';
 import 'package:open_bike/infrastructure/files/zwo_parser.dart';
+import 'package:open_bike/presentation/models/ride_extra.dart';
 import 'package:open_bike/presentation/state/providers.dart';
 
 import 'test_helpers.dart';
@@ -392,5 +393,106 @@ void main() {
       expect(find.byType(Scaffold), findsWidgets,
           reason: 'Route $path should render a Scaffold');
     }
+  });
+
+  // =========================================================================
+  // 8. P3 — Workout HUD appears when a workout ride starts
+  // =========================================================================
+
+  testWidgets('Workout ride: HUD shows the active step once the engine ticks',
+      (tester) async {
+    await tester.pumpWidget(buildTestApp());
+    await tester.pumpAndSettle();
+
+    final container = ProviderScope.containerOf(
+      tester.element(find.byType(MaterialApp)),
+    );
+
+    // Connect the simulator as the active trainer — required by
+    // workoutEngineProvider, which throws without a connected TrainerPort.
+    final plugin = container.read(simulatorPluginProvider)!;
+    final devices = await plugin.scan(const Duration(seconds: 1));
+    final trainer = await plugin.connect(devices.first);
+    container.read(activeTrainerPortProvider.notifier).state = trainer;
+
+    final workout = Workout(
+      id: 'hud-test',
+      name: 'HUD Test',
+      steps: const [
+        WorkoutStep(
+          type: StepType.steadyState,
+          durationSeconds: 30,
+          powerTargetPercent: 100,
+        ),
+      ],
+    );
+
+    final goRouter = GoRouter.of(tester.element(find.byType(MaterialApp)));
+    goRouter.go('/ride', extra: RideExtra(workout: workout));
+    await tester.pumpAndSettle();
+
+    // The HUD only renders once WorkoutEngine emits its first progress tick.
+    await tester.pump(const Duration(seconds: 1));
+    await Future<void>.delayed(const Duration(seconds: 1));
+    await tester.pump();
+
+    expect(find.text('STEADY STATE'), findsOneWidget);
+
+    await trainer.disconnect();
+  });
+
+  // =========================================================================
+  // 9. P3 — Route completion prompts to stop & save
+  // =========================================================================
+
+  testWidgets('Route ride: completion dialog appears when the route ends',
+      (tester) async {
+    await tester.pumpWidget(buildTestApp());
+    await tester.pumpAndSettle();
+
+    final container = ProviderScope.containerOf(
+      tester.element(find.byType(MaterialApp)),
+    );
+
+    final plugin = container.read(simulatorPluginProvider)!;
+    final devices = await plugin.scan(const Duration(seconds: 1));
+    final trainer = await plugin.connect(devices.first);
+    container.read(activeTrainerPortProvider.notifier).state = trainer;
+
+    // A tiny flat route so the simulator completes it within a couple of
+    // ticks regardless of how quickly virtual speed converges.
+    final route = Route(
+      id: 'short-route',
+      name: 'Short',
+      points: const [
+        RoutePoint(
+          position: GeoPoint(lat: 45.0, lon: 6.0),
+          distanceFromStart: 0,
+          smoothedElevation: 100,
+          grade: Grade.flat,
+        ),
+        RoutePoint(
+          position: GeoPoint(lat: 45.0001, lon: 6.0),
+          distanceFromStart: 2,
+          smoothedElevation: 100,
+          grade: Grade.flat,
+        ),
+      ],
+    );
+
+    final goRouter = GoRouter.of(tester.element(find.byType(MaterialApp)));
+    goRouter.go('/ride', extra: RideExtra(route: route));
+    await tester.pumpAndSettle();
+
+    // Let the simulator tick until it covers the (very short) route.
+    for (var i = 0; i < 6; i++) {
+      await tester.pump(const Duration(seconds: 1));
+      await Future<void>.delayed(const Duration(seconds: 1));
+    }
+    await tester.pump();
+
+    expect(find.text('Route completed!'), findsOneWidget);
+
+    await trainer.disconnect();
   });
 }

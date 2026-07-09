@@ -1,3 +1,4 @@
+export 'auto_pause_detector.dart';
 export 'physics_engine.dart';
 export 'recording_engine.dart';
 export 'route_simulator.dart';
