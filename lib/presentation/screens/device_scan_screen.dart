@@ -6,6 +6,7 @@ import '../../core/domain/entities/entities.dart';
 import '../../infrastructure/ble/ble_transport.dart';
 import '../../infrastructure/simulator/simulator.dart';
 import '../state/providers.dart';
+import '../widgets/sensor_role_labels.dart';
 
 final _log = Logger('DeviceScanScreen');
 
@@ -99,7 +100,7 @@ class _DeviceScanScreenState extends ConsumerState<DeviceScanScreen> {
               padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
               child: Text(
                 'Tap a device below to assign it to '
-                '${_roleLabel(_assigningRole!)}.',
+                '${roleLabel(_assigningRole!)}.',
                 style: const TextStyle(color: Colors.amber, fontSize: 12),
               ),
             ),
@@ -400,11 +401,11 @@ class _RoleSlotTile extends StatelessWidget {
       ),
       child: ListTile(
         leading: Icon(
-          _roleIcon(role),
+          roleIcon(role),
           color: assigned ? Colors.green : Colors.white38,
         ),
         title: Text(
-          _roleLabel(role),
+          roleLabel(role),
           style: const TextStyle(color: Colors.white, fontWeight: FontWeight.w600),
         ),
         subtitle: Text(
@@ -451,7 +452,7 @@ class _RoleSlotTile extends StatelessWidget {
     final result = await showDialog<String>(
       context: context,
       builder: (ctx) => AlertDialog(
-        title: Text('Rename ${_roleLabel(role)} device'),
+        title: Text('Rename ${roleLabel(role)} device'),
         content: TextField(
           controller: controller,
           autofocus: true,
@@ -470,32 +471,6 @@ class _RoleSlotTile extends StatelessWidget {
       ),
     );
     if (result != null) onRename(result);
-  }
-}
-
-String _roleLabel(SensorRole role) {
-  switch (role) {
-    case SensorRole.trainer:
-      return 'Trainer';
-    case SensorRole.heartRate:
-      return 'Heart Rate';
-    case SensorRole.power:
-      return 'Power Meter';
-    case SensorRole.cadenceSpeed:
-      return 'Cadence / Speed';
-  }
-}
-
-IconData _roleIcon(SensorRole role) {
-  switch (role) {
-    case SensorRole.trainer:
-      return Icons.pedal_bike;
-    case SensorRole.heartRate:
-      return Icons.favorite;
-    case SensorRole.power:
-      return Icons.bolt;
-    case SensorRole.cadenceSpeed:
-      return Icons.rotate_right;
   }
 }
 

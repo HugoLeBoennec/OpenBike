@@ -5,6 +5,7 @@ import 'package:wakelock_plus/wakelock_plus.dart';
 import '../models/data_field_type.dart';
 import '../models/ride_extra.dart';
 import '../state/providers.dart';
+import '../widgets/connection_banner.dart';
 import '../widgets/data_field_grid.dart';
 import '../widgets/live_chart.dart';
 import '../widgets/power_gauge.dart';
@@ -68,16 +69,23 @@ class _RideScreenState extends ConsumerState<RideScreen> {
       child: Scaffold(
         backgroundColor: Colors.black,
         body: SafeArea(
-          child: LayoutBuilder(
-            builder: (context, constraints) {
-              if (constraints.maxWidth >= 1200) {
-                return _buildDesktopLayout(context, ref, constraints);
-              } else if (constraints.maxWidth >= 600) {
-                return _buildLandscapeLayout(context, ref, constraints);
-              } else {
-                return _buildPortraitLayout(context, ref, constraints);
-              }
-            },
+          child: Column(
+            children: [
+              const ConnectionBanner(),
+              Expanded(
+                child: LayoutBuilder(
+                  builder: (context, constraints) {
+                    if (constraints.maxWidth >= 1200) {
+                      return _buildDesktopLayout(context, ref, constraints);
+                    } else if (constraints.maxWidth >= 600) {
+                      return _buildLandscapeLayout(context, ref, constraints);
+                    } else {
+                      return _buildPortraitLayout(context, ref, constraints);
+                    }
+                  },
+                ),
+              ),
+            ],
           ),
         ),
       ),

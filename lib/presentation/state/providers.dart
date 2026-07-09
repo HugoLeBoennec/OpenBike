@@ -7,6 +7,7 @@ import '../../core/domain/entities/entities.dart';
 import '../../core/domain/ports/storage_port.dart';
 import '../../core/domain/ports/trainer_port.dart';
 import '../../core/domain/value_objects/value_objects.dart';
+import '../../core/events/app_event.dart';
 import '../../core/events/event_bus.dart';
 import '../../core/application/services/connection_monitor.dart';
 import '../../core/application/services/device_pairing_service.dart';
@@ -169,6 +170,70 @@ final devicePairingServiceProvider = Provider<DevicePairingService>((ref) {
 /// [AppPreferences.setPairedDevices]) whenever the user assigns or forgets a role.
 final pairedDevicesProvider = StateProvider<PairedDevices>((ref) {
   return const PairedDevices();
+});
+
+// ---------------------------------------------------------------------------
+// Per-role connection status (in-ride banner + sensor status dots)
+// ---------------------------------------------------------------------------
+
+/// Tracks connected/disconnected per [SensorRole], derived from
+/// [TrainerEvent]s on the [EventBus] correlated against [PairedDevices].
+///
+/// A role with no entry in the map means "no disconnect has been observed
+/// yet" rather than "explicitly disconnected" — the `connected` event for a
+/// role fires at pairing time, which may be before this notifier existed
+/// (e.g. paired from the device screen before the ride screen ever mounted).
+class RoleConnectionNotifier extends StateNotifier<Map<SensorRole, bool>> {
+  RoleConnectionNotifier({
+    required EventBus eventBus,
+    required PairedDevices Function() getPairedDevices,
+  })  : _getPairedDevices = getPairedDevices,
+        super(const {}) {
+    _sub = eventBus.on<TrainerEvent>().listen(_onEvent);
+  }
+
+  final PairedDevices Function() _getPairedDevices;
+  late final StreamSubscription<TrainerEvent> _sub;
+
+  void _onEvent(TrainerEvent event) {
+    event.map(
+      connected: (e) => _setStatus(e.device.id, true),
+      disconnected: (e) => _setStatus(e.deviceId, false),
+      controlAcquired: (_) {},
+      modeChanged: (_) {},
+    );
+  }
+
+  void _setStatus(String deviceId, bool connected) {
+    final role = _getPairedDevices().roleForDevice(deviceId);
+    if (role == null) return;
+    state = {...state, role: connected};
+  }
+
+  @override
+  void dispose() {
+    _sub.cancel();
+    super.dispose();
+  }
+}
+
+final roleConnectionStatusProvider =
+    StateNotifierProvider<RoleConnectionNotifier, Map<SensorRole, bool>>((ref) {
+  return RoleConnectionNotifier(
+    eventBus: ref.watch(eventBusProvider),
+    getPairedDevices: () => ref.read(pairedDevicesProvider),
+  );
+});
+
+/// Roles that are paired but whose device reported a disconnect that hasn't
+/// been followed by a reconnect yet — drives the in-ride connection banner.
+final disconnectedPairedRolesProvider = Provider<List<SensorRole>>((ref) {
+  final paired = ref.watch(pairedDevicesProvider);
+  final status = ref.watch(roleConnectionStatusProvider);
+  return [
+    for (final role in paired.byRole.keys)
+      if (status[role] == false) role,
+  ];
 });
 
 final _autoReconnectLog = Logger('AutoReconnectPairedRoles');
