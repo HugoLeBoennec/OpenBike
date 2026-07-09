@@ -12,7 +12,8 @@ part of 'trainer_device.dart';
 T _$identity<T>(T value) => value;
 
 final _privateConstructorUsedError = UnsupportedError(
-    'It seems like you constructed your class using `MyClass._()`. This constructor is only meant to be used by freezed and you are not supposed to need it nor use it.\nPlease check the documentation here for more information: https://github.com/rrousselGit/freezed#custom-getters-and-methods');
+  'It seems like you constructed your class using `MyClass._()`. This constructor is only meant to be used by freezed and you are not supposed to need it nor use it.\nPlease check the documentation here for more information: https://github.com/rrousselGit/freezed#adding-getters-and-methods-to-our-models',
+);
 
 /// @nodoc
 mixin _$TrainerDevice {
@@ -23,7 +24,9 @@ mixin _$TrainerDevice {
   bool get isControllable => throw _privateConstructorUsedError;
   List<ControlMode> get supportedModes => throw _privateConstructorUsedError;
 
-  @JsonKey(ignore: true)
+  /// Create a copy of TrainerDevice
+  /// with the given fields replaced by the non-null parameter values.
+  @JsonKey(includeFromJson: false, includeToJson: false)
   $TrainerDeviceCopyWith<TrainerDevice> get copyWith =>
       throw _privateConstructorUsedError;
 }
@@ -31,16 +34,18 @@ mixin _$TrainerDevice {
 /// @nodoc
 abstract class $TrainerDeviceCopyWith<$Res> {
   factory $TrainerDeviceCopyWith(
-          TrainerDevice value, $Res Function(TrainerDevice) then) =
-      _$TrainerDeviceCopyWithImpl<$Res, TrainerDevice>;
+    TrainerDevice value,
+    $Res Function(TrainerDevice) then,
+  ) = _$TrainerDeviceCopyWithImpl<$Res, TrainerDevice>;
   @useResult
-  $Res call(
-      {String id,
-      String name,
-      String? manufacturer,
-      DeviceProtocol protocol,
-      bool isControllable,
-      List<ControlMode> supportedModes});
+  $Res call({
+    String id,
+    String name,
+    String? manufacturer,
+    DeviceProtocol protocol,
+    bool isControllable,
+    List<ControlMode> supportedModes,
+  });
 }
 
 /// @nodoc
@@ -53,6 +58,8 @@ class _$TrainerDeviceCopyWithImpl<$Res, $Val extends TrainerDevice>
   // ignore: unused_field
   final $Res Function($Val) _then;
 
+  /// Create a copy of TrainerDevice
+  /// with the given fields replaced by the non-null parameter values.
   @pragma('vm:prefer-inline')
   @override
   $Res call({
@@ -63,60 +70,68 @@ class _$TrainerDeviceCopyWithImpl<$Res, $Val extends TrainerDevice>
     Object? isControllable = null,
     Object? supportedModes = null,
   }) {
-    return _then(_value.copyWith(
-      id: null == id
-          ? _value.id
-          : id // ignore: cast_nullable_to_non_nullable
-              as String,
-      name: null == name
-          ? _value.name
-          : name // ignore: cast_nullable_to_non_nullable
-              as String,
-      manufacturer: freezed == manufacturer
-          ? _value.manufacturer
-          : manufacturer // ignore: cast_nullable_to_non_nullable
-              as String?,
-      protocol: null == protocol
-          ? _value.protocol
-          : protocol // ignore: cast_nullable_to_non_nullable
-              as DeviceProtocol,
-      isControllable: null == isControllable
-          ? _value.isControllable
-          : isControllable // ignore: cast_nullable_to_non_nullable
-              as bool,
-      supportedModes: null == supportedModes
-          ? _value.supportedModes
-          : supportedModes // ignore: cast_nullable_to_non_nullable
-              as List<ControlMode>,
-    ) as $Val);
+    return _then(
+      _value.copyWith(
+            id: null == id
+                ? _value.id
+                : id // ignore: cast_nullable_to_non_nullable
+                      as String,
+            name: null == name
+                ? _value.name
+                : name // ignore: cast_nullable_to_non_nullable
+                      as String,
+            manufacturer: freezed == manufacturer
+                ? _value.manufacturer
+                : manufacturer // ignore: cast_nullable_to_non_nullable
+                      as String?,
+            protocol: null == protocol
+                ? _value.protocol
+                : protocol // ignore: cast_nullable_to_non_nullable
+                      as DeviceProtocol,
+            isControllable: null == isControllable
+                ? _value.isControllable
+                : isControllable // ignore: cast_nullable_to_non_nullable
+                      as bool,
+            supportedModes: null == supportedModes
+                ? _value.supportedModes
+                : supportedModes // ignore: cast_nullable_to_non_nullable
+                      as List<ControlMode>,
+          )
+          as $Val,
+    );
   }
 }
 
 /// @nodoc
-abstract class _$$_TrainerDeviceCopyWith<$Res>
+abstract class _$$TrainerDeviceImplCopyWith<$Res>
     implements $TrainerDeviceCopyWith<$Res> {
-  factory _$$_TrainerDeviceCopyWith(
-          _$_TrainerDevice value, $Res Function(_$_TrainerDevice) then) =
-      __$$_TrainerDeviceCopyWithImpl<$Res>;
+  factory _$$TrainerDeviceImplCopyWith(
+    _$TrainerDeviceImpl value,
+    $Res Function(_$TrainerDeviceImpl) then,
+  ) = __$$TrainerDeviceImplCopyWithImpl<$Res>;
   @override
   @useResult
-  $Res call(
-      {String id,
-      String name,
-      String? manufacturer,
-      DeviceProtocol protocol,
-      bool isControllable,
-      List<ControlMode> supportedModes});
+  $Res call({
+    String id,
+    String name,
+    String? manufacturer,
+    DeviceProtocol protocol,
+    bool isControllable,
+    List<ControlMode> supportedModes,
+  });
 }
 
 /// @nodoc
-class __$$_TrainerDeviceCopyWithImpl<$Res>
-    extends _$TrainerDeviceCopyWithImpl<$Res, _$_TrainerDevice>
-    implements _$$_TrainerDeviceCopyWith<$Res> {
-  __$$_TrainerDeviceCopyWithImpl(
-      _$_TrainerDevice _value, $Res Function(_$_TrainerDevice) _then)
-      : super(_value, _then);
+class __$$TrainerDeviceImplCopyWithImpl<$Res>
+    extends _$TrainerDeviceCopyWithImpl<$Res, _$TrainerDeviceImpl>
+    implements _$$TrainerDeviceImplCopyWith<$Res> {
+  __$$TrainerDeviceImplCopyWithImpl(
+    _$TrainerDeviceImpl _value,
+    $Res Function(_$TrainerDeviceImpl) _then,
+  ) : super(_value, _then);
 
+  /// Create a copy of TrainerDevice
+  /// with the given fields replaced by the non-null parameter values.
   @pragma('vm:prefer-inline')
   @override
   $Res call({
@@ -127,46 +142,48 @@ class __$$_TrainerDeviceCopyWithImpl<$Res>
     Object? isControllable = null,
     Object? supportedModes = null,
   }) {
-    return _then(_$_TrainerDevice(
-      id: null == id
-          ? _value.id
-          : id // ignore: cast_nullable_to_non_nullable
-              as String,
-      name: null == name
-          ? _value.name
-          : name // ignore: cast_nullable_to_non_nullable
-              as String,
-      manufacturer: freezed == manufacturer
-          ? _value.manufacturer
-          : manufacturer // ignore: cast_nullable_to_non_nullable
-              as String?,
-      protocol: null == protocol
-          ? _value.protocol
-          : protocol // ignore: cast_nullable_to_non_nullable
-              as DeviceProtocol,
-      isControllable: null == isControllable
-          ? _value.isControllable
-          : isControllable // ignore: cast_nullable_to_non_nullable
-              as bool,
-      supportedModes: null == supportedModes
-          ? _value._supportedModes
-          : supportedModes // ignore: cast_nullable_to_non_nullable
-              as List<ControlMode>,
-    ));
+    return _then(
+      _$TrainerDeviceImpl(
+        id: null == id
+            ? _value.id
+            : id // ignore: cast_nullable_to_non_nullable
+                  as String,
+        name: null == name
+            ? _value.name
+            : name // ignore: cast_nullable_to_non_nullable
+                  as String,
+        manufacturer: freezed == manufacturer
+            ? _value.manufacturer
+            : manufacturer // ignore: cast_nullable_to_non_nullable
+                  as String?,
+        protocol: null == protocol
+            ? _value.protocol
+            : protocol // ignore: cast_nullable_to_non_nullable
+                  as DeviceProtocol,
+        isControllable: null == isControllable
+            ? _value.isControllable
+            : isControllable // ignore: cast_nullable_to_non_nullable
+                  as bool,
+        supportedModes: null == supportedModes
+            ? _value._supportedModes
+            : supportedModes // ignore: cast_nullable_to_non_nullable
+                  as List<ControlMode>,
+      ),
+    );
   }
 }
 
 /// @nodoc
 
-class _$_TrainerDevice implements _TrainerDevice {
-  const _$_TrainerDevice(
-      {required this.id,
-      required this.name,
-      this.manufacturer,
-      required this.protocol,
-      this.isControllable = false,
-      final List<ControlMode> supportedModes = const []})
-      : _supportedModes = supportedModes;
+class _$TrainerDeviceImpl implements _TrainerDevice {
+  const _$TrainerDeviceImpl({
+    required this.id,
+    required this.name,
+    this.manufacturer,
+    required this.protocol,
+    this.isControllable = false,
+    final List<ControlMode> supportedModes = const [],
+  }) : _supportedModes = supportedModes;
 
   @override
   final String id;
@@ -194,10 +211,10 @@ class _$_TrainerDevice implements _TrainerDevice {
   }
 
   @override
-  bool operator ==(dynamic other) {
+  bool operator ==(Object other) {
     return identical(this, other) ||
         (other.runtimeType == runtimeType &&
-            other is _$_TrainerDevice &&
+            other is _$TrainerDeviceImpl &&
             (identical(other.id, id) || other.id == id) &&
             (identical(other.name, name) || other.name == name) &&
             (identical(other.manufacturer, manufacturer) ||
@@ -206,29 +223,41 @@ class _$_TrainerDevice implements _TrainerDevice {
                 other.protocol == protocol) &&
             (identical(other.isControllable, isControllable) ||
                 other.isControllable == isControllable) &&
-            const DeepCollectionEquality()
-                .equals(other._supportedModes, _supportedModes));
+            const DeepCollectionEquality().equals(
+              other._supportedModes,
+              _supportedModes,
+            ));
   }
 
   @override
-  int get hashCode => Object.hash(runtimeType, id, name, manufacturer, protocol,
-      isControllable, const DeepCollectionEquality().hash(_supportedModes));
+  int get hashCode => Object.hash(
+    runtimeType,
+    id,
+    name,
+    manufacturer,
+    protocol,
+    isControllable,
+    const DeepCollectionEquality().hash(_supportedModes),
+  );
 
-  @JsonKey(ignore: true)
+  /// Create a copy of TrainerDevice
+  /// with the given fields replaced by the non-null parameter values.
+  @JsonKey(includeFromJson: false, includeToJson: false)
   @override
   @pragma('vm:prefer-inline')
-  _$$_TrainerDeviceCopyWith<_$_TrainerDevice> get copyWith =>
-      __$$_TrainerDeviceCopyWithImpl<_$_TrainerDevice>(this, _$identity);
+  _$$TrainerDeviceImplCopyWith<_$TrainerDeviceImpl> get copyWith =>
+      __$$TrainerDeviceImplCopyWithImpl<_$TrainerDeviceImpl>(this, _$identity);
 }
 
 abstract class _TrainerDevice implements TrainerDevice {
-  const factory _TrainerDevice(
-      {required final String id,
-      required final String name,
-      final String? manufacturer,
-      required final DeviceProtocol protocol,
-      final bool isControllable,
-      final List<ControlMode> supportedModes}) = _$_TrainerDevice;
+  const factory _TrainerDevice({
+    required final String id,
+    required final String name,
+    final String? manufacturer,
+    required final DeviceProtocol protocol,
+    final bool isControllable,
+    final List<ControlMode> supportedModes,
+  }) = _$TrainerDeviceImpl;
 
   @override
   String get id;
@@ -242,8 +271,11 @@ abstract class _TrainerDevice implements TrainerDevice {
   bool get isControllable;
   @override
   List<ControlMode> get supportedModes;
+
+  /// Create a copy of TrainerDevice
+  /// with the given fields replaced by the non-null parameter values.
   @override
-  @JsonKey(ignore: true)
-  _$$_TrainerDeviceCopyWith<_$_TrainerDevice> get copyWith =>
+  @JsonKey(includeFromJson: false, includeToJson: false)
+  _$$TrainerDeviceImplCopyWith<_$TrainerDeviceImpl> get copyWith =>
       throw _privateConstructorUsedError;
 }

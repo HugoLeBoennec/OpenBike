@@ -140,7 +140,7 @@ An agent picking up a phase MUST:
 
 | Phase | Title | Status |
 |---|---|---|
-| [P0](P0-foundation.md) | Foundation — CI green, repo hygiene, correctness fixes | NOT_STARTED |
+| [P0](P0-foundation.md) | Foundation — CI green, repo hygiene, correctness fixes | DONE |
 | [P1](P1-platform-config.md) | Platform config — permissions, signing, deep links | NOT_STARTED |
 | [P2](P2-connectivity.md) | Connectivity — multi-sensor, background recording, Windows BLE | NOT_STARTED |
 | [P3](P3-ride-experience.md) | Ride experience — workout HUD, route profile | NOT_STARTED |

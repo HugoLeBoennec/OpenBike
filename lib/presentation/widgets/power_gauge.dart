@@ -112,7 +112,7 @@ class _PowerGaugePainter extends CustomPainter {
           sweep,
           false,
           Paint()
-            ..color = zone.color.withOpacity(0.5)
+            ..color = zone.color.withValues(alpha: 0.5)
             ..style = PaintingStyle.stroke
             ..strokeWidth = _strokeWidth,
         );

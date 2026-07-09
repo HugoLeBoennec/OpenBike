@@ -12,7 +12,8 @@ part of 'route_point.dart';
 T _$identity<T>(T value) => value;
 
 final _privateConstructorUsedError = UnsupportedError(
-    'It seems like you constructed your class using `MyClass._()`. This constructor is only meant to be used by freezed and you are not supposed to need it nor use it.\nPlease check the documentation here for more information: https://github.com/rrousselGit/freezed#custom-getters-and-methods');
+  'It seems like you constructed your class using `MyClass._()`. This constructor is only meant to be used by freezed and you are not supposed to need it nor use it.\nPlease check the documentation here for more information: https://github.com/rrousselGit/freezed#adding-getters-and-methods-to-our-models',
+);
 
 /// @nodoc
 mixin _$RoutePoint {
@@ -21,7 +22,9 @@ mixin _$RoutePoint {
   double get smoothedElevation => throw _privateConstructorUsedError;
   Grade get grade => throw _privateConstructorUsedError;
 
-  @JsonKey(ignore: true)
+  /// Create a copy of RoutePoint
+  /// with the given fields replaced by the non-null parameter values.
+  @JsonKey(includeFromJson: false, includeToJson: false)
   $RoutePointCopyWith<RoutePoint> get copyWith =>
       throw _privateConstructorUsedError;
 }
@@ -29,14 +32,16 @@ mixin _$RoutePoint {
 /// @nodoc
 abstract class $RoutePointCopyWith<$Res> {
   factory $RoutePointCopyWith(
-          RoutePoint value, $Res Function(RoutePoint) then) =
-      _$RoutePointCopyWithImpl<$Res, RoutePoint>;
+    RoutePoint value,
+    $Res Function(RoutePoint) then,
+  ) = _$RoutePointCopyWithImpl<$Res, RoutePoint>;
   @useResult
-  $Res call(
-      {GeoPoint position,
-      double distanceFromStart,
-      double smoothedElevation,
-      Grade grade});
+  $Res call({
+    GeoPoint position,
+    double distanceFromStart,
+    double smoothedElevation,
+    Grade grade,
+  });
 
   $GeoPointCopyWith<$Res> get position;
   $GradeCopyWith<$Res> get grade;
@@ -52,6 +57,8 @@ class _$RoutePointCopyWithImpl<$Res, $Val extends RoutePoint>
   // ignore: unused_field
   final $Res Function($Val) _then;
 
+  /// Create a copy of RoutePoint
+  /// with the given fields replaced by the non-null parameter values.
   @pragma('vm:prefer-inline')
   @override
   $Res call({
@@ -60,26 +67,31 @@ class _$RoutePointCopyWithImpl<$Res, $Val extends RoutePoint>
     Object? smoothedElevation = null,
     Object? grade = null,
   }) {
-    return _then(_value.copyWith(
-      position: null == position
-          ? _value.position
-          : position // ignore: cast_nullable_to_non_nullable
-              as GeoPoint,
-      distanceFromStart: null == distanceFromStart
-          ? _value.distanceFromStart
-          : distanceFromStart // ignore: cast_nullable_to_non_nullable
-              as double,
-      smoothedElevation: null == smoothedElevation
-          ? _value.smoothedElevation
-          : smoothedElevation // ignore: cast_nullable_to_non_nullable
-              as double,
-      grade: null == grade
-          ? _value.grade
-          : grade // ignore: cast_nullable_to_non_nullable
-              as Grade,
-    ) as $Val);
+    return _then(
+      _value.copyWith(
+            position: null == position
+                ? _value.position
+                : position // ignore: cast_nullable_to_non_nullable
+                      as GeoPoint,
+            distanceFromStart: null == distanceFromStart
+                ? _value.distanceFromStart
+                : distanceFromStart // ignore: cast_nullable_to_non_nullable
+                      as double,
+            smoothedElevation: null == smoothedElevation
+                ? _value.smoothedElevation
+                : smoothedElevation // ignore: cast_nullable_to_non_nullable
+                      as double,
+            grade: null == grade
+                ? _value.grade
+                : grade // ignore: cast_nullable_to_non_nullable
+                      as Grade,
+          )
+          as $Val,
+    );
   }
 
+  /// Create a copy of RoutePoint
+  /// with the given fields replaced by the non-null parameter values.
   @override
   @pragma('vm:prefer-inline')
   $GeoPointCopyWith<$Res> get position {
@@ -88,6 +100,8 @@ class _$RoutePointCopyWithImpl<$Res, $Val extends RoutePoint>
     });
   }
 
+  /// Create a copy of RoutePoint
+  /// with the given fields replaced by the non-null parameter values.
   @override
   @pragma('vm:prefer-inline')
   $GradeCopyWith<$Res> get grade {
@@ -98,18 +112,20 @@ class _$RoutePointCopyWithImpl<$Res, $Val extends RoutePoint>
 }
 
 /// @nodoc
-abstract class _$$_RoutePointCopyWith<$Res>
+abstract class _$$RoutePointImplCopyWith<$Res>
     implements $RoutePointCopyWith<$Res> {
-  factory _$$_RoutePointCopyWith(
-          _$_RoutePoint value, $Res Function(_$_RoutePoint) then) =
-      __$$_RoutePointCopyWithImpl<$Res>;
+  factory _$$RoutePointImplCopyWith(
+    _$RoutePointImpl value,
+    $Res Function(_$RoutePointImpl) then,
+  ) = __$$RoutePointImplCopyWithImpl<$Res>;
   @override
   @useResult
-  $Res call(
-      {GeoPoint position,
-      double distanceFromStart,
-      double smoothedElevation,
-      Grade grade});
+  $Res call({
+    GeoPoint position,
+    double distanceFromStart,
+    double smoothedElevation,
+    Grade grade,
+  });
 
   @override
   $GeoPointCopyWith<$Res> get position;
@@ -118,13 +134,16 @@ abstract class _$$_RoutePointCopyWith<$Res>
 }
 
 /// @nodoc
-class __$$_RoutePointCopyWithImpl<$Res>
-    extends _$RoutePointCopyWithImpl<$Res, _$_RoutePoint>
-    implements _$$_RoutePointCopyWith<$Res> {
-  __$$_RoutePointCopyWithImpl(
-      _$_RoutePoint _value, $Res Function(_$_RoutePoint) _then)
-      : super(_value, _then);
+class __$$RoutePointImplCopyWithImpl<$Res>
+    extends _$RoutePointCopyWithImpl<$Res, _$RoutePointImpl>
+    implements _$$RoutePointImplCopyWith<$Res> {
+  __$$RoutePointImplCopyWithImpl(
+    _$RoutePointImpl _value,
+    $Res Function(_$RoutePointImpl) _then,
+  ) : super(_value, _then);
 
+  /// Create a copy of RoutePoint
+  /// with the given fields replaced by the non-null parameter values.
   @pragma('vm:prefer-inline')
   @override
   $Res call({
@@ -133,36 +152,38 @@ class __$$_RoutePointCopyWithImpl<$Res>
     Object? smoothedElevation = null,
     Object? grade = null,
   }) {
-    return _then(_$_RoutePoint(
-      position: null == position
-          ? _value.position
-          : position // ignore: cast_nullable_to_non_nullable
-              as GeoPoint,
-      distanceFromStart: null == distanceFromStart
-          ? _value.distanceFromStart
-          : distanceFromStart // ignore: cast_nullable_to_non_nullable
-              as double,
-      smoothedElevation: null == smoothedElevation
-          ? _value.smoothedElevation
-          : smoothedElevation // ignore: cast_nullable_to_non_nullable
-              as double,
-      grade: null == grade
-          ? _value.grade
-          : grade // ignore: cast_nullable_to_non_nullable
-              as Grade,
-    ));
+    return _then(
+      _$RoutePointImpl(
+        position: null == position
+            ? _value.position
+            : position // ignore: cast_nullable_to_non_nullable
+                  as GeoPoint,
+        distanceFromStart: null == distanceFromStart
+            ? _value.distanceFromStart
+            : distanceFromStart // ignore: cast_nullable_to_non_nullable
+                  as double,
+        smoothedElevation: null == smoothedElevation
+            ? _value.smoothedElevation
+            : smoothedElevation // ignore: cast_nullable_to_non_nullable
+                  as double,
+        grade: null == grade
+            ? _value.grade
+            : grade // ignore: cast_nullable_to_non_nullable
+                  as Grade,
+      ),
+    );
   }
 }
 
 /// @nodoc
 
-class _$_RoutePoint extends _RoutePoint {
-  const _$_RoutePoint(
-      {required this.position,
-      required this.distanceFromStart,
-      required this.smoothedElevation,
-      required this.grade})
-      : super._();
+class _$RoutePointImpl extends _RoutePoint {
+  const _$RoutePointImpl({
+    required this.position,
+    required this.distanceFromStart,
+    required this.smoothedElevation,
+    required this.grade,
+  }) : super._();
 
   @override
   final GeoPoint position;
@@ -179,10 +200,10 @@ class _$_RoutePoint extends _RoutePoint {
   }
 
   @override
-  bool operator ==(dynamic other) {
+  bool operator ==(Object other) {
     return identical(this, other) ||
         (other.runtimeType == runtimeType &&
-            other is _$_RoutePoint &&
+            other is _$RoutePointImpl &&
             (identical(other.position, position) ||
                 other.position == position) &&
             (identical(other.distanceFromStart, distanceFromStart) ||
@@ -194,21 +215,29 @@ class _$_RoutePoint extends _RoutePoint {
 
   @override
   int get hashCode => Object.hash(
-      runtimeType, position, distanceFromStart, smoothedElevation, grade);
+    runtimeType,
+    position,
+    distanceFromStart,
+    smoothedElevation,
+    grade,
+  );
 
-  @JsonKey(ignore: true)
+  /// Create a copy of RoutePoint
+  /// with the given fields replaced by the non-null parameter values.
+  @JsonKey(includeFromJson: false, includeToJson: false)
   @override
   @pragma('vm:prefer-inline')
-  _$$_RoutePointCopyWith<_$_RoutePoint> get copyWith =>
-      __$$_RoutePointCopyWithImpl<_$_RoutePoint>(this, _$identity);
+  _$$RoutePointImplCopyWith<_$RoutePointImpl> get copyWith =>
+      __$$RoutePointImplCopyWithImpl<_$RoutePointImpl>(this, _$identity);
 }
 
 abstract class _RoutePoint extends RoutePoint {
-  const factory _RoutePoint(
-      {required final GeoPoint position,
-      required final double distanceFromStart,
-      required final double smoothedElevation,
-      required final Grade grade}) = _$_RoutePoint;
+  const factory _RoutePoint({
+    required final GeoPoint position,
+    required final double distanceFromStart,
+    required final double smoothedElevation,
+    required final Grade grade,
+  }) = _$RoutePointImpl;
   const _RoutePoint._() : super._();
 
   @override
@@ -219,8 +248,11 @@ abstract class _RoutePoint extends RoutePoint {
   double get smoothedElevation;
   @override
   Grade get grade;
+
+  /// Create a copy of RoutePoint
+  /// with the given fields replaced by the non-null parameter values.
   @override
-  @JsonKey(ignore: true)
-  _$$_RoutePointCopyWith<_$_RoutePoint> get copyWith =>
+  @JsonKey(includeFromJson: false, includeToJson: false)
+  _$$RoutePointImplCopyWith<_$RoutePointImpl> get copyWith =>
       throw _privateConstructorUsedError;
 }

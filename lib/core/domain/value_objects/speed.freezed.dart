@@ -12,13 +12,16 @@ part of 'speed.dart';
 T _$identity<T>(T value) => value;
 
 final _privateConstructorUsedError = UnsupportedError(
-    'It seems like you constructed your class using `MyClass._()`. This constructor is only meant to be used by freezed and you are not supposed to need it nor use it.\nPlease check the documentation here for more information: https://github.com/rrousselGit/freezed#custom-getters-and-methods');
+  'It seems like you constructed your class using `MyClass._()`. This constructor is only meant to be used by freezed and you are not supposed to need it nor use it.\nPlease check the documentation here for more information: https://github.com/rrousselGit/freezed#adding-getters-and-methods-to-our-models',
+);
 
 /// @nodoc
 mixin _$Speed {
   double get kmh => throw _privateConstructorUsedError;
 
-  @JsonKey(ignore: true)
+  /// Create a copy of Speed
+  /// with the given fields replaced by the non-null parameter values.
+  @JsonKey(includeFromJson: false, includeToJson: false)
   $SpeedCopyWith<Speed> get copyWith => throw _privateConstructorUsedError;
 }
 
@@ -40,53 +43,63 @@ class _$SpeedCopyWithImpl<$Res, $Val extends Speed>
   // ignore: unused_field
   final $Res Function($Val) _then;
 
+  /// Create a copy of Speed
+  /// with the given fields replaced by the non-null parameter values.
   @pragma('vm:prefer-inline')
   @override
-  $Res call({
-    Object? kmh = null,
-  }) {
-    return _then(_value.copyWith(
-      kmh: null == kmh
-          ? _value.kmh
-          : kmh // ignore: cast_nullable_to_non_nullable
-              as double,
-    ) as $Val);
+  $Res call({Object? kmh = null}) {
+    return _then(
+      _value.copyWith(
+            kmh: null == kmh
+                ? _value.kmh
+                : kmh // ignore: cast_nullable_to_non_nullable
+                      as double,
+          )
+          as $Val,
+    );
   }
 }
 
 /// @nodoc
-abstract class _$$_SpeedCopyWith<$Res> implements $SpeedCopyWith<$Res> {
-  factory _$$_SpeedCopyWith(_$_Speed value, $Res Function(_$_Speed) then) =
-      __$$_SpeedCopyWithImpl<$Res>;
+abstract class _$$SpeedImplCopyWith<$Res> implements $SpeedCopyWith<$Res> {
+  factory _$$SpeedImplCopyWith(
+    _$SpeedImpl value,
+    $Res Function(_$SpeedImpl) then,
+  ) = __$$SpeedImplCopyWithImpl<$Res>;
   @override
   @useResult
   $Res call({double kmh});
 }
 
 /// @nodoc
-class __$$_SpeedCopyWithImpl<$Res> extends _$SpeedCopyWithImpl<$Res, _$_Speed>
-    implements _$$_SpeedCopyWith<$Res> {
-  __$$_SpeedCopyWithImpl(_$_Speed _value, $Res Function(_$_Speed) _then)
-      : super(_value, _then);
+class __$$SpeedImplCopyWithImpl<$Res>
+    extends _$SpeedCopyWithImpl<$Res, _$SpeedImpl>
+    implements _$$SpeedImplCopyWith<$Res> {
+  __$$SpeedImplCopyWithImpl(
+    _$SpeedImpl _value,
+    $Res Function(_$SpeedImpl) _then,
+  ) : super(_value, _then);
 
+  /// Create a copy of Speed
+  /// with the given fields replaced by the non-null parameter values.
   @pragma('vm:prefer-inline')
   @override
-  $Res call({
-    Object? kmh = null,
-  }) {
-    return _then(_$_Speed(
-      null == kmh
-          ? _value.kmh
-          : kmh // ignore: cast_nullable_to_non_nullable
-              as double,
-    ));
+  $Res call({Object? kmh = null}) {
+    return _then(
+      _$SpeedImpl(
+        null == kmh
+            ? _value.kmh
+            : kmh // ignore: cast_nullable_to_non_nullable
+                  as double,
+      ),
+    );
   }
 }
 
 /// @nodoc
 
-class _$_Speed extends _Speed {
-  const _$_Speed(this.kmh) : super._();
+class _$SpeedImpl extends _Speed {
+  const _$SpeedImpl(this.kmh) : super._();
 
   @override
   final double kmh;
@@ -97,31 +110,36 @@ class _$_Speed extends _Speed {
   }
 
   @override
-  bool operator ==(dynamic other) {
+  bool operator ==(Object other) {
     return identical(this, other) ||
         (other.runtimeType == runtimeType &&
-            other is _$_Speed &&
+            other is _$SpeedImpl &&
             (identical(other.kmh, kmh) || other.kmh == kmh));
   }
 
   @override
   int get hashCode => Object.hash(runtimeType, kmh);
 
-  @JsonKey(ignore: true)
+  /// Create a copy of Speed
+  /// with the given fields replaced by the non-null parameter values.
+  @JsonKey(includeFromJson: false, includeToJson: false)
   @override
   @pragma('vm:prefer-inline')
-  _$$_SpeedCopyWith<_$_Speed> get copyWith =>
-      __$$_SpeedCopyWithImpl<_$_Speed>(this, _$identity);
+  _$$SpeedImplCopyWith<_$SpeedImpl> get copyWith =>
+      __$$SpeedImplCopyWithImpl<_$SpeedImpl>(this, _$identity);
 }
 
 abstract class _Speed extends Speed {
-  const factory _Speed(final double kmh) = _$_Speed;
+  const factory _Speed(final double kmh) = _$SpeedImpl;
   const _Speed._() : super._();
 
   @override
   double get kmh;
+
+  /// Create a copy of Speed
+  /// with the given fields replaced by the non-null parameter values.
   @override
-  @JsonKey(ignore: true)
-  _$$_SpeedCopyWith<_$_Speed> get copyWith =>
+  @JsonKey(includeFromJson: false, includeToJson: false)
+  _$$SpeedImplCopyWith<_$SpeedImpl> get copyWith =>
       throw _privateConstructorUsedError;
 }

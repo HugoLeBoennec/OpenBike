@@ -8,6 +8,7 @@ import 'package:url_launcher/url_launcher.dart';
 
 import '../../core/domain/entities/entities.dart';
 import '../../core/domain/ports/export_port.dart';
+import '../../core/domain/value_objects/value_objects.dart';
 import '../../infrastructure/files/fit_encoder.dart';
 import '../plugin_interfaces.dart';
 import '../plugin_manifest.dart';
@@ -26,7 +27,7 @@ class StravaConfig {
   const StravaConfig({
     required this.clientId,
     required this.clientSecret,
-    this.redirectUri = 'pedalhub://strava/callback',
+    this.redirectUri = 'openbike://strava/callback',
   });
 }
 
@@ -127,7 +128,7 @@ class StravaExportPlugin implements ExportPlugin {
 
   /// Called when the app receives the deep link callback.
   ///
-  /// [callbackUri] is the full URI: `pedalhub://strava/callback?code=XXX`.
+  /// [callbackUri] is the full URI: `openbike://strava/callback?code=XXX`.
   Future<void> handleCallback(Uri callbackUri) async {
     final code = callbackUri.queryParameters['code'];
     if (code == null) {
@@ -218,12 +219,13 @@ class StravaExportPlugin implements ExportPlugin {
   Future<String> export(
     Ride ride, {
     ExportFormat format = ExportFormat.fit,
+    Watts? ftp,
   }) async {
     await _ensureValidToken();
     _checkRateLimit();
 
     // 1. Encode ride to FIT binary
-    final Uint8List fitBytes = _fitEncoder.encode(ride);
+    final Uint8List fitBytes = _fitEncoder.encode(ride, ftp: ftp);
 
     // 2. Upload via multipart POST
     final uploadId = await _uploadFit(fitBytes, ride);

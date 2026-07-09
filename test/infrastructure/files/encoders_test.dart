@@ -62,6 +62,77 @@ int _computeFileCrc(Uint8List data) {
 }
 
 // ---------------------------------------------------------------------------
+// Minimal generic FIT record walker — locates the session message (global
+// mesg 18) and reads its fields by FIT field definition number, without
+// hard-coding byte offsets that depend on reading count.
+// ---------------------------------------------------------------------------
+
+class _FieldDef {
+  const _FieldDef(this.num, this.size);
+  final int num;
+  final int size;
+}
+
+/// Walks the FIT data records starting after the 14-byte header and returns
+/// the raw unsigned integer field values (keyed by field definition number)
+/// of the first data message matching [targetGlobalMesg].
+Map<int, int> _readMessageFields(Uint8List bytes, int targetGlobalMesg) {
+  final bd = ByteData.sublistView(bytes);
+  final definitions = <int, List<_FieldDef>>{};
+  final globalMesgByLocal = <int, int>{};
+
+  var offset = 14; // skip header
+  while (offset < bytes.length - 2) {
+    final recordHeader = bytes[offset];
+    final localType = recordHeader & 0x0F;
+
+    if (recordHeader & 0x40 != 0) {
+      // Definition record: [0]header [1]reserved [2]arch [3-4]globalMesg
+      // [5]numFields [6..]field triples.
+      final globalMesg = bd.getUint16(offset + 3, Endian.little);
+      final numFields = bytes[offset + 5];
+      final fields = <_FieldDef>[];
+      var fieldOffset = offset + 6;
+      for (var i = 0; i < numFields; i++) {
+        fields.add(_FieldDef(bytes[fieldOffset], bytes[fieldOffset + 1]));
+        fieldOffset += 3;
+      }
+      definitions[localType] = fields;
+      globalMesgByLocal[localType] = globalMesg;
+      offset = fieldOffset;
+    } else {
+      // Data record.
+      final fields = definitions[localType]!;
+      final isTarget = globalMesgByLocal[localType] == targetGlobalMesg;
+      var dataOffset = offset + 1;
+      final values = <int, int>{};
+      for (final field in fields) {
+        if (isTarget) {
+          values[field.num] = switch (field.size) {
+            1 => bytes[dataOffset],
+            2 => bd.getUint16(dataOffset, Endian.little),
+            4 => bd.getUint32(dataOffset, Endian.little),
+            _ => throw StateError('Unsupported field size ${field.size}'),
+          };
+        }
+        dataOffset += field.size;
+      }
+      if (isTarget) return values;
+      offset = dataOffset;
+    }
+  }
+  throw StateError('Message $targetGlobalMesg not found');
+}
+
+int _sessionThresholdPower(Uint8List bytes) =>
+    _readMessageFields(bytes, 18)[37]!;
+
+double _sessionIntensityFactor(Uint8List bytes) =>
+    _readMessageFields(bytes, 18)[36]! / 1000.0;
+
+double _sessionTss(Uint8List bytes) => _readMessageFields(bytes, 18)[35]! / 10.0;
+
+// ---------------------------------------------------------------------------
 // Tests
 // ---------------------------------------------------------------------------
 
@@ -193,6 +264,25 @@ void main() {
       final a = fitEncoder.encode(ride);
       final b = fitEncoder.encode(ride);
       expect(a, equals(b));
+    });
+
+    test('threshold_power in session message reflects the given FTP', () {
+      final defaultBytes = fitEncoder.encode(ride);
+      final ftp250Bytes = fitEncoder.encode(ride, ftp: const Watts(250));
+
+      final defaultThreshold = _sessionThresholdPower(defaultBytes);
+      final threshold250 = _sessionThresholdPower(ftp250Bytes);
+
+      // Default (no FTP given) falls back to 200 W.
+      expect(defaultThreshold, 200);
+      expect(threshold250, 250);
+
+      // TSS/IF in the session message must be computed against the same FTP.
+      final expectedIf = ride.intensityFactor(const Watts(250));
+      final expectedTss = ride.tss(const Watts(250));
+      expect(_sessionIntensityFactor(ftp250Bytes),
+          closeTo(expectedIf, 0.001));
+      expect(_sessionTss(ftp250Bytes), closeTo(expectedTss, 0.1));
     });
   });
 

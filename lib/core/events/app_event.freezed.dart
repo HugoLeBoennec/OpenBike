@@ -12,14 +12,17 @@ part of 'app_event.dart';
 T _$identity<T>(T value) => value;
 
 final _privateConstructorUsedError = UnsupportedError(
-    'It seems like you constructed your class using `MyClass._()`. This constructor is only meant to be used by freezed and you are not supposed to need it nor use it.\nPlease check the documentation here for more information: https://github.com/rrousselGit/freezed#custom-getters-and-methods');
+  'It seems like you constructed your class using `MyClass._()`. This constructor is only meant to be used by freezed and you are not supposed to need it nor use it.\nPlease check the documentation here for more information: https://github.com/rrousselGit/freezed#adding-getters-and-methods-to-our-models',
+);
 
 /// @nodoc
 mixin _$SensorEvent {
   SensorReading get reading => throw _privateConstructorUsedError;
   String get deviceId => throw _privateConstructorUsedError;
 
-  @JsonKey(ignore: true)
+  /// Create a copy of SensorEvent
+  /// with the given fields replaced by the non-null parameter values.
+  @JsonKey(includeFromJson: false, includeToJson: false)
   $SensorEventCopyWith<SensorEvent> get copyWith =>
       throw _privateConstructorUsedError;
 }
@@ -27,8 +30,9 @@ mixin _$SensorEvent {
 /// @nodoc
 abstract class $SensorEventCopyWith<$Res> {
   factory $SensorEventCopyWith(
-          SensorEvent value, $Res Function(SensorEvent) then) =
-      _$SensorEventCopyWithImpl<$Res, SensorEvent>;
+    SensorEvent value,
+    $Res Function(SensorEvent) then,
+  ) = _$SensorEventCopyWithImpl<$Res, SensorEvent>;
   @useResult
   $Res call({SensorReading reading, String deviceId});
 
@@ -45,24 +49,28 @@ class _$SensorEventCopyWithImpl<$Res, $Val extends SensorEvent>
   // ignore: unused_field
   final $Res Function($Val) _then;
 
+  /// Create a copy of SensorEvent
+  /// with the given fields replaced by the non-null parameter values.
   @pragma('vm:prefer-inline')
   @override
-  $Res call({
-    Object? reading = null,
-    Object? deviceId = null,
-  }) {
-    return _then(_value.copyWith(
-      reading: null == reading
-          ? _value.reading
-          : reading // ignore: cast_nullable_to_non_nullable
-              as SensorReading,
-      deviceId: null == deviceId
-          ? _value.deviceId
-          : deviceId // ignore: cast_nullable_to_non_nullable
-              as String,
-    ) as $Val);
+  $Res call({Object? reading = null, Object? deviceId = null}) {
+    return _then(
+      _value.copyWith(
+            reading: null == reading
+                ? _value.reading
+                : reading // ignore: cast_nullable_to_non_nullable
+                      as SensorReading,
+            deviceId: null == deviceId
+                ? _value.deviceId
+                : deviceId // ignore: cast_nullable_to_non_nullable
+                      as String,
+          )
+          as $Val,
+    );
   }
 
+  /// Create a copy of SensorEvent
+  /// with the given fields replaced by the non-null parameter values.
   @override
   @pragma('vm:prefer-inline')
   $SensorReadingCopyWith<$Res> get reading {
@@ -73,11 +81,12 @@ class _$SensorEventCopyWithImpl<$Res, $Val extends SensorEvent>
 }
 
 /// @nodoc
-abstract class _$$_SensorEventCopyWith<$Res>
+abstract class _$$SensorEventImplCopyWith<$Res>
     implements $SensorEventCopyWith<$Res> {
-  factory _$$_SensorEventCopyWith(
-          _$_SensorEvent value, $Res Function(_$_SensorEvent) then) =
-      __$$_SensorEventCopyWithImpl<$Res>;
+  factory _$$SensorEventImplCopyWith(
+    _$SensorEventImpl value,
+    $Res Function(_$SensorEventImpl) then,
+  ) = __$$SensorEventImplCopyWithImpl<$Res>;
   @override
   @useResult
   $Res call({SensorReading reading, String deviceId});
@@ -87,36 +96,38 @@ abstract class _$$_SensorEventCopyWith<$Res>
 }
 
 /// @nodoc
-class __$$_SensorEventCopyWithImpl<$Res>
-    extends _$SensorEventCopyWithImpl<$Res, _$_SensorEvent>
-    implements _$$_SensorEventCopyWith<$Res> {
-  __$$_SensorEventCopyWithImpl(
-      _$_SensorEvent _value, $Res Function(_$_SensorEvent) _then)
-      : super(_value, _then);
+class __$$SensorEventImplCopyWithImpl<$Res>
+    extends _$SensorEventCopyWithImpl<$Res, _$SensorEventImpl>
+    implements _$$SensorEventImplCopyWith<$Res> {
+  __$$SensorEventImplCopyWithImpl(
+    _$SensorEventImpl _value,
+    $Res Function(_$SensorEventImpl) _then,
+  ) : super(_value, _then);
 
+  /// Create a copy of SensorEvent
+  /// with the given fields replaced by the non-null parameter values.
   @pragma('vm:prefer-inline')
   @override
-  $Res call({
-    Object? reading = null,
-    Object? deviceId = null,
-  }) {
-    return _then(_$_SensorEvent(
-      reading: null == reading
-          ? _value.reading
-          : reading // ignore: cast_nullable_to_non_nullable
-              as SensorReading,
-      deviceId: null == deviceId
-          ? _value.deviceId
-          : deviceId // ignore: cast_nullable_to_non_nullable
-              as String,
-    ));
+  $Res call({Object? reading = null, Object? deviceId = null}) {
+    return _then(
+      _$SensorEventImpl(
+        reading: null == reading
+            ? _value.reading
+            : reading // ignore: cast_nullable_to_non_nullable
+                  as SensorReading,
+        deviceId: null == deviceId
+            ? _value.deviceId
+            : deviceId // ignore: cast_nullable_to_non_nullable
+                  as String,
+      ),
+    );
   }
 }
 
 /// @nodoc
 
-class _$_SensorEvent implements _SensorEvent {
-  const _$_SensorEvent({required this.reading, required this.deviceId});
+class _$SensorEventImpl implements _SensorEvent {
+  const _$SensorEventImpl({required this.reading, required this.deviceId});
 
   @override
   final SensorReading reading;
@@ -129,10 +140,10 @@ class _$_SensorEvent implements _SensorEvent {
   }
 
   @override
-  bool operator ==(dynamic other) {
+  bool operator ==(Object other) {
     return identical(this, other) ||
         (other.runtimeType == runtimeType &&
-            other is _$_SensorEvent &&
+            other is _$SensorEventImpl &&
             (identical(other.reading, reading) || other.reading == reading) &&
             (identical(other.deviceId, deviceId) ||
                 other.deviceId == deviceId));
@@ -141,25 +152,31 @@ class _$_SensorEvent implements _SensorEvent {
   @override
   int get hashCode => Object.hash(runtimeType, reading, deviceId);
 
-  @JsonKey(ignore: true)
+  /// Create a copy of SensorEvent
+  /// with the given fields replaced by the non-null parameter values.
+  @JsonKey(includeFromJson: false, includeToJson: false)
   @override
   @pragma('vm:prefer-inline')
-  _$$_SensorEventCopyWith<_$_SensorEvent> get copyWith =>
-      __$$_SensorEventCopyWithImpl<_$_SensorEvent>(this, _$identity);
+  _$$SensorEventImplCopyWith<_$SensorEventImpl> get copyWith =>
+      __$$SensorEventImplCopyWithImpl<_$SensorEventImpl>(this, _$identity);
 }
 
 abstract class _SensorEvent implements SensorEvent {
-  const factory _SensorEvent(
-      {required final SensorReading reading,
-      required final String deviceId}) = _$_SensorEvent;
+  const factory _SensorEvent({
+    required final SensorReading reading,
+    required final String deviceId,
+  }) = _$SensorEventImpl;
 
   @override
   SensorReading get reading;
   @override
   String get deviceId;
+
+  /// Create a copy of SensorEvent
+  /// with the given fields replaced by the non-null parameter values.
   @override
-  @JsonKey(ignore: true)
-  _$$_SensorEventCopyWith<_$_SensorEvent> get copyWith =>
+  @JsonKey(includeFromJson: false, includeToJson: false)
+  _$$SensorEventImplCopyWith<_$SensorEventImpl> get copyWith =>
       throw _privateConstructorUsedError;
 }
 
@@ -171,16 +188,14 @@ mixin _$TrainerEvent {
     required TResult Function(String deviceId) disconnected,
     required TResult Function(String deviceId) controlAcquired,
     required TResult Function(String deviceId, ControlMode mode) modeChanged,
-  }) =>
-      throw _privateConstructorUsedError;
+  }) => throw _privateConstructorUsedError;
   @optionalTypeArgs
   TResult? whenOrNull<TResult extends Object?>({
     TResult? Function(TrainerDevice device)? connected,
     TResult? Function(String deviceId)? disconnected,
     TResult? Function(String deviceId)? controlAcquired,
     TResult? Function(String deviceId, ControlMode mode)? modeChanged,
-  }) =>
-      throw _privateConstructorUsedError;
+  }) => throw _privateConstructorUsedError;
   @optionalTypeArgs
   TResult maybeWhen<TResult extends Object?>({
     TResult Function(TrainerDevice device)? connected,
@@ -188,24 +203,21 @@ mixin _$TrainerEvent {
     TResult Function(String deviceId)? controlAcquired,
     TResult Function(String deviceId, ControlMode mode)? modeChanged,
     required TResult orElse(),
-  }) =>
-      throw _privateConstructorUsedError;
+  }) => throw _privateConstructorUsedError;
   @optionalTypeArgs
   TResult map<TResult extends Object?>({
     required TResult Function(TrainerConnected value) connected,
     required TResult Function(TrainerDisconnected value) disconnected,
     required TResult Function(TrainerControlAcquired value) controlAcquired,
     required TResult Function(TrainerModeChanged value) modeChanged,
-  }) =>
-      throw _privateConstructorUsedError;
+  }) => throw _privateConstructorUsedError;
   @optionalTypeArgs
   TResult? mapOrNull<TResult extends Object?>({
     TResult? Function(TrainerConnected value)? connected,
     TResult? Function(TrainerDisconnected value)? disconnected,
     TResult? Function(TrainerControlAcquired value)? controlAcquired,
     TResult? Function(TrainerModeChanged value)? modeChanged,
-  }) =>
-      throw _privateConstructorUsedError;
+  }) => throw _privateConstructorUsedError;
   @optionalTypeArgs
   TResult maybeMap<TResult extends Object?>({
     TResult Function(TrainerConnected value)? connected,
@@ -213,15 +225,15 @@ mixin _$TrainerEvent {
     TResult Function(TrainerControlAcquired value)? controlAcquired,
     TResult Function(TrainerModeChanged value)? modeChanged,
     required TResult orElse(),
-  }) =>
-      throw _privateConstructorUsedError;
+  }) => throw _privateConstructorUsedError;
 }
 
 /// @nodoc
 abstract class $TrainerEventCopyWith<$Res> {
   factory $TrainerEventCopyWith(
-          TrainerEvent value, $Res Function(TrainerEvent) then) =
-      _$TrainerEventCopyWithImpl<$Res, TrainerEvent>;
+    TrainerEvent value,
+    $Res Function(TrainerEvent) then,
+  ) = _$TrainerEventCopyWithImpl<$Res, TrainerEvent>;
 }
 
 /// @nodoc
@@ -233,13 +245,17 @@ class _$TrainerEventCopyWithImpl<$Res, $Val extends TrainerEvent>
   final $Val _value;
   // ignore: unused_field
   final $Res Function($Val) _then;
+
+  /// Create a copy of TrainerEvent
+  /// with the given fields replaced by the non-null parameter values.
 }
 
 /// @nodoc
-abstract class _$$TrainerConnectedCopyWith<$Res> {
-  factory _$$TrainerConnectedCopyWith(
-          _$TrainerConnected value, $Res Function(_$TrainerConnected) then) =
-      __$$TrainerConnectedCopyWithImpl<$Res>;
+abstract class _$$TrainerConnectedImplCopyWith<$Res> {
+  factory _$$TrainerConnectedImplCopyWith(
+    _$TrainerConnectedImpl value,
+    $Res Function(_$TrainerConnectedImpl) then,
+  ) = __$$TrainerConnectedImplCopyWithImpl<$Res>;
   @useResult
   $Res call({TrainerDevice device});
 
@@ -247,26 +263,31 @@ abstract class _$$TrainerConnectedCopyWith<$Res> {
 }
 
 /// @nodoc
-class __$$TrainerConnectedCopyWithImpl<$Res>
-    extends _$TrainerEventCopyWithImpl<$Res, _$TrainerConnected>
-    implements _$$TrainerConnectedCopyWith<$Res> {
-  __$$TrainerConnectedCopyWithImpl(
-      _$TrainerConnected _value, $Res Function(_$TrainerConnected) _then)
-      : super(_value, _then);
+class __$$TrainerConnectedImplCopyWithImpl<$Res>
+    extends _$TrainerEventCopyWithImpl<$Res, _$TrainerConnectedImpl>
+    implements _$$TrainerConnectedImplCopyWith<$Res> {
+  __$$TrainerConnectedImplCopyWithImpl(
+    _$TrainerConnectedImpl _value,
+    $Res Function(_$TrainerConnectedImpl) _then,
+  ) : super(_value, _then);
 
+  /// Create a copy of TrainerEvent
+  /// with the given fields replaced by the non-null parameter values.
   @pragma('vm:prefer-inline')
   @override
-  $Res call({
-    Object? device = null,
-  }) {
-    return _then(_$TrainerConnected(
-      null == device
-          ? _value.device
-          : device // ignore: cast_nullable_to_non_nullable
-              as TrainerDevice,
-    ));
+  $Res call({Object? device = null}) {
+    return _then(
+      _$TrainerConnectedImpl(
+        null == device
+            ? _value.device
+            : device // ignore: cast_nullable_to_non_nullable
+                  as TrainerDevice,
+      ),
+    );
   }
 
+  /// Create a copy of TrainerEvent
+  /// with the given fields replaced by the non-null parameter values.
   @override
   @pragma('vm:prefer-inline')
   $TrainerDeviceCopyWith<$Res> get device {
@@ -278,8 +299,8 @@ class __$$TrainerConnectedCopyWithImpl<$Res>
 
 /// @nodoc
 
-class _$TrainerConnected implements TrainerConnected {
-  const _$TrainerConnected(this.device);
+class _$TrainerConnectedImpl implements TrainerConnected {
+  const _$TrainerConnectedImpl(this.device);
 
   @override
   final TrainerDevice device;
@@ -290,21 +311,26 @@ class _$TrainerConnected implements TrainerConnected {
   }
 
   @override
-  bool operator ==(dynamic other) {
+  bool operator ==(Object other) {
     return identical(this, other) ||
         (other.runtimeType == runtimeType &&
-            other is _$TrainerConnected &&
+            other is _$TrainerConnectedImpl &&
             (identical(other.device, device) || other.device == device));
   }
 
   @override
   int get hashCode => Object.hash(runtimeType, device);
 
-  @JsonKey(ignore: true)
+  /// Create a copy of TrainerEvent
+  /// with the given fields replaced by the non-null parameter values.
+  @JsonKey(includeFromJson: false, includeToJson: false)
   @override
   @pragma('vm:prefer-inline')
-  _$$TrainerConnectedCopyWith<_$TrainerConnected> get copyWith =>
-      __$$TrainerConnectedCopyWithImpl<_$TrainerConnected>(this, _$identity);
+  _$$TrainerConnectedImplCopyWith<_$TrainerConnectedImpl> get copyWith =>
+      __$$TrainerConnectedImplCopyWithImpl<_$TrainerConnectedImpl>(
+        this,
+        _$identity,
+      );
 
   @override
   @optionalTypeArgs
@@ -383,49 +409,56 @@ class _$TrainerConnected implements TrainerConnected {
 
 abstract class TrainerConnected implements TrainerEvent {
   const factory TrainerConnected(final TrainerDevice device) =
-      _$TrainerConnected;
+      _$TrainerConnectedImpl;
 
   TrainerDevice get device;
-  @JsonKey(ignore: true)
-  _$$TrainerConnectedCopyWith<_$TrainerConnected> get copyWith =>
+
+  /// Create a copy of TrainerEvent
+  /// with the given fields replaced by the non-null parameter values.
+  @JsonKey(includeFromJson: false, includeToJson: false)
+  _$$TrainerConnectedImplCopyWith<_$TrainerConnectedImpl> get copyWith =>
       throw _privateConstructorUsedError;
 }
 
 /// @nodoc
-abstract class _$$TrainerDisconnectedCopyWith<$Res> {
-  factory _$$TrainerDisconnectedCopyWith(_$TrainerDisconnected value,
-          $Res Function(_$TrainerDisconnected) then) =
-      __$$TrainerDisconnectedCopyWithImpl<$Res>;
+abstract class _$$TrainerDisconnectedImplCopyWith<$Res> {
+  factory _$$TrainerDisconnectedImplCopyWith(
+    _$TrainerDisconnectedImpl value,
+    $Res Function(_$TrainerDisconnectedImpl) then,
+  ) = __$$TrainerDisconnectedImplCopyWithImpl<$Res>;
   @useResult
   $Res call({String deviceId});
 }
 
 /// @nodoc
-class __$$TrainerDisconnectedCopyWithImpl<$Res>
-    extends _$TrainerEventCopyWithImpl<$Res, _$TrainerDisconnected>
-    implements _$$TrainerDisconnectedCopyWith<$Res> {
-  __$$TrainerDisconnectedCopyWithImpl(
-      _$TrainerDisconnected _value, $Res Function(_$TrainerDisconnected) _then)
-      : super(_value, _then);
+class __$$TrainerDisconnectedImplCopyWithImpl<$Res>
+    extends _$TrainerEventCopyWithImpl<$Res, _$TrainerDisconnectedImpl>
+    implements _$$TrainerDisconnectedImplCopyWith<$Res> {
+  __$$TrainerDisconnectedImplCopyWithImpl(
+    _$TrainerDisconnectedImpl _value,
+    $Res Function(_$TrainerDisconnectedImpl) _then,
+  ) : super(_value, _then);
 
+  /// Create a copy of TrainerEvent
+  /// with the given fields replaced by the non-null parameter values.
   @pragma('vm:prefer-inline')
   @override
-  $Res call({
-    Object? deviceId = null,
-  }) {
-    return _then(_$TrainerDisconnected(
-      null == deviceId
-          ? _value.deviceId
-          : deviceId // ignore: cast_nullable_to_non_nullable
-              as String,
-    ));
+  $Res call({Object? deviceId = null}) {
+    return _then(
+      _$TrainerDisconnectedImpl(
+        null == deviceId
+            ? _value.deviceId
+            : deviceId // ignore: cast_nullable_to_non_nullable
+                  as String,
+      ),
+    );
   }
 }
 
 /// @nodoc
 
-class _$TrainerDisconnected implements TrainerDisconnected {
-  const _$TrainerDisconnected(this.deviceId);
+class _$TrainerDisconnectedImpl implements TrainerDisconnected {
+  const _$TrainerDisconnectedImpl(this.deviceId);
 
   @override
   final String deviceId;
@@ -436,10 +469,10 @@ class _$TrainerDisconnected implements TrainerDisconnected {
   }
 
   @override
-  bool operator ==(dynamic other) {
+  bool operator ==(Object other) {
     return identical(this, other) ||
         (other.runtimeType == runtimeType &&
-            other is _$TrainerDisconnected &&
+            other is _$TrainerDisconnectedImpl &&
             (identical(other.deviceId, deviceId) ||
                 other.deviceId == deviceId));
   }
@@ -447,12 +480,16 @@ class _$TrainerDisconnected implements TrainerDisconnected {
   @override
   int get hashCode => Object.hash(runtimeType, deviceId);
 
-  @JsonKey(ignore: true)
+  /// Create a copy of TrainerEvent
+  /// with the given fields replaced by the non-null parameter values.
+  @JsonKey(includeFromJson: false, includeToJson: false)
   @override
   @pragma('vm:prefer-inline')
-  _$$TrainerDisconnectedCopyWith<_$TrainerDisconnected> get copyWith =>
-      __$$TrainerDisconnectedCopyWithImpl<_$TrainerDisconnected>(
-          this, _$identity);
+  _$$TrainerDisconnectedImplCopyWith<_$TrainerDisconnectedImpl> get copyWith =>
+      __$$TrainerDisconnectedImplCopyWithImpl<_$TrainerDisconnectedImpl>(
+        this,
+        _$identity,
+      );
 
   @override
   @optionalTypeArgs
@@ -531,49 +568,56 @@ class _$TrainerDisconnected implements TrainerDisconnected {
 
 abstract class TrainerDisconnected implements TrainerEvent {
   const factory TrainerDisconnected(final String deviceId) =
-      _$TrainerDisconnected;
+      _$TrainerDisconnectedImpl;
 
   String get deviceId;
-  @JsonKey(ignore: true)
-  _$$TrainerDisconnectedCopyWith<_$TrainerDisconnected> get copyWith =>
+
+  /// Create a copy of TrainerEvent
+  /// with the given fields replaced by the non-null parameter values.
+  @JsonKey(includeFromJson: false, includeToJson: false)
+  _$$TrainerDisconnectedImplCopyWith<_$TrainerDisconnectedImpl> get copyWith =>
       throw _privateConstructorUsedError;
 }
 
 /// @nodoc
-abstract class _$$TrainerControlAcquiredCopyWith<$Res> {
-  factory _$$TrainerControlAcquiredCopyWith(_$TrainerControlAcquired value,
-          $Res Function(_$TrainerControlAcquired) then) =
-      __$$TrainerControlAcquiredCopyWithImpl<$Res>;
+abstract class _$$TrainerControlAcquiredImplCopyWith<$Res> {
+  factory _$$TrainerControlAcquiredImplCopyWith(
+    _$TrainerControlAcquiredImpl value,
+    $Res Function(_$TrainerControlAcquiredImpl) then,
+  ) = __$$TrainerControlAcquiredImplCopyWithImpl<$Res>;
   @useResult
   $Res call({String deviceId});
 }
 
 /// @nodoc
-class __$$TrainerControlAcquiredCopyWithImpl<$Res>
-    extends _$TrainerEventCopyWithImpl<$Res, _$TrainerControlAcquired>
-    implements _$$TrainerControlAcquiredCopyWith<$Res> {
-  __$$TrainerControlAcquiredCopyWithImpl(_$TrainerControlAcquired _value,
-      $Res Function(_$TrainerControlAcquired) _then)
-      : super(_value, _then);
+class __$$TrainerControlAcquiredImplCopyWithImpl<$Res>
+    extends _$TrainerEventCopyWithImpl<$Res, _$TrainerControlAcquiredImpl>
+    implements _$$TrainerControlAcquiredImplCopyWith<$Res> {
+  __$$TrainerControlAcquiredImplCopyWithImpl(
+    _$TrainerControlAcquiredImpl _value,
+    $Res Function(_$TrainerControlAcquiredImpl) _then,
+  ) : super(_value, _then);
 
+  /// Create a copy of TrainerEvent
+  /// with the given fields replaced by the non-null parameter values.
   @pragma('vm:prefer-inline')
   @override
-  $Res call({
-    Object? deviceId = null,
-  }) {
-    return _then(_$TrainerControlAcquired(
-      null == deviceId
-          ? _value.deviceId
-          : deviceId // ignore: cast_nullable_to_non_nullable
-              as String,
-    ));
+  $Res call({Object? deviceId = null}) {
+    return _then(
+      _$TrainerControlAcquiredImpl(
+        null == deviceId
+            ? _value.deviceId
+            : deviceId // ignore: cast_nullable_to_non_nullable
+                  as String,
+      ),
+    );
   }
 }
 
 /// @nodoc
 
-class _$TrainerControlAcquired implements TrainerControlAcquired {
-  const _$TrainerControlAcquired(this.deviceId);
+class _$TrainerControlAcquiredImpl implements TrainerControlAcquired {
+  const _$TrainerControlAcquiredImpl(this.deviceId);
 
   @override
   final String deviceId;
@@ -584,10 +628,10 @@ class _$TrainerControlAcquired implements TrainerControlAcquired {
   }
 
   @override
-  bool operator ==(dynamic other) {
+  bool operator ==(Object other) {
     return identical(this, other) ||
         (other.runtimeType == runtimeType &&
-            other is _$TrainerControlAcquired &&
+            other is _$TrainerControlAcquiredImpl &&
             (identical(other.deviceId, deviceId) ||
                 other.deviceId == deviceId));
   }
@@ -595,12 +639,17 @@ class _$TrainerControlAcquired implements TrainerControlAcquired {
   @override
   int get hashCode => Object.hash(runtimeType, deviceId);
 
-  @JsonKey(ignore: true)
+  /// Create a copy of TrainerEvent
+  /// with the given fields replaced by the non-null parameter values.
+  @JsonKey(includeFromJson: false, includeToJson: false)
   @override
   @pragma('vm:prefer-inline')
-  _$$TrainerControlAcquiredCopyWith<_$TrainerControlAcquired> get copyWith =>
-      __$$TrainerControlAcquiredCopyWithImpl<_$TrainerControlAcquired>(
-          this, _$identity);
+  _$$TrainerControlAcquiredImplCopyWith<_$TrainerControlAcquiredImpl>
+  get copyWith =>
+      __$$TrainerControlAcquiredImplCopyWithImpl<_$TrainerControlAcquiredImpl>(
+        this,
+        _$identity,
+      );
 
   @override
   @optionalTypeArgs
@@ -679,54 +728,60 @@ class _$TrainerControlAcquired implements TrainerControlAcquired {
 
 abstract class TrainerControlAcquired implements TrainerEvent {
   const factory TrainerControlAcquired(final String deviceId) =
-      _$TrainerControlAcquired;
+      _$TrainerControlAcquiredImpl;
 
   String get deviceId;
-  @JsonKey(ignore: true)
-  _$$TrainerControlAcquiredCopyWith<_$TrainerControlAcquired> get copyWith =>
-      throw _privateConstructorUsedError;
+
+  /// Create a copy of TrainerEvent
+  /// with the given fields replaced by the non-null parameter values.
+  @JsonKey(includeFromJson: false, includeToJson: false)
+  _$$TrainerControlAcquiredImplCopyWith<_$TrainerControlAcquiredImpl>
+  get copyWith => throw _privateConstructorUsedError;
 }
 
 /// @nodoc
-abstract class _$$TrainerModeChangedCopyWith<$Res> {
-  factory _$$TrainerModeChangedCopyWith(_$TrainerModeChanged value,
-          $Res Function(_$TrainerModeChanged) then) =
-      __$$TrainerModeChangedCopyWithImpl<$Res>;
+abstract class _$$TrainerModeChangedImplCopyWith<$Res> {
+  factory _$$TrainerModeChangedImplCopyWith(
+    _$TrainerModeChangedImpl value,
+    $Res Function(_$TrainerModeChangedImpl) then,
+  ) = __$$TrainerModeChangedImplCopyWithImpl<$Res>;
   @useResult
   $Res call({String deviceId, ControlMode mode});
 }
 
 /// @nodoc
-class __$$TrainerModeChangedCopyWithImpl<$Res>
-    extends _$TrainerEventCopyWithImpl<$Res, _$TrainerModeChanged>
-    implements _$$TrainerModeChangedCopyWith<$Res> {
-  __$$TrainerModeChangedCopyWithImpl(
-      _$TrainerModeChanged _value, $Res Function(_$TrainerModeChanged) _then)
-      : super(_value, _then);
+class __$$TrainerModeChangedImplCopyWithImpl<$Res>
+    extends _$TrainerEventCopyWithImpl<$Res, _$TrainerModeChangedImpl>
+    implements _$$TrainerModeChangedImplCopyWith<$Res> {
+  __$$TrainerModeChangedImplCopyWithImpl(
+    _$TrainerModeChangedImpl _value,
+    $Res Function(_$TrainerModeChangedImpl) _then,
+  ) : super(_value, _then);
 
+  /// Create a copy of TrainerEvent
+  /// with the given fields replaced by the non-null parameter values.
   @pragma('vm:prefer-inline')
   @override
-  $Res call({
-    Object? deviceId = null,
-    Object? mode = null,
-  }) {
-    return _then(_$TrainerModeChanged(
-      null == deviceId
-          ? _value.deviceId
-          : deviceId // ignore: cast_nullable_to_non_nullable
-              as String,
-      null == mode
-          ? _value.mode
-          : mode // ignore: cast_nullable_to_non_nullable
-              as ControlMode,
-    ));
+  $Res call({Object? deviceId = null, Object? mode = null}) {
+    return _then(
+      _$TrainerModeChangedImpl(
+        null == deviceId
+            ? _value.deviceId
+            : deviceId // ignore: cast_nullable_to_non_nullable
+                  as String,
+        null == mode
+            ? _value.mode
+            : mode // ignore: cast_nullable_to_non_nullable
+                  as ControlMode,
+      ),
+    );
   }
 }
 
 /// @nodoc
 
-class _$TrainerModeChanged implements TrainerModeChanged {
-  const _$TrainerModeChanged(this.deviceId, this.mode);
+class _$TrainerModeChangedImpl implements TrainerModeChanged {
+  const _$TrainerModeChangedImpl(this.deviceId, this.mode);
 
   @override
   final String deviceId;
@@ -739,10 +794,10 @@ class _$TrainerModeChanged implements TrainerModeChanged {
   }
 
   @override
-  bool operator ==(dynamic other) {
+  bool operator ==(Object other) {
     return identical(this, other) ||
         (other.runtimeType == runtimeType &&
-            other is _$TrainerModeChanged &&
+            other is _$TrainerModeChangedImpl &&
             (identical(other.deviceId, deviceId) ||
                 other.deviceId == deviceId) &&
             (identical(other.mode, mode) || other.mode == mode));
@@ -751,12 +806,16 @@ class _$TrainerModeChanged implements TrainerModeChanged {
   @override
   int get hashCode => Object.hash(runtimeType, deviceId, mode);
 
-  @JsonKey(ignore: true)
+  /// Create a copy of TrainerEvent
+  /// with the given fields replaced by the non-null parameter values.
+  @JsonKey(includeFromJson: false, includeToJson: false)
   @override
   @pragma('vm:prefer-inline')
-  _$$TrainerModeChangedCopyWith<_$TrainerModeChanged> get copyWith =>
-      __$$TrainerModeChangedCopyWithImpl<_$TrainerModeChanged>(
-          this, _$identity);
+  _$$TrainerModeChangedImplCopyWith<_$TrainerModeChangedImpl> get copyWith =>
+      __$$TrainerModeChangedImplCopyWithImpl<_$TrainerModeChangedImpl>(
+        this,
+        _$identity,
+      );
 
   @override
   @optionalTypeArgs
@@ -835,12 +894,17 @@ class _$TrainerModeChanged implements TrainerModeChanged {
 
 abstract class TrainerModeChanged implements TrainerEvent {
   const factory TrainerModeChanged(
-      final String deviceId, final ControlMode mode) = _$TrainerModeChanged;
+    final String deviceId,
+    final ControlMode mode,
+  ) = _$TrainerModeChangedImpl;
 
   String get deviceId;
   ControlMode get mode;
-  @JsonKey(ignore: true)
-  _$$TrainerModeChangedCopyWith<_$TrainerModeChanged> get copyWith =>
+
+  /// Create a copy of TrainerEvent
+  /// with the given fields replaced by the non-null parameter values.
+  @JsonKey(includeFromJson: false, includeToJson: false)
+  _$$TrainerModeChangedImplCopyWith<_$TrainerModeChangedImpl> get copyWith =>
       throw _privateConstructorUsedError;
 }
 
@@ -853,8 +917,7 @@ mixin _$WorkoutEvent {
     required TResult Function() completed,
     required TResult Function() paused,
     required TResult Function() resumed,
-  }) =>
-      throw _privateConstructorUsedError;
+  }) => throw _privateConstructorUsedError;
   @optionalTypeArgs
   TResult? whenOrNull<TResult extends Object?>({
     TResult? Function(Workout workout)? started,
@@ -862,8 +925,7 @@ mixin _$WorkoutEvent {
     TResult? Function()? completed,
     TResult? Function()? paused,
     TResult? Function()? resumed,
-  }) =>
-      throw _privateConstructorUsedError;
+  }) => throw _privateConstructorUsedError;
   @optionalTypeArgs
   TResult maybeWhen<TResult extends Object?>({
     TResult Function(Workout workout)? started,
@@ -872,8 +934,7 @@ mixin _$WorkoutEvent {
     TResult Function()? paused,
     TResult Function()? resumed,
     required TResult orElse(),
-  }) =>
-      throw _privateConstructorUsedError;
+  }) => throw _privateConstructorUsedError;
   @optionalTypeArgs
   TResult map<TResult extends Object?>({
     required TResult Function(WorkoutStarted value) started,
@@ -881,8 +942,7 @@ mixin _$WorkoutEvent {
     required TResult Function(WorkoutCompleted value) completed,
     required TResult Function(WorkoutPaused value) paused,
     required TResult Function(WorkoutResumed value) resumed,
-  }) =>
-      throw _privateConstructorUsedError;
+  }) => throw _privateConstructorUsedError;
   @optionalTypeArgs
   TResult? mapOrNull<TResult extends Object?>({
     TResult? Function(WorkoutStarted value)? started,
@@ -890,8 +950,7 @@ mixin _$WorkoutEvent {
     TResult? Function(WorkoutCompleted value)? completed,
     TResult? Function(WorkoutPaused value)? paused,
     TResult? Function(WorkoutResumed value)? resumed,
-  }) =>
-      throw _privateConstructorUsedError;
+  }) => throw _privateConstructorUsedError;
   @optionalTypeArgs
   TResult maybeMap<TResult extends Object?>({
     TResult Function(WorkoutStarted value)? started,
@@ -900,15 +959,15 @@ mixin _$WorkoutEvent {
     TResult Function(WorkoutPaused value)? paused,
     TResult Function(WorkoutResumed value)? resumed,
     required TResult orElse(),
-  }) =>
-      throw _privateConstructorUsedError;
+  }) => throw _privateConstructorUsedError;
 }
 
 /// @nodoc
 abstract class $WorkoutEventCopyWith<$Res> {
   factory $WorkoutEventCopyWith(
-          WorkoutEvent value, $Res Function(WorkoutEvent) then) =
-      _$WorkoutEventCopyWithImpl<$Res, WorkoutEvent>;
+    WorkoutEvent value,
+    $Res Function(WorkoutEvent) then,
+  ) = _$WorkoutEventCopyWithImpl<$Res, WorkoutEvent>;
 }
 
 /// @nodoc
@@ -920,13 +979,17 @@ class _$WorkoutEventCopyWithImpl<$Res, $Val extends WorkoutEvent>
   final $Val _value;
   // ignore: unused_field
   final $Res Function($Val) _then;
+
+  /// Create a copy of WorkoutEvent
+  /// with the given fields replaced by the non-null parameter values.
 }
 
 /// @nodoc
-abstract class _$$WorkoutStartedCopyWith<$Res> {
-  factory _$$WorkoutStartedCopyWith(
-          _$WorkoutStarted value, $Res Function(_$WorkoutStarted) then) =
-      __$$WorkoutStartedCopyWithImpl<$Res>;
+abstract class _$$WorkoutStartedImplCopyWith<$Res> {
+  factory _$$WorkoutStartedImplCopyWith(
+    _$WorkoutStartedImpl value,
+    $Res Function(_$WorkoutStartedImpl) then,
+  ) = __$$WorkoutStartedImplCopyWithImpl<$Res>;
   @useResult
   $Res call({Workout workout});
 
@@ -934,26 +997,31 @@ abstract class _$$WorkoutStartedCopyWith<$Res> {
 }
 
 /// @nodoc
-class __$$WorkoutStartedCopyWithImpl<$Res>
-    extends _$WorkoutEventCopyWithImpl<$Res, _$WorkoutStarted>
-    implements _$$WorkoutStartedCopyWith<$Res> {
-  __$$WorkoutStartedCopyWithImpl(
-      _$WorkoutStarted _value, $Res Function(_$WorkoutStarted) _then)
-      : super(_value, _then);
+class __$$WorkoutStartedImplCopyWithImpl<$Res>
+    extends _$WorkoutEventCopyWithImpl<$Res, _$WorkoutStartedImpl>
+    implements _$$WorkoutStartedImplCopyWith<$Res> {
+  __$$WorkoutStartedImplCopyWithImpl(
+    _$WorkoutStartedImpl _value,
+    $Res Function(_$WorkoutStartedImpl) _then,
+  ) : super(_value, _then);
 
+  /// Create a copy of WorkoutEvent
+  /// with the given fields replaced by the non-null parameter values.
   @pragma('vm:prefer-inline')
   @override
-  $Res call({
-    Object? workout = null,
-  }) {
-    return _then(_$WorkoutStarted(
-      null == workout
-          ? _value.workout
-          : workout // ignore: cast_nullable_to_non_nullable
-              as Workout,
-    ));
+  $Res call({Object? workout = null}) {
+    return _then(
+      _$WorkoutStartedImpl(
+        null == workout
+            ? _value.workout
+            : workout // ignore: cast_nullable_to_non_nullable
+                  as Workout,
+      ),
+    );
   }
 
+  /// Create a copy of WorkoutEvent
+  /// with the given fields replaced by the non-null parameter values.
   @override
   @pragma('vm:prefer-inline')
   $WorkoutCopyWith<$Res> get workout {
@@ -965,8 +1033,8 @@ class __$$WorkoutStartedCopyWithImpl<$Res>
 
 /// @nodoc
 
-class _$WorkoutStarted implements WorkoutStarted {
-  const _$WorkoutStarted(this.workout);
+class _$WorkoutStartedImpl implements WorkoutStarted {
+  const _$WorkoutStartedImpl(this.workout);
 
   @override
   final Workout workout;
@@ -977,21 +1045,26 @@ class _$WorkoutStarted implements WorkoutStarted {
   }
 
   @override
-  bool operator ==(dynamic other) {
+  bool operator ==(Object other) {
     return identical(this, other) ||
         (other.runtimeType == runtimeType &&
-            other is _$WorkoutStarted &&
+            other is _$WorkoutStartedImpl &&
             (identical(other.workout, workout) || other.workout == workout));
   }
 
   @override
   int get hashCode => Object.hash(runtimeType, workout);
 
-  @JsonKey(ignore: true)
+  /// Create a copy of WorkoutEvent
+  /// with the given fields replaced by the non-null parameter values.
+  @JsonKey(includeFromJson: false, includeToJson: false)
   @override
   @pragma('vm:prefer-inline')
-  _$$WorkoutStartedCopyWith<_$WorkoutStarted> get copyWith =>
-      __$$WorkoutStartedCopyWithImpl<_$WorkoutStarted>(this, _$identity);
+  _$$WorkoutStartedImplCopyWith<_$WorkoutStartedImpl> get copyWith =>
+      __$$WorkoutStartedImplCopyWithImpl<_$WorkoutStartedImpl>(
+        this,
+        _$identity,
+      );
 
   @override
   @optionalTypeArgs
@@ -1075,19 +1148,23 @@ class _$WorkoutStarted implements WorkoutStarted {
 }
 
 abstract class WorkoutStarted implements WorkoutEvent {
-  const factory WorkoutStarted(final Workout workout) = _$WorkoutStarted;
+  const factory WorkoutStarted(final Workout workout) = _$WorkoutStartedImpl;
 
   Workout get workout;
-  @JsonKey(ignore: true)
-  _$$WorkoutStartedCopyWith<_$WorkoutStarted> get copyWith =>
+
+  /// Create a copy of WorkoutEvent
+  /// with the given fields replaced by the non-null parameter values.
+  @JsonKey(includeFromJson: false, includeToJson: false)
+  _$$WorkoutStartedImplCopyWith<_$WorkoutStartedImpl> get copyWith =>
       throw _privateConstructorUsedError;
 }
 
 /// @nodoc
-abstract class _$$WorkoutStepChangedCopyWith<$Res> {
-  factory _$$WorkoutStepChangedCopyWith(_$WorkoutStepChanged value,
-          $Res Function(_$WorkoutStepChanged) then) =
-      __$$WorkoutStepChangedCopyWithImpl<$Res>;
+abstract class _$$WorkoutStepChangedImplCopyWith<$Res> {
+  factory _$$WorkoutStepChangedImplCopyWith(
+    _$WorkoutStepChangedImpl value,
+    $Res Function(_$WorkoutStepChangedImpl) then,
+  ) = __$$WorkoutStepChangedImplCopyWithImpl<$Res>;
   @useResult
   $Res call({WorkoutStep step, int index});
 
@@ -1095,31 +1172,35 @@ abstract class _$$WorkoutStepChangedCopyWith<$Res> {
 }
 
 /// @nodoc
-class __$$WorkoutStepChangedCopyWithImpl<$Res>
-    extends _$WorkoutEventCopyWithImpl<$Res, _$WorkoutStepChanged>
-    implements _$$WorkoutStepChangedCopyWith<$Res> {
-  __$$WorkoutStepChangedCopyWithImpl(
-      _$WorkoutStepChanged _value, $Res Function(_$WorkoutStepChanged) _then)
-      : super(_value, _then);
+class __$$WorkoutStepChangedImplCopyWithImpl<$Res>
+    extends _$WorkoutEventCopyWithImpl<$Res, _$WorkoutStepChangedImpl>
+    implements _$$WorkoutStepChangedImplCopyWith<$Res> {
+  __$$WorkoutStepChangedImplCopyWithImpl(
+    _$WorkoutStepChangedImpl _value,
+    $Res Function(_$WorkoutStepChangedImpl) _then,
+  ) : super(_value, _then);
 
+  /// Create a copy of WorkoutEvent
+  /// with the given fields replaced by the non-null parameter values.
   @pragma('vm:prefer-inline')
   @override
-  $Res call({
-    Object? step = null,
-    Object? index = null,
-  }) {
-    return _then(_$WorkoutStepChanged(
-      null == step
-          ? _value.step
-          : step // ignore: cast_nullable_to_non_nullable
-              as WorkoutStep,
-      null == index
-          ? _value.index
-          : index // ignore: cast_nullable_to_non_nullable
-              as int,
-    ));
+  $Res call({Object? step = null, Object? index = null}) {
+    return _then(
+      _$WorkoutStepChangedImpl(
+        null == step
+            ? _value.step
+            : step // ignore: cast_nullable_to_non_nullable
+                  as WorkoutStep,
+        null == index
+            ? _value.index
+            : index // ignore: cast_nullable_to_non_nullable
+                  as int,
+      ),
+    );
   }
 
+  /// Create a copy of WorkoutEvent
+  /// with the given fields replaced by the non-null parameter values.
   @override
   @pragma('vm:prefer-inline')
   $WorkoutStepCopyWith<$Res> get step {
@@ -1131,8 +1212,8 @@ class __$$WorkoutStepChangedCopyWithImpl<$Res>
 
 /// @nodoc
 
-class _$WorkoutStepChanged implements WorkoutStepChanged {
-  const _$WorkoutStepChanged(this.step, this.index);
+class _$WorkoutStepChangedImpl implements WorkoutStepChanged {
+  const _$WorkoutStepChangedImpl(this.step, this.index);
 
   @override
   final WorkoutStep step;
@@ -1145,10 +1226,10 @@ class _$WorkoutStepChanged implements WorkoutStepChanged {
   }
 
   @override
-  bool operator ==(dynamic other) {
+  bool operator ==(Object other) {
     return identical(this, other) ||
         (other.runtimeType == runtimeType &&
-            other is _$WorkoutStepChanged &&
+            other is _$WorkoutStepChangedImpl &&
             (identical(other.step, step) || other.step == step) &&
             (identical(other.index, index) || other.index == index));
   }
@@ -1156,12 +1237,16 @@ class _$WorkoutStepChanged implements WorkoutStepChanged {
   @override
   int get hashCode => Object.hash(runtimeType, step, index);
 
-  @JsonKey(ignore: true)
+  /// Create a copy of WorkoutEvent
+  /// with the given fields replaced by the non-null parameter values.
+  @JsonKey(includeFromJson: false, includeToJson: false)
   @override
   @pragma('vm:prefer-inline')
-  _$$WorkoutStepChangedCopyWith<_$WorkoutStepChanged> get copyWith =>
-      __$$WorkoutStepChangedCopyWithImpl<_$WorkoutStepChanged>(
-          this, _$identity);
+  _$$WorkoutStepChangedImplCopyWith<_$WorkoutStepChangedImpl> get copyWith =>
+      __$$WorkoutStepChangedImplCopyWithImpl<_$WorkoutStepChangedImpl>(
+        this,
+        _$identity,
+      );
 
   @override
   @optionalTypeArgs
@@ -1246,35 +1331,43 @@ class _$WorkoutStepChanged implements WorkoutStepChanged {
 
 abstract class WorkoutStepChanged implements WorkoutEvent {
   const factory WorkoutStepChanged(final WorkoutStep step, final int index) =
-      _$WorkoutStepChanged;
+      _$WorkoutStepChangedImpl;
 
   WorkoutStep get step;
   int get index;
-  @JsonKey(ignore: true)
-  _$$WorkoutStepChangedCopyWith<_$WorkoutStepChanged> get copyWith =>
+
+  /// Create a copy of WorkoutEvent
+  /// with the given fields replaced by the non-null parameter values.
+  @JsonKey(includeFromJson: false, includeToJson: false)
+  _$$WorkoutStepChangedImplCopyWith<_$WorkoutStepChangedImpl> get copyWith =>
       throw _privateConstructorUsedError;
 }
 
 /// @nodoc
-abstract class _$$WorkoutCompletedCopyWith<$Res> {
-  factory _$$WorkoutCompletedCopyWith(
-          _$WorkoutCompleted value, $Res Function(_$WorkoutCompleted) then) =
-      __$$WorkoutCompletedCopyWithImpl<$Res>;
+abstract class _$$WorkoutCompletedImplCopyWith<$Res> {
+  factory _$$WorkoutCompletedImplCopyWith(
+    _$WorkoutCompletedImpl value,
+    $Res Function(_$WorkoutCompletedImpl) then,
+  ) = __$$WorkoutCompletedImplCopyWithImpl<$Res>;
 }
 
 /// @nodoc
-class __$$WorkoutCompletedCopyWithImpl<$Res>
-    extends _$WorkoutEventCopyWithImpl<$Res, _$WorkoutCompleted>
-    implements _$$WorkoutCompletedCopyWith<$Res> {
-  __$$WorkoutCompletedCopyWithImpl(
-      _$WorkoutCompleted _value, $Res Function(_$WorkoutCompleted) _then)
-      : super(_value, _then);
+class __$$WorkoutCompletedImplCopyWithImpl<$Res>
+    extends _$WorkoutEventCopyWithImpl<$Res, _$WorkoutCompletedImpl>
+    implements _$$WorkoutCompletedImplCopyWith<$Res> {
+  __$$WorkoutCompletedImplCopyWithImpl(
+    _$WorkoutCompletedImpl _value,
+    $Res Function(_$WorkoutCompletedImpl) _then,
+  ) : super(_value, _then);
+
+  /// Create a copy of WorkoutEvent
+  /// with the given fields replaced by the non-null parameter values.
 }
 
 /// @nodoc
 
-class _$WorkoutCompleted implements WorkoutCompleted {
-  const _$WorkoutCompleted();
+class _$WorkoutCompletedImpl implements WorkoutCompleted {
+  const _$WorkoutCompletedImpl();
 
   @override
   String toString() {
@@ -1282,9 +1375,9 @@ class _$WorkoutCompleted implements WorkoutCompleted {
   }
 
   @override
-  bool operator ==(dynamic other) {
+  bool operator ==(Object other) {
     return identical(this, other) ||
-        (other.runtimeType == runtimeType && other is _$WorkoutCompleted);
+        (other.runtimeType == runtimeType && other is _$WorkoutCompletedImpl);
   }
 
   @override
@@ -1372,29 +1465,34 @@ class _$WorkoutCompleted implements WorkoutCompleted {
 }
 
 abstract class WorkoutCompleted implements WorkoutEvent {
-  const factory WorkoutCompleted() = _$WorkoutCompleted;
+  const factory WorkoutCompleted() = _$WorkoutCompletedImpl;
 }
 
 /// @nodoc
-abstract class _$$WorkoutPausedCopyWith<$Res> {
-  factory _$$WorkoutPausedCopyWith(
-          _$WorkoutPaused value, $Res Function(_$WorkoutPaused) then) =
-      __$$WorkoutPausedCopyWithImpl<$Res>;
+abstract class _$$WorkoutPausedImplCopyWith<$Res> {
+  factory _$$WorkoutPausedImplCopyWith(
+    _$WorkoutPausedImpl value,
+    $Res Function(_$WorkoutPausedImpl) then,
+  ) = __$$WorkoutPausedImplCopyWithImpl<$Res>;
 }
 
 /// @nodoc
-class __$$WorkoutPausedCopyWithImpl<$Res>
-    extends _$WorkoutEventCopyWithImpl<$Res, _$WorkoutPaused>
-    implements _$$WorkoutPausedCopyWith<$Res> {
-  __$$WorkoutPausedCopyWithImpl(
-      _$WorkoutPaused _value, $Res Function(_$WorkoutPaused) _then)
-      : super(_value, _then);
+class __$$WorkoutPausedImplCopyWithImpl<$Res>
+    extends _$WorkoutEventCopyWithImpl<$Res, _$WorkoutPausedImpl>
+    implements _$$WorkoutPausedImplCopyWith<$Res> {
+  __$$WorkoutPausedImplCopyWithImpl(
+    _$WorkoutPausedImpl _value,
+    $Res Function(_$WorkoutPausedImpl) _then,
+  ) : super(_value, _then);
+
+  /// Create a copy of WorkoutEvent
+  /// with the given fields replaced by the non-null parameter values.
 }
 
 /// @nodoc
 
-class _$WorkoutPaused implements WorkoutPaused {
-  const _$WorkoutPaused();
+class _$WorkoutPausedImpl implements WorkoutPaused {
+  const _$WorkoutPausedImpl();
 
   @override
   String toString() {
@@ -1402,9 +1500,9 @@ class _$WorkoutPaused implements WorkoutPaused {
   }
 
   @override
-  bool operator ==(dynamic other) {
+  bool operator ==(Object other) {
     return identical(this, other) ||
-        (other.runtimeType == runtimeType && other is _$WorkoutPaused);
+        (other.runtimeType == runtimeType && other is _$WorkoutPausedImpl);
   }
 
   @override
@@ -1492,29 +1590,34 @@ class _$WorkoutPaused implements WorkoutPaused {
 }
 
 abstract class WorkoutPaused implements WorkoutEvent {
-  const factory WorkoutPaused() = _$WorkoutPaused;
+  const factory WorkoutPaused() = _$WorkoutPausedImpl;
 }
 
 /// @nodoc
-abstract class _$$WorkoutResumedCopyWith<$Res> {
-  factory _$$WorkoutResumedCopyWith(
-          _$WorkoutResumed value, $Res Function(_$WorkoutResumed) then) =
-      __$$WorkoutResumedCopyWithImpl<$Res>;
+abstract class _$$WorkoutResumedImplCopyWith<$Res> {
+  factory _$$WorkoutResumedImplCopyWith(
+    _$WorkoutResumedImpl value,
+    $Res Function(_$WorkoutResumedImpl) then,
+  ) = __$$WorkoutResumedImplCopyWithImpl<$Res>;
 }
 
 /// @nodoc
-class __$$WorkoutResumedCopyWithImpl<$Res>
-    extends _$WorkoutEventCopyWithImpl<$Res, _$WorkoutResumed>
-    implements _$$WorkoutResumedCopyWith<$Res> {
-  __$$WorkoutResumedCopyWithImpl(
-      _$WorkoutResumed _value, $Res Function(_$WorkoutResumed) _then)
-      : super(_value, _then);
+class __$$WorkoutResumedImplCopyWithImpl<$Res>
+    extends _$WorkoutEventCopyWithImpl<$Res, _$WorkoutResumedImpl>
+    implements _$$WorkoutResumedImplCopyWith<$Res> {
+  __$$WorkoutResumedImplCopyWithImpl(
+    _$WorkoutResumedImpl _value,
+    $Res Function(_$WorkoutResumedImpl) _then,
+  ) : super(_value, _then);
+
+  /// Create a copy of WorkoutEvent
+  /// with the given fields replaced by the non-null parameter values.
 }
 
 /// @nodoc
 
-class _$WorkoutResumed implements WorkoutResumed {
-  const _$WorkoutResumed();
+class _$WorkoutResumedImpl implements WorkoutResumed {
+  const _$WorkoutResumedImpl();
 
   @override
   String toString() {
@@ -1522,9 +1625,9 @@ class _$WorkoutResumed implements WorkoutResumed {
   }
 
   @override
-  bool operator ==(dynamic other) {
+  bool operator ==(Object other) {
     return identical(this, other) ||
-        (other.runtimeType == runtimeType && other is _$WorkoutResumed);
+        (other.runtimeType == runtimeType && other is _$WorkoutResumedImpl);
   }
 
   @override
@@ -1612,7 +1715,7 @@ class _$WorkoutResumed implements WorkoutResumed {
 }
 
 abstract class WorkoutResumed implements WorkoutEvent {
-  const factory WorkoutResumed() = _$WorkoutResumed;
+  const factory WorkoutResumed() = _$WorkoutResumedImpl;
 }
 
 /// @nodoc
@@ -1624,8 +1727,7 @@ mixin _$RideEvent {
     required TResult Function(String rideId) resumed,
     required TResult Function(String rideId, Lap lap) lapMarked,
     required TResult Function(Ride ride) stopped,
-  }) =>
-      throw _privateConstructorUsedError;
+  }) => throw _privateConstructorUsedError;
   @optionalTypeArgs
   TResult? whenOrNull<TResult extends Object?>({
     TResult? Function(String rideId)? started,
@@ -1633,8 +1735,7 @@ mixin _$RideEvent {
     TResult? Function(String rideId)? resumed,
     TResult? Function(String rideId, Lap lap)? lapMarked,
     TResult? Function(Ride ride)? stopped,
-  }) =>
-      throw _privateConstructorUsedError;
+  }) => throw _privateConstructorUsedError;
   @optionalTypeArgs
   TResult maybeWhen<TResult extends Object?>({
     TResult Function(String rideId)? started,
@@ -1643,8 +1744,7 @@ mixin _$RideEvent {
     TResult Function(String rideId, Lap lap)? lapMarked,
     TResult Function(Ride ride)? stopped,
     required TResult orElse(),
-  }) =>
-      throw _privateConstructorUsedError;
+  }) => throw _privateConstructorUsedError;
   @optionalTypeArgs
   TResult map<TResult extends Object?>({
     required TResult Function(RideStarted value) started,
@@ -1652,8 +1752,7 @@ mixin _$RideEvent {
     required TResult Function(RideResumed value) resumed,
     required TResult Function(RideLapMarked value) lapMarked,
     required TResult Function(RideStopped value) stopped,
-  }) =>
-      throw _privateConstructorUsedError;
+  }) => throw _privateConstructorUsedError;
   @optionalTypeArgs
   TResult? mapOrNull<TResult extends Object?>({
     TResult? Function(RideStarted value)? started,
@@ -1661,8 +1760,7 @@ mixin _$RideEvent {
     TResult? Function(RideResumed value)? resumed,
     TResult? Function(RideLapMarked value)? lapMarked,
     TResult? Function(RideStopped value)? stopped,
-  }) =>
-      throw _privateConstructorUsedError;
+  }) => throw _privateConstructorUsedError;
   @optionalTypeArgs
   TResult maybeMap<TResult extends Object?>({
     TResult Function(RideStarted value)? started,
@@ -1671,8 +1769,7 @@ mixin _$RideEvent {
     TResult Function(RideLapMarked value)? lapMarked,
     TResult Function(RideStopped value)? stopped,
     required TResult orElse(),
-  }) =>
-      throw _privateConstructorUsedError;
+  }) => throw _privateConstructorUsedError;
 }
 
 /// @nodoc
@@ -1690,43 +1787,50 @@ class _$RideEventCopyWithImpl<$Res, $Val extends RideEvent>
   final $Val _value;
   // ignore: unused_field
   final $Res Function($Val) _then;
+
+  /// Create a copy of RideEvent
+  /// with the given fields replaced by the non-null parameter values.
 }
 
 /// @nodoc
-abstract class _$$RideStartedCopyWith<$Res> {
-  factory _$$RideStartedCopyWith(
-          _$RideStarted value, $Res Function(_$RideStarted) then) =
-      __$$RideStartedCopyWithImpl<$Res>;
+abstract class _$$RideStartedImplCopyWith<$Res> {
+  factory _$$RideStartedImplCopyWith(
+    _$RideStartedImpl value,
+    $Res Function(_$RideStartedImpl) then,
+  ) = __$$RideStartedImplCopyWithImpl<$Res>;
   @useResult
   $Res call({String rideId});
 }
 
 /// @nodoc
-class __$$RideStartedCopyWithImpl<$Res>
-    extends _$RideEventCopyWithImpl<$Res, _$RideStarted>
-    implements _$$RideStartedCopyWith<$Res> {
-  __$$RideStartedCopyWithImpl(
-      _$RideStarted _value, $Res Function(_$RideStarted) _then)
-      : super(_value, _then);
+class __$$RideStartedImplCopyWithImpl<$Res>
+    extends _$RideEventCopyWithImpl<$Res, _$RideStartedImpl>
+    implements _$$RideStartedImplCopyWith<$Res> {
+  __$$RideStartedImplCopyWithImpl(
+    _$RideStartedImpl _value,
+    $Res Function(_$RideStartedImpl) _then,
+  ) : super(_value, _then);
 
+  /// Create a copy of RideEvent
+  /// with the given fields replaced by the non-null parameter values.
   @pragma('vm:prefer-inline')
   @override
-  $Res call({
-    Object? rideId = null,
-  }) {
-    return _then(_$RideStarted(
-      null == rideId
-          ? _value.rideId
-          : rideId // ignore: cast_nullable_to_non_nullable
-              as String,
-    ));
+  $Res call({Object? rideId = null}) {
+    return _then(
+      _$RideStartedImpl(
+        null == rideId
+            ? _value.rideId
+            : rideId // ignore: cast_nullable_to_non_nullable
+                  as String,
+      ),
+    );
   }
 }
 
 /// @nodoc
 
-class _$RideStarted implements RideStarted {
-  const _$RideStarted(this.rideId);
+class _$RideStartedImpl implements RideStarted {
+  const _$RideStartedImpl(this.rideId);
 
   @override
   final String rideId;
@@ -1737,21 +1841,23 @@ class _$RideStarted implements RideStarted {
   }
 
   @override
-  bool operator ==(dynamic other) {
+  bool operator ==(Object other) {
     return identical(this, other) ||
         (other.runtimeType == runtimeType &&
-            other is _$RideStarted &&
+            other is _$RideStartedImpl &&
             (identical(other.rideId, rideId) || other.rideId == rideId));
   }
 
   @override
   int get hashCode => Object.hash(runtimeType, rideId);
 
-  @JsonKey(ignore: true)
+  /// Create a copy of RideEvent
+  /// with the given fields replaced by the non-null parameter values.
+  @JsonKey(includeFromJson: false, includeToJson: false)
   @override
   @pragma('vm:prefer-inline')
-  _$$RideStartedCopyWith<_$RideStarted> get copyWith =>
-      __$$RideStartedCopyWithImpl<_$RideStarted>(this, _$identity);
+  _$$RideStartedImplCopyWith<_$RideStartedImpl> get copyWith =>
+      __$$RideStartedImplCopyWithImpl<_$RideStartedImpl>(this, _$identity);
 
   @override
   @optionalTypeArgs
@@ -1835,49 +1941,56 @@ class _$RideStarted implements RideStarted {
 }
 
 abstract class RideStarted implements RideEvent {
-  const factory RideStarted(final String rideId) = _$RideStarted;
+  const factory RideStarted(final String rideId) = _$RideStartedImpl;
 
   String get rideId;
-  @JsonKey(ignore: true)
-  _$$RideStartedCopyWith<_$RideStarted> get copyWith =>
+
+  /// Create a copy of RideEvent
+  /// with the given fields replaced by the non-null parameter values.
+  @JsonKey(includeFromJson: false, includeToJson: false)
+  _$$RideStartedImplCopyWith<_$RideStartedImpl> get copyWith =>
       throw _privateConstructorUsedError;
 }
 
 /// @nodoc
-abstract class _$$RidePausedCopyWith<$Res> {
-  factory _$$RidePausedCopyWith(
-          _$RidePaused value, $Res Function(_$RidePaused) then) =
-      __$$RidePausedCopyWithImpl<$Res>;
+abstract class _$$RidePausedImplCopyWith<$Res> {
+  factory _$$RidePausedImplCopyWith(
+    _$RidePausedImpl value,
+    $Res Function(_$RidePausedImpl) then,
+  ) = __$$RidePausedImplCopyWithImpl<$Res>;
   @useResult
   $Res call({String rideId});
 }
 
 /// @nodoc
-class __$$RidePausedCopyWithImpl<$Res>
-    extends _$RideEventCopyWithImpl<$Res, _$RidePaused>
-    implements _$$RidePausedCopyWith<$Res> {
-  __$$RidePausedCopyWithImpl(
-      _$RidePaused _value, $Res Function(_$RidePaused) _then)
-      : super(_value, _then);
+class __$$RidePausedImplCopyWithImpl<$Res>
+    extends _$RideEventCopyWithImpl<$Res, _$RidePausedImpl>
+    implements _$$RidePausedImplCopyWith<$Res> {
+  __$$RidePausedImplCopyWithImpl(
+    _$RidePausedImpl _value,
+    $Res Function(_$RidePausedImpl) _then,
+  ) : super(_value, _then);
 
+  /// Create a copy of RideEvent
+  /// with the given fields replaced by the non-null parameter values.
   @pragma('vm:prefer-inline')
   @override
-  $Res call({
-    Object? rideId = null,
-  }) {
-    return _then(_$RidePaused(
-      null == rideId
-          ? _value.rideId
-          : rideId // ignore: cast_nullable_to_non_nullable
-              as String,
-    ));
+  $Res call({Object? rideId = null}) {
+    return _then(
+      _$RidePausedImpl(
+        null == rideId
+            ? _value.rideId
+            : rideId // ignore: cast_nullable_to_non_nullable
+                  as String,
+      ),
+    );
   }
 }
 
 /// @nodoc
 
-class _$RidePaused implements RidePaused {
-  const _$RidePaused(this.rideId);
+class _$RidePausedImpl implements RidePaused {
+  const _$RidePausedImpl(this.rideId);
 
   @override
   final String rideId;
@@ -1888,21 +2001,23 @@ class _$RidePaused implements RidePaused {
   }
 
   @override
-  bool operator ==(dynamic other) {
+  bool operator ==(Object other) {
     return identical(this, other) ||
         (other.runtimeType == runtimeType &&
-            other is _$RidePaused &&
+            other is _$RidePausedImpl &&
             (identical(other.rideId, rideId) || other.rideId == rideId));
   }
 
   @override
   int get hashCode => Object.hash(runtimeType, rideId);
 
-  @JsonKey(ignore: true)
+  /// Create a copy of RideEvent
+  /// with the given fields replaced by the non-null parameter values.
+  @JsonKey(includeFromJson: false, includeToJson: false)
   @override
   @pragma('vm:prefer-inline')
-  _$$RidePausedCopyWith<_$RidePaused> get copyWith =>
-      __$$RidePausedCopyWithImpl<_$RidePaused>(this, _$identity);
+  _$$RidePausedImplCopyWith<_$RidePausedImpl> get copyWith =>
+      __$$RidePausedImplCopyWithImpl<_$RidePausedImpl>(this, _$identity);
 
   @override
   @optionalTypeArgs
@@ -1986,49 +2101,56 @@ class _$RidePaused implements RidePaused {
 }
 
 abstract class RidePaused implements RideEvent {
-  const factory RidePaused(final String rideId) = _$RidePaused;
+  const factory RidePaused(final String rideId) = _$RidePausedImpl;
 
   String get rideId;
-  @JsonKey(ignore: true)
-  _$$RidePausedCopyWith<_$RidePaused> get copyWith =>
+
+  /// Create a copy of RideEvent
+  /// with the given fields replaced by the non-null parameter values.
+  @JsonKey(includeFromJson: false, includeToJson: false)
+  _$$RidePausedImplCopyWith<_$RidePausedImpl> get copyWith =>
       throw _privateConstructorUsedError;
 }
 
 /// @nodoc
-abstract class _$$RideResumedCopyWith<$Res> {
-  factory _$$RideResumedCopyWith(
-          _$RideResumed value, $Res Function(_$RideResumed) then) =
-      __$$RideResumedCopyWithImpl<$Res>;
+abstract class _$$RideResumedImplCopyWith<$Res> {
+  factory _$$RideResumedImplCopyWith(
+    _$RideResumedImpl value,
+    $Res Function(_$RideResumedImpl) then,
+  ) = __$$RideResumedImplCopyWithImpl<$Res>;
   @useResult
   $Res call({String rideId});
 }
 
 /// @nodoc
-class __$$RideResumedCopyWithImpl<$Res>
-    extends _$RideEventCopyWithImpl<$Res, _$RideResumed>
-    implements _$$RideResumedCopyWith<$Res> {
-  __$$RideResumedCopyWithImpl(
-      _$RideResumed _value, $Res Function(_$RideResumed) _then)
-      : super(_value, _then);
+class __$$RideResumedImplCopyWithImpl<$Res>
+    extends _$RideEventCopyWithImpl<$Res, _$RideResumedImpl>
+    implements _$$RideResumedImplCopyWith<$Res> {
+  __$$RideResumedImplCopyWithImpl(
+    _$RideResumedImpl _value,
+    $Res Function(_$RideResumedImpl) _then,
+  ) : super(_value, _then);
 
+  /// Create a copy of RideEvent
+  /// with the given fields replaced by the non-null parameter values.
   @pragma('vm:prefer-inline')
   @override
-  $Res call({
-    Object? rideId = null,
-  }) {
-    return _then(_$RideResumed(
-      null == rideId
-          ? _value.rideId
-          : rideId // ignore: cast_nullable_to_non_nullable
-              as String,
-    ));
+  $Res call({Object? rideId = null}) {
+    return _then(
+      _$RideResumedImpl(
+        null == rideId
+            ? _value.rideId
+            : rideId // ignore: cast_nullable_to_non_nullable
+                  as String,
+      ),
+    );
   }
 }
 
 /// @nodoc
 
-class _$RideResumed implements RideResumed {
-  const _$RideResumed(this.rideId);
+class _$RideResumedImpl implements RideResumed {
+  const _$RideResumedImpl(this.rideId);
 
   @override
   final String rideId;
@@ -2039,21 +2161,23 @@ class _$RideResumed implements RideResumed {
   }
 
   @override
-  bool operator ==(dynamic other) {
+  bool operator ==(Object other) {
     return identical(this, other) ||
         (other.runtimeType == runtimeType &&
-            other is _$RideResumed &&
+            other is _$RideResumedImpl &&
             (identical(other.rideId, rideId) || other.rideId == rideId));
   }
 
   @override
   int get hashCode => Object.hash(runtimeType, rideId);
 
-  @JsonKey(ignore: true)
+  /// Create a copy of RideEvent
+  /// with the given fields replaced by the non-null parameter values.
+  @JsonKey(includeFromJson: false, includeToJson: false)
   @override
   @pragma('vm:prefer-inline')
-  _$$RideResumedCopyWith<_$RideResumed> get copyWith =>
-      __$$RideResumedCopyWithImpl<_$RideResumed>(this, _$identity);
+  _$$RideResumedImplCopyWith<_$RideResumedImpl> get copyWith =>
+      __$$RideResumedImplCopyWithImpl<_$RideResumedImpl>(this, _$identity);
 
   @override
   @optionalTypeArgs
@@ -2137,19 +2261,23 @@ class _$RideResumed implements RideResumed {
 }
 
 abstract class RideResumed implements RideEvent {
-  const factory RideResumed(final String rideId) = _$RideResumed;
+  const factory RideResumed(final String rideId) = _$RideResumedImpl;
 
   String get rideId;
-  @JsonKey(ignore: true)
-  _$$RideResumedCopyWith<_$RideResumed> get copyWith =>
+
+  /// Create a copy of RideEvent
+  /// with the given fields replaced by the non-null parameter values.
+  @JsonKey(includeFromJson: false, includeToJson: false)
+  _$$RideResumedImplCopyWith<_$RideResumedImpl> get copyWith =>
       throw _privateConstructorUsedError;
 }
 
 /// @nodoc
-abstract class _$$RideLapMarkedCopyWith<$Res> {
-  factory _$$RideLapMarkedCopyWith(
-          _$RideLapMarked value, $Res Function(_$RideLapMarked) then) =
-      __$$RideLapMarkedCopyWithImpl<$Res>;
+abstract class _$$RideLapMarkedImplCopyWith<$Res> {
+  factory _$$RideLapMarkedImplCopyWith(
+    _$RideLapMarkedImpl value,
+    $Res Function(_$RideLapMarkedImpl) then,
+  ) = __$$RideLapMarkedImplCopyWithImpl<$Res>;
   @useResult
   $Res call({String rideId, Lap lap});
 
@@ -2157,31 +2285,35 @@ abstract class _$$RideLapMarkedCopyWith<$Res> {
 }
 
 /// @nodoc
-class __$$RideLapMarkedCopyWithImpl<$Res>
-    extends _$RideEventCopyWithImpl<$Res, _$RideLapMarked>
-    implements _$$RideLapMarkedCopyWith<$Res> {
-  __$$RideLapMarkedCopyWithImpl(
-      _$RideLapMarked _value, $Res Function(_$RideLapMarked) _then)
-      : super(_value, _then);
+class __$$RideLapMarkedImplCopyWithImpl<$Res>
+    extends _$RideEventCopyWithImpl<$Res, _$RideLapMarkedImpl>
+    implements _$$RideLapMarkedImplCopyWith<$Res> {
+  __$$RideLapMarkedImplCopyWithImpl(
+    _$RideLapMarkedImpl _value,
+    $Res Function(_$RideLapMarkedImpl) _then,
+  ) : super(_value, _then);
 
+  /// Create a copy of RideEvent
+  /// with the given fields replaced by the non-null parameter values.
   @pragma('vm:prefer-inline')
   @override
-  $Res call({
-    Object? rideId = null,
-    Object? lap = null,
-  }) {
-    return _then(_$RideLapMarked(
-      null == rideId
-          ? _value.rideId
-          : rideId // ignore: cast_nullable_to_non_nullable
-              as String,
-      null == lap
-          ? _value.lap
-          : lap // ignore: cast_nullable_to_non_nullable
-              as Lap,
-    ));
+  $Res call({Object? rideId = null, Object? lap = null}) {
+    return _then(
+      _$RideLapMarkedImpl(
+        null == rideId
+            ? _value.rideId
+            : rideId // ignore: cast_nullable_to_non_nullable
+                  as String,
+        null == lap
+            ? _value.lap
+            : lap // ignore: cast_nullable_to_non_nullable
+                  as Lap,
+      ),
+    );
   }
 
+  /// Create a copy of RideEvent
+  /// with the given fields replaced by the non-null parameter values.
   @override
   @pragma('vm:prefer-inline')
   $LapCopyWith<$Res> get lap {
@@ -2193,8 +2325,8 @@ class __$$RideLapMarkedCopyWithImpl<$Res>
 
 /// @nodoc
 
-class _$RideLapMarked implements RideLapMarked {
-  const _$RideLapMarked(this.rideId, this.lap);
+class _$RideLapMarkedImpl implements RideLapMarked {
+  const _$RideLapMarkedImpl(this.rideId, this.lap);
 
   @override
   final String rideId;
@@ -2207,10 +2339,10 @@ class _$RideLapMarked implements RideLapMarked {
   }
 
   @override
-  bool operator ==(dynamic other) {
+  bool operator ==(Object other) {
     return identical(this, other) ||
         (other.runtimeType == runtimeType &&
-            other is _$RideLapMarked &&
+            other is _$RideLapMarkedImpl &&
             (identical(other.rideId, rideId) || other.rideId == rideId) &&
             (identical(other.lap, lap) || other.lap == lap));
   }
@@ -2218,11 +2350,13 @@ class _$RideLapMarked implements RideLapMarked {
   @override
   int get hashCode => Object.hash(runtimeType, rideId, lap);
 
-  @JsonKey(ignore: true)
+  /// Create a copy of RideEvent
+  /// with the given fields replaced by the non-null parameter values.
+  @JsonKey(includeFromJson: false, includeToJson: false)
   @override
   @pragma('vm:prefer-inline')
-  _$$RideLapMarkedCopyWith<_$RideLapMarked> get copyWith =>
-      __$$RideLapMarkedCopyWithImpl<_$RideLapMarked>(this, _$identity);
+  _$$RideLapMarkedImplCopyWith<_$RideLapMarkedImpl> get copyWith =>
+      __$$RideLapMarkedImplCopyWithImpl<_$RideLapMarkedImpl>(this, _$identity);
 
   @override
   @optionalTypeArgs
@@ -2307,20 +2441,24 @@ class _$RideLapMarked implements RideLapMarked {
 
 abstract class RideLapMarked implements RideEvent {
   const factory RideLapMarked(final String rideId, final Lap lap) =
-      _$RideLapMarked;
+      _$RideLapMarkedImpl;
 
   String get rideId;
   Lap get lap;
-  @JsonKey(ignore: true)
-  _$$RideLapMarkedCopyWith<_$RideLapMarked> get copyWith =>
+
+  /// Create a copy of RideEvent
+  /// with the given fields replaced by the non-null parameter values.
+  @JsonKey(includeFromJson: false, includeToJson: false)
+  _$$RideLapMarkedImplCopyWith<_$RideLapMarkedImpl> get copyWith =>
       throw _privateConstructorUsedError;
 }
 
 /// @nodoc
-abstract class _$$RideStoppedCopyWith<$Res> {
-  factory _$$RideStoppedCopyWith(
-          _$RideStopped value, $Res Function(_$RideStopped) then) =
-      __$$RideStoppedCopyWithImpl<$Res>;
+abstract class _$$RideStoppedImplCopyWith<$Res> {
+  factory _$$RideStoppedImplCopyWith(
+    _$RideStoppedImpl value,
+    $Res Function(_$RideStoppedImpl) then,
+  ) = __$$RideStoppedImplCopyWithImpl<$Res>;
   @useResult
   $Res call({Ride ride});
 
@@ -2328,26 +2466,31 @@ abstract class _$$RideStoppedCopyWith<$Res> {
 }
 
 /// @nodoc
-class __$$RideStoppedCopyWithImpl<$Res>
-    extends _$RideEventCopyWithImpl<$Res, _$RideStopped>
-    implements _$$RideStoppedCopyWith<$Res> {
-  __$$RideStoppedCopyWithImpl(
-      _$RideStopped _value, $Res Function(_$RideStopped) _then)
-      : super(_value, _then);
+class __$$RideStoppedImplCopyWithImpl<$Res>
+    extends _$RideEventCopyWithImpl<$Res, _$RideStoppedImpl>
+    implements _$$RideStoppedImplCopyWith<$Res> {
+  __$$RideStoppedImplCopyWithImpl(
+    _$RideStoppedImpl _value,
+    $Res Function(_$RideStoppedImpl) _then,
+  ) : super(_value, _then);
 
+  /// Create a copy of RideEvent
+  /// with the given fields replaced by the non-null parameter values.
   @pragma('vm:prefer-inline')
   @override
-  $Res call({
-    Object? ride = null,
-  }) {
-    return _then(_$RideStopped(
-      null == ride
-          ? _value.ride
-          : ride // ignore: cast_nullable_to_non_nullable
-              as Ride,
-    ));
+  $Res call({Object? ride = null}) {
+    return _then(
+      _$RideStoppedImpl(
+        null == ride
+            ? _value.ride
+            : ride // ignore: cast_nullable_to_non_nullable
+                  as Ride,
+      ),
+    );
   }
 
+  /// Create a copy of RideEvent
+  /// with the given fields replaced by the non-null parameter values.
   @override
   @pragma('vm:prefer-inline')
   $RideCopyWith<$Res> get ride {
@@ -2359,8 +2502,8 @@ class __$$RideStoppedCopyWithImpl<$Res>
 
 /// @nodoc
 
-class _$RideStopped implements RideStopped {
-  const _$RideStopped(this.ride);
+class _$RideStoppedImpl implements RideStopped {
+  const _$RideStoppedImpl(this.ride);
 
   @override
   final Ride ride;
@@ -2371,21 +2514,23 @@ class _$RideStopped implements RideStopped {
   }
 
   @override
-  bool operator ==(dynamic other) {
+  bool operator ==(Object other) {
     return identical(this, other) ||
         (other.runtimeType == runtimeType &&
-            other is _$RideStopped &&
+            other is _$RideStoppedImpl &&
             (identical(other.ride, ride) || other.ride == ride));
   }
 
   @override
   int get hashCode => Object.hash(runtimeType, ride);
 
-  @JsonKey(ignore: true)
+  /// Create a copy of RideEvent
+  /// with the given fields replaced by the non-null parameter values.
+  @JsonKey(includeFromJson: false, includeToJson: false)
   @override
   @pragma('vm:prefer-inline')
-  _$$RideStoppedCopyWith<_$RideStopped> get copyWith =>
-      __$$RideStoppedCopyWithImpl<_$RideStopped>(this, _$identity);
+  _$$RideStoppedImplCopyWith<_$RideStoppedImpl> get copyWith =>
+      __$$RideStoppedImplCopyWithImpl<_$RideStoppedImpl>(this, _$identity);
 
   @override
   @optionalTypeArgs
@@ -2469,11 +2614,14 @@ class _$RideStopped implements RideStopped {
 }
 
 abstract class RideStopped implements RideEvent {
-  const factory RideStopped(final Ride ride) = _$RideStopped;
+  const factory RideStopped(final Ride ride) = _$RideStoppedImpl;
 
   Ride get ride;
-  @JsonKey(ignore: true)
-  _$$RideStoppedCopyWith<_$RideStopped> get copyWith =>
+
+  /// Create a copy of RideEvent
+  /// with the given fields replaced by the non-null parameter values.
+  @JsonKey(includeFromJson: false, includeToJson: false)
+  _$$RideStoppedImplCopyWith<_$RideStoppedImpl> get copyWith =>
       throw _privateConstructorUsedError;
 }
 
@@ -2486,8 +2634,7 @@ mixin _$SimulationEvent {
     required TResult Function() paused,
     required TResult Function() resumed,
     required TResult Function() completed,
-  }) =>
-      throw _privateConstructorUsedError;
+  }) => throw _privateConstructorUsedError;
   @optionalTypeArgs
   TResult? whenOrNull<TResult extends Object?>({
     TResult? Function(Route route)? started,
@@ -2495,8 +2642,7 @@ mixin _$SimulationEvent {
     TResult? Function()? paused,
     TResult? Function()? resumed,
     TResult? Function()? completed,
-  }) =>
-      throw _privateConstructorUsedError;
+  }) => throw _privateConstructorUsedError;
   @optionalTypeArgs
   TResult maybeWhen<TResult extends Object?>({
     TResult Function(Route route)? started,
@@ -2505,8 +2651,7 @@ mixin _$SimulationEvent {
     TResult Function()? resumed,
     TResult Function()? completed,
     required TResult orElse(),
-  }) =>
-      throw _privateConstructorUsedError;
+  }) => throw _privateConstructorUsedError;
   @optionalTypeArgs
   TResult map<TResult extends Object?>({
     required TResult Function(SimulationStarted value) started,
@@ -2514,8 +2659,7 @@ mixin _$SimulationEvent {
     required TResult Function(SimulationPaused value) paused,
     required TResult Function(SimulationResumed value) resumed,
     required TResult Function(SimulationCompleted value) completed,
-  }) =>
-      throw _privateConstructorUsedError;
+  }) => throw _privateConstructorUsedError;
   @optionalTypeArgs
   TResult? mapOrNull<TResult extends Object?>({
     TResult? Function(SimulationStarted value)? started,
@@ -2523,8 +2667,7 @@ mixin _$SimulationEvent {
     TResult? Function(SimulationPaused value)? paused,
     TResult? Function(SimulationResumed value)? resumed,
     TResult? Function(SimulationCompleted value)? completed,
-  }) =>
-      throw _privateConstructorUsedError;
+  }) => throw _privateConstructorUsedError;
   @optionalTypeArgs
   TResult maybeMap<TResult extends Object?>({
     TResult Function(SimulationStarted value)? started,
@@ -2533,15 +2676,15 @@ mixin _$SimulationEvent {
     TResult Function(SimulationResumed value)? resumed,
     TResult Function(SimulationCompleted value)? completed,
     required TResult orElse(),
-  }) =>
-      throw _privateConstructorUsedError;
+  }) => throw _privateConstructorUsedError;
 }
 
 /// @nodoc
 abstract class $SimulationEventCopyWith<$Res> {
   factory $SimulationEventCopyWith(
-          SimulationEvent value, $Res Function(SimulationEvent) then) =
-      _$SimulationEventCopyWithImpl<$Res, SimulationEvent>;
+    SimulationEvent value,
+    $Res Function(SimulationEvent) then,
+  ) = _$SimulationEventCopyWithImpl<$Res, SimulationEvent>;
 }
 
 /// @nodoc
@@ -2553,13 +2696,17 @@ class _$SimulationEventCopyWithImpl<$Res, $Val extends SimulationEvent>
   final $Val _value;
   // ignore: unused_field
   final $Res Function($Val) _then;
+
+  /// Create a copy of SimulationEvent
+  /// with the given fields replaced by the non-null parameter values.
 }
 
 /// @nodoc
-abstract class _$$SimulationStartedCopyWith<$Res> {
-  factory _$$SimulationStartedCopyWith(
-          _$SimulationStarted value, $Res Function(_$SimulationStarted) then) =
-      __$$SimulationStartedCopyWithImpl<$Res>;
+abstract class _$$SimulationStartedImplCopyWith<$Res> {
+  factory _$$SimulationStartedImplCopyWith(
+    _$SimulationStartedImpl value,
+    $Res Function(_$SimulationStartedImpl) then,
+  ) = __$$SimulationStartedImplCopyWithImpl<$Res>;
   @useResult
   $Res call({Route route});
 
@@ -2567,26 +2714,31 @@ abstract class _$$SimulationStartedCopyWith<$Res> {
 }
 
 /// @nodoc
-class __$$SimulationStartedCopyWithImpl<$Res>
-    extends _$SimulationEventCopyWithImpl<$Res, _$SimulationStarted>
-    implements _$$SimulationStartedCopyWith<$Res> {
-  __$$SimulationStartedCopyWithImpl(
-      _$SimulationStarted _value, $Res Function(_$SimulationStarted) _then)
-      : super(_value, _then);
+class __$$SimulationStartedImplCopyWithImpl<$Res>
+    extends _$SimulationEventCopyWithImpl<$Res, _$SimulationStartedImpl>
+    implements _$$SimulationStartedImplCopyWith<$Res> {
+  __$$SimulationStartedImplCopyWithImpl(
+    _$SimulationStartedImpl _value,
+    $Res Function(_$SimulationStartedImpl) _then,
+  ) : super(_value, _then);
 
+  /// Create a copy of SimulationEvent
+  /// with the given fields replaced by the non-null parameter values.
   @pragma('vm:prefer-inline')
   @override
-  $Res call({
-    Object? route = null,
-  }) {
-    return _then(_$SimulationStarted(
-      null == route
-          ? _value.route
-          : route // ignore: cast_nullable_to_non_nullable
-              as Route,
-    ));
+  $Res call({Object? route = null}) {
+    return _then(
+      _$SimulationStartedImpl(
+        null == route
+            ? _value.route
+            : route // ignore: cast_nullable_to_non_nullable
+                  as Route,
+      ),
+    );
   }
 
+  /// Create a copy of SimulationEvent
+  /// with the given fields replaced by the non-null parameter values.
   @override
   @pragma('vm:prefer-inline')
   $RouteCopyWith<$Res> get route {
@@ -2598,8 +2750,8 @@ class __$$SimulationStartedCopyWithImpl<$Res>
 
 /// @nodoc
 
-class _$SimulationStarted implements SimulationStarted {
-  const _$SimulationStarted(this.route);
+class _$SimulationStartedImpl implements SimulationStarted {
+  const _$SimulationStartedImpl(this.route);
 
   @override
   final Route route;
@@ -2610,21 +2762,26 @@ class _$SimulationStarted implements SimulationStarted {
   }
 
   @override
-  bool operator ==(dynamic other) {
+  bool operator ==(Object other) {
     return identical(this, other) ||
         (other.runtimeType == runtimeType &&
-            other is _$SimulationStarted &&
+            other is _$SimulationStartedImpl &&
             (identical(other.route, route) || other.route == route));
   }
 
   @override
   int get hashCode => Object.hash(runtimeType, route);
 
-  @JsonKey(ignore: true)
+  /// Create a copy of SimulationEvent
+  /// with the given fields replaced by the non-null parameter values.
+  @JsonKey(includeFromJson: false, includeToJson: false)
   @override
   @pragma('vm:prefer-inline')
-  _$$SimulationStartedCopyWith<_$SimulationStarted> get copyWith =>
-      __$$SimulationStartedCopyWithImpl<_$SimulationStarted>(this, _$identity);
+  _$$SimulationStartedImplCopyWith<_$SimulationStartedImpl> get copyWith =>
+      __$$SimulationStartedImplCopyWithImpl<_$SimulationStartedImpl>(
+        this,
+        _$identity,
+      );
 
   @override
   @optionalTypeArgs
@@ -2708,20 +2865,23 @@ class _$SimulationStarted implements SimulationStarted {
 }
 
 abstract class SimulationStarted implements SimulationEvent {
-  const factory SimulationStarted(final Route route) = _$SimulationStarted;
+  const factory SimulationStarted(final Route route) = _$SimulationStartedImpl;
 
   Route get route;
-  @JsonKey(ignore: true)
-  _$$SimulationStartedCopyWith<_$SimulationStarted> get copyWith =>
+
+  /// Create a copy of SimulationEvent
+  /// with the given fields replaced by the non-null parameter values.
+  @JsonKey(includeFromJson: false, includeToJson: false)
+  _$$SimulationStartedImplCopyWith<_$SimulationStartedImpl> get copyWith =>
       throw _privateConstructorUsedError;
 }
 
 /// @nodoc
-abstract class _$$SimulationPositionChangedCopyWith<$Res> {
-  factory _$$SimulationPositionChangedCopyWith(
-          _$SimulationPositionChanged value,
-          $Res Function(_$SimulationPositionChanged) then) =
-      __$$SimulationPositionChangedCopyWithImpl<$Res>;
+abstract class _$$SimulationPositionChangedImplCopyWith<$Res> {
+  factory _$$SimulationPositionChangedImplCopyWith(
+    _$SimulationPositionChangedImpl value,
+    $Res Function(_$SimulationPositionChangedImpl) then,
+  ) = __$$SimulationPositionChangedImplCopyWithImpl<$Res>;
   @useResult
   $Res call({RoutePoint point, Speed speed});
 
@@ -2730,31 +2890,35 @@ abstract class _$$SimulationPositionChangedCopyWith<$Res> {
 }
 
 /// @nodoc
-class __$$SimulationPositionChangedCopyWithImpl<$Res>
-    extends _$SimulationEventCopyWithImpl<$Res, _$SimulationPositionChanged>
-    implements _$$SimulationPositionChangedCopyWith<$Res> {
-  __$$SimulationPositionChangedCopyWithImpl(_$SimulationPositionChanged _value,
-      $Res Function(_$SimulationPositionChanged) _then)
-      : super(_value, _then);
+class __$$SimulationPositionChangedImplCopyWithImpl<$Res>
+    extends _$SimulationEventCopyWithImpl<$Res, _$SimulationPositionChangedImpl>
+    implements _$$SimulationPositionChangedImplCopyWith<$Res> {
+  __$$SimulationPositionChangedImplCopyWithImpl(
+    _$SimulationPositionChangedImpl _value,
+    $Res Function(_$SimulationPositionChangedImpl) _then,
+  ) : super(_value, _then);
 
+  /// Create a copy of SimulationEvent
+  /// with the given fields replaced by the non-null parameter values.
   @pragma('vm:prefer-inline')
   @override
-  $Res call({
-    Object? point = null,
-    Object? speed = null,
-  }) {
-    return _then(_$SimulationPositionChanged(
-      null == point
-          ? _value.point
-          : point // ignore: cast_nullable_to_non_nullable
-              as RoutePoint,
-      null == speed
-          ? _value.speed
-          : speed // ignore: cast_nullable_to_non_nullable
-              as Speed,
-    ));
+  $Res call({Object? point = null, Object? speed = null}) {
+    return _then(
+      _$SimulationPositionChangedImpl(
+        null == point
+            ? _value.point
+            : point // ignore: cast_nullable_to_non_nullable
+                  as RoutePoint,
+        null == speed
+            ? _value.speed
+            : speed // ignore: cast_nullable_to_non_nullable
+                  as Speed,
+      ),
+    );
   }
 
+  /// Create a copy of SimulationEvent
+  /// with the given fields replaced by the non-null parameter values.
   @override
   @pragma('vm:prefer-inline')
   $RoutePointCopyWith<$Res> get point {
@@ -2763,6 +2927,8 @@ class __$$SimulationPositionChangedCopyWithImpl<$Res>
     });
   }
 
+  /// Create a copy of SimulationEvent
+  /// with the given fields replaced by the non-null parameter values.
   @override
   @pragma('vm:prefer-inline')
   $SpeedCopyWith<$Res> get speed {
@@ -2774,8 +2940,8 @@ class __$$SimulationPositionChangedCopyWithImpl<$Res>
 
 /// @nodoc
 
-class _$SimulationPositionChanged implements SimulationPositionChanged {
-  const _$SimulationPositionChanged(this.point, this.speed);
+class _$SimulationPositionChangedImpl implements SimulationPositionChanged {
+  const _$SimulationPositionChangedImpl(this.point, this.speed);
 
   @override
   final RoutePoint point;
@@ -2788,10 +2954,10 @@ class _$SimulationPositionChanged implements SimulationPositionChanged {
   }
 
   @override
-  bool operator ==(dynamic other) {
+  bool operator ==(Object other) {
     return identical(this, other) ||
         (other.runtimeType == runtimeType &&
-            other is _$SimulationPositionChanged &&
+            other is _$SimulationPositionChangedImpl &&
             (identical(other.point, point) || other.point == point) &&
             (identical(other.speed, speed) || other.speed == speed));
   }
@@ -2799,12 +2965,16 @@ class _$SimulationPositionChanged implements SimulationPositionChanged {
   @override
   int get hashCode => Object.hash(runtimeType, point, speed);
 
-  @JsonKey(ignore: true)
+  /// Create a copy of SimulationEvent
+  /// with the given fields replaced by the non-null parameter values.
+  @JsonKey(includeFromJson: false, includeToJson: false)
   @override
   @pragma('vm:prefer-inline')
-  _$$SimulationPositionChangedCopyWith<_$SimulationPositionChanged>
-      get copyWith => __$$SimulationPositionChangedCopyWithImpl<
-          _$SimulationPositionChanged>(this, _$identity);
+  _$$SimulationPositionChangedImplCopyWith<_$SimulationPositionChangedImpl>
+  get copyWith =>
+      __$$SimulationPositionChangedImplCopyWithImpl<
+        _$SimulationPositionChangedImpl
+      >(this, _$identity);
 
   @override
   @optionalTypeArgs
@@ -2889,35 +3059,45 @@ class _$SimulationPositionChanged implements SimulationPositionChanged {
 
 abstract class SimulationPositionChanged implements SimulationEvent {
   const factory SimulationPositionChanged(
-      final RoutePoint point, final Speed speed) = _$SimulationPositionChanged;
+    final RoutePoint point,
+    final Speed speed,
+  ) = _$SimulationPositionChangedImpl;
 
   RoutePoint get point;
   Speed get speed;
-  @JsonKey(ignore: true)
-  _$$SimulationPositionChangedCopyWith<_$SimulationPositionChanged>
-      get copyWith => throw _privateConstructorUsedError;
+
+  /// Create a copy of SimulationEvent
+  /// with the given fields replaced by the non-null parameter values.
+  @JsonKey(includeFromJson: false, includeToJson: false)
+  _$$SimulationPositionChangedImplCopyWith<_$SimulationPositionChangedImpl>
+  get copyWith => throw _privateConstructorUsedError;
 }
 
 /// @nodoc
-abstract class _$$SimulationPausedCopyWith<$Res> {
-  factory _$$SimulationPausedCopyWith(
-          _$SimulationPaused value, $Res Function(_$SimulationPaused) then) =
-      __$$SimulationPausedCopyWithImpl<$Res>;
+abstract class _$$SimulationPausedImplCopyWith<$Res> {
+  factory _$$SimulationPausedImplCopyWith(
+    _$SimulationPausedImpl value,
+    $Res Function(_$SimulationPausedImpl) then,
+  ) = __$$SimulationPausedImplCopyWithImpl<$Res>;
 }
 
 /// @nodoc
-class __$$SimulationPausedCopyWithImpl<$Res>
-    extends _$SimulationEventCopyWithImpl<$Res, _$SimulationPaused>
-    implements _$$SimulationPausedCopyWith<$Res> {
-  __$$SimulationPausedCopyWithImpl(
-      _$SimulationPaused _value, $Res Function(_$SimulationPaused) _then)
-      : super(_value, _then);
+class __$$SimulationPausedImplCopyWithImpl<$Res>
+    extends _$SimulationEventCopyWithImpl<$Res, _$SimulationPausedImpl>
+    implements _$$SimulationPausedImplCopyWith<$Res> {
+  __$$SimulationPausedImplCopyWithImpl(
+    _$SimulationPausedImpl _value,
+    $Res Function(_$SimulationPausedImpl) _then,
+  ) : super(_value, _then);
+
+  /// Create a copy of SimulationEvent
+  /// with the given fields replaced by the non-null parameter values.
 }
 
 /// @nodoc
 
-class _$SimulationPaused implements SimulationPaused {
-  const _$SimulationPaused();
+class _$SimulationPausedImpl implements SimulationPaused {
+  const _$SimulationPausedImpl();
 
   @override
   String toString() {
@@ -2925,9 +3105,9 @@ class _$SimulationPaused implements SimulationPaused {
   }
 
   @override
-  bool operator ==(dynamic other) {
+  bool operator ==(Object other) {
     return identical(this, other) ||
-        (other.runtimeType == runtimeType && other is _$SimulationPaused);
+        (other.runtimeType == runtimeType && other is _$SimulationPausedImpl);
   }
 
   @override
@@ -3015,29 +3195,34 @@ class _$SimulationPaused implements SimulationPaused {
 }
 
 abstract class SimulationPaused implements SimulationEvent {
-  const factory SimulationPaused() = _$SimulationPaused;
+  const factory SimulationPaused() = _$SimulationPausedImpl;
 }
 
 /// @nodoc
-abstract class _$$SimulationResumedCopyWith<$Res> {
-  factory _$$SimulationResumedCopyWith(
-          _$SimulationResumed value, $Res Function(_$SimulationResumed) then) =
-      __$$SimulationResumedCopyWithImpl<$Res>;
+abstract class _$$SimulationResumedImplCopyWith<$Res> {
+  factory _$$SimulationResumedImplCopyWith(
+    _$SimulationResumedImpl value,
+    $Res Function(_$SimulationResumedImpl) then,
+  ) = __$$SimulationResumedImplCopyWithImpl<$Res>;
 }
 
 /// @nodoc
-class __$$SimulationResumedCopyWithImpl<$Res>
-    extends _$SimulationEventCopyWithImpl<$Res, _$SimulationResumed>
-    implements _$$SimulationResumedCopyWith<$Res> {
-  __$$SimulationResumedCopyWithImpl(
-      _$SimulationResumed _value, $Res Function(_$SimulationResumed) _then)
-      : super(_value, _then);
+class __$$SimulationResumedImplCopyWithImpl<$Res>
+    extends _$SimulationEventCopyWithImpl<$Res, _$SimulationResumedImpl>
+    implements _$$SimulationResumedImplCopyWith<$Res> {
+  __$$SimulationResumedImplCopyWithImpl(
+    _$SimulationResumedImpl _value,
+    $Res Function(_$SimulationResumedImpl) _then,
+  ) : super(_value, _then);
+
+  /// Create a copy of SimulationEvent
+  /// with the given fields replaced by the non-null parameter values.
 }
 
 /// @nodoc
 
-class _$SimulationResumed implements SimulationResumed {
-  const _$SimulationResumed();
+class _$SimulationResumedImpl implements SimulationResumed {
+  const _$SimulationResumedImpl();
 
   @override
   String toString() {
@@ -3045,9 +3230,9 @@ class _$SimulationResumed implements SimulationResumed {
   }
 
   @override
-  bool operator ==(dynamic other) {
+  bool operator ==(Object other) {
     return identical(this, other) ||
-        (other.runtimeType == runtimeType && other is _$SimulationResumed);
+        (other.runtimeType == runtimeType && other is _$SimulationResumedImpl);
   }
 
   @override
@@ -3135,29 +3320,34 @@ class _$SimulationResumed implements SimulationResumed {
 }
 
 abstract class SimulationResumed implements SimulationEvent {
-  const factory SimulationResumed() = _$SimulationResumed;
+  const factory SimulationResumed() = _$SimulationResumedImpl;
 }
 
 /// @nodoc
-abstract class _$$SimulationCompletedCopyWith<$Res> {
-  factory _$$SimulationCompletedCopyWith(_$SimulationCompleted value,
-          $Res Function(_$SimulationCompleted) then) =
-      __$$SimulationCompletedCopyWithImpl<$Res>;
+abstract class _$$SimulationCompletedImplCopyWith<$Res> {
+  factory _$$SimulationCompletedImplCopyWith(
+    _$SimulationCompletedImpl value,
+    $Res Function(_$SimulationCompletedImpl) then,
+  ) = __$$SimulationCompletedImplCopyWithImpl<$Res>;
 }
 
 /// @nodoc
-class __$$SimulationCompletedCopyWithImpl<$Res>
-    extends _$SimulationEventCopyWithImpl<$Res, _$SimulationCompleted>
-    implements _$$SimulationCompletedCopyWith<$Res> {
-  __$$SimulationCompletedCopyWithImpl(
-      _$SimulationCompleted _value, $Res Function(_$SimulationCompleted) _then)
-      : super(_value, _then);
+class __$$SimulationCompletedImplCopyWithImpl<$Res>
+    extends _$SimulationEventCopyWithImpl<$Res, _$SimulationCompletedImpl>
+    implements _$$SimulationCompletedImplCopyWith<$Res> {
+  __$$SimulationCompletedImplCopyWithImpl(
+    _$SimulationCompletedImpl _value,
+    $Res Function(_$SimulationCompletedImpl) _then,
+  ) : super(_value, _then);
+
+  /// Create a copy of SimulationEvent
+  /// with the given fields replaced by the non-null parameter values.
 }
 
 /// @nodoc
 
-class _$SimulationCompleted implements SimulationCompleted {
-  const _$SimulationCompleted();
+class _$SimulationCompletedImpl implements SimulationCompleted {
+  const _$SimulationCompletedImpl();
 
   @override
   String toString() {
@@ -3165,9 +3355,10 @@ class _$SimulationCompleted implements SimulationCompleted {
   }
 
   @override
-  bool operator ==(dynamic other) {
+  bool operator ==(Object other) {
     return identical(this, other) ||
-        (other.runtimeType == runtimeType && other is _$SimulationCompleted);
+        (other.runtimeType == runtimeType &&
+            other is _$SimulationCompletedImpl);
   }
 
   @override
@@ -3255,7 +3446,7 @@ class _$SimulationCompleted implements SimulationCompleted {
 }
 
 abstract class SimulationCompleted implements SimulationEvent {
-  const factory SimulationCompleted() = _$SimulationCompleted;
+  const factory SimulationCompleted() = _$SimulationCompletedImpl;
 }
 
 /// @nodoc
@@ -3268,17 +3459,15 @@ mixin _$ExportEvent {
     required TResult Function(String rideId, String target) uploading,
     required TResult Function(String rideId, String target) success,
     required TResult Function(String rideId, String target, String error)
-        failed,
-  }) =>
-      throw _privateConstructorUsedError;
+    failed,
+  }) => throw _privateConstructorUsedError;
   @optionalTypeArgs
   TResult? whenOrNull<TResult extends Object?>({
     TResult? Function(String rideId, String target)? queued,
     TResult? Function(String rideId, String target)? uploading,
     TResult? Function(String rideId, String target)? success,
     TResult? Function(String rideId, String target, String error)? failed,
-  }) =>
-      throw _privateConstructorUsedError;
+  }) => throw _privateConstructorUsedError;
   @optionalTypeArgs
   TResult maybeWhen<TResult extends Object?>({
     TResult Function(String rideId, String target)? queued,
@@ -3286,24 +3475,21 @@ mixin _$ExportEvent {
     TResult Function(String rideId, String target)? success,
     TResult Function(String rideId, String target, String error)? failed,
     required TResult orElse(),
-  }) =>
-      throw _privateConstructorUsedError;
+  }) => throw _privateConstructorUsedError;
   @optionalTypeArgs
   TResult map<TResult extends Object?>({
     required TResult Function(ExportQueued value) queued,
     required TResult Function(ExportUploading value) uploading,
     required TResult Function(ExportSuccess value) success,
     required TResult Function(ExportFailed value) failed,
-  }) =>
-      throw _privateConstructorUsedError;
+  }) => throw _privateConstructorUsedError;
   @optionalTypeArgs
   TResult? mapOrNull<TResult extends Object?>({
     TResult? Function(ExportQueued value)? queued,
     TResult? Function(ExportUploading value)? uploading,
     TResult? Function(ExportSuccess value)? success,
     TResult? Function(ExportFailed value)? failed,
-  }) =>
-      throw _privateConstructorUsedError;
+  }) => throw _privateConstructorUsedError;
   @optionalTypeArgs
   TResult maybeMap<TResult extends Object?>({
     TResult Function(ExportQueued value)? queued,
@@ -3311,10 +3497,11 @@ mixin _$ExportEvent {
     TResult Function(ExportSuccess value)? success,
     TResult Function(ExportFailed value)? failed,
     required TResult orElse(),
-  }) =>
-      throw _privateConstructorUsedError;
+  }) => throw _privateConstructorUsedError;
 
-  @JsonKey(ignore: true)
+  /// Create a copy of ExportEvent
+  /// with the given fields replaced by the non-null parameter values.
+  @JsonKey(includeFromJson: false, includeToJson: false)
   $ExportEventCopyWith<ExportEvent> get copyWith =>
       throw _privateConstructorUsedError;
 }
@@ -3322,8 +3509,9 @@ mixin _$ExportEvent {
 /// @nodoc
 abstract class $ExportEventCopyWith<$Res> {
   factory $ExportEventCopyWith(
-          ExportEvent value, $Res Function(ExportEvent) then) =
-      _$ExportEventCopyWithImpl<$Res, ExportEvent>;
+    ExportEvent value,
+    $Res Function(ExportEvent) then,
+  ) = _$ExportEventCopyWithImpl<$Res, ExportEvent>;
   @useResult
   $Res call({String rideId, String target});
 }
@@ -3338,67 +3526,72 @@ class _$ExportEventCopyWithImpl<$Res, $Val extends ExportEvent>
   // ignore: unused_field
   final $Res Function($Val) _then;
 
+  /// Create a copy of ExportEvent
+  /// with the given fields replaced by the non-null parameter values.
   @pragma('vm:prefer-inline')
   @override
-  $Res call({
-    Object? rideId = null,
-    Object? target = null,
-  }) {
-    return _then(_value.copyWith(
-      rideId: null == rideId
-          ? _value.rideId
-          : rideId // ignore: cast_nullable_to_non_nullable
-              as String,
-      target: null == target
-          ? _value.target
-          : target // ignore: cast_nullable_to_non_nullable
-              as String,
-    ) as $Val);
+  $Res call({Object? rideId = null, Object? target = null}) {
+    return _then(
+      _value.copyWith(
+            rideId: null == rideId
+                ? _value.rideId
+                : rideId // ignore: cast_nullable_to_non_nullable
+                      as String,
+            target: null == target
+                ? _value.target
+                : target // ignore: cast_nullable_to_non_nullable
+                      as String,
+          )
+          as $Val,
+    );
   }
 }
 
 /// @nodoc
-abstract class _$$ExportQueuedCopyWith<$Res>
+abstract class _$$ExportQueuedImplCopyWith<$Res>
     implements $ExportEventCopyWith<$Res> {
-  factory _$$ExportQueuedCopyWith(
-          _$ExportQueued value, $Res Function(_$ExportQueued) then) =
-      __$$ExportQueuedCopyWithImpl<$Res>;
+  factory _$$ExportQueuedImplCopyWith(
+    _$ExportQueuedImpl value,
+    $Res Function(_$ExportQueuedImpl) then,
+  ) = __$$ExportQueuedImplCopyWithImpl<$Res>;
   @override
   @useResult
   $Res call({String rideId, String target});
 }
 
 /// @nodoc
-class __$$ExportQueuedCopyWithImpl<$Res>
-    extends _$ExportEventCopyWithImpl<$Res, _$ExportQueued>
-    implements _$$ExportQueuedCopyWith<$Res> {
-  __$$ExportQueuedCopyWithImpl(
-      _$ExportQueued _value, $Res Function(_$ExportQueued) _then)
-      : super(_value, _then);
+class __$$ExportQueuedImplCopyWithImpl<$Res>
+    extends _$ExportEventCopyWithImpl<$Res, _$ExportQueuedImpl>
+    implements _$$ExportQueuedImplCopyWith<$Res> {
+  __$$ExportQueuedImplCopyWithImpl(
+    _$ExportQueuedImpl _value,
+    $Res Function(_$ExportQueuedImpl) _then,
+  ) : super(_value, _then);
 
+  /// Create a copy of ExportEvent
+  /// with the given fields replaced by the non-null parameter values.
   @pragma('vm:prefer-inline')
   @override
-  $Res call({
-    Object? rideId = null,
-    Object? target = null,
-  }) {
-    return _then(_$ExportQueued(
-      null == rideId
-          ? _value.rideId
-          : rideId // ignore: cast_nullable_to_non_nullable
-              as String,
-      null == target
-          ? _value.target
-          : target // ignore: cast_nullable_to_non_nullable
-              as String,
-    ));
+  $Res call({Object? rideId = null, Object? target = null}) {
+    return _then(
+      _$ExportQueuedImpl(
+        null == rideId
+            ? _value.rideId
+            : rideId // ignore: cast_nullable_to_non_nullable
+                  as String,
+        null == target
+            ? _value.target
+            : target // ignore: cast_nullable_to_non_nullable
+                  as String,
+      ),
+    );
   }
 }
 
 /// @nodoc
 
-class _$ExportQueued implements ExportQueued {
-  const _$ExportQueued(this.rideId, this.target);
+class _$ExportQueuedImpl implements ExportQueued {
+  const _$ExportQueuedImpl(this.rideId, this.target);
 
   @override
   final String rideId;
@@ -3411,10 +3604,10 @@ class _$ExportQueued implements ExportQueued {
   }
 
   @override
-  bool operator ==(dynamic other) {
+  bool operator ==(Object other) {
     return identical(this, other) ||
         (other.runtimeType == runtimeType &&
-            other is _$ExportQueued &&
+            other is _$ExportQueuedImpl &&
             (identical(other.rideId, rideId) || other.rideId == rideId) &&
             (identical(other.target, target) || other.target == target));
   }
@@ -3422,11 +3615,13 @@ class _$ExportQueued implements ExportQueued {
   @override
   int get hashCode => Object.hash(runtimeType, rideId, target);
 
-  @JsonKey(ignore: true)
+  /// Create a copy of ExportEvent
+  /// with the given fields replaced by the non-null parameter values.
+  @JsonKey(includeFromJson: false, includeToJson: false)
   @override
   @pragma('vm:prefer-inline')
-  _$$ExportQueuedCopyWith<_$ExportQueued> get copyWith =>
-      __$$ExportQueuedCopyWithImpl<_$ExportQueued>(this, _$identity);
+  _$$ExportQueuedImplCopyWith<_$ExportQueuedImpl> get copyWith =>
+      __$$ExportQueuedImplCopyWithImpl<_$ExportQueuedImpl>(this, _$identity);
 
   @override
   @optionalTypeArgs
@@ -3435,7 +3630,7 @@ class _$ExportQueued implements ExportQueued {
     required TResult Function(String rideId, String target) uploading,
     required TResult Function(String rideId, String target) success,
     required TResult Function(String rideId, String target, String error)
-        failed,
+    failed,
   }) {
     return queued(rideId, target);
   }
@@ -3506,60 +3701,66 @@ class _$ExportQueued implements ExportQueued {
 
 abstract class ExportQueued implements ExportEvent {
   const factory ExportQueued(final String rideId, final String target) =
-      _$ExportQueued;
+      _$ExportQueuedImpl;
 
   @override
   String get rideId;
   @override
   String get target;
+
+  /// Create a copy of ExportEvent
+  /// with the given fields replaced by the non-null parameter values.
   @override
-  @JsonKey(ignore: true)
-  _$$ExportQueuedCopyWith<_$ExportQueued> get copyWith =>
+  @JsonKey(includeFromJson: false, includeToJson: false)
+  _$$ExportQueuedImplCopyWith<_$ExportQueuedImpl> get copyWith =>
       throw _privateConstructorUsedError;
 }
 
 /// @nodoc
-abstract class _$$ExportUploadingCopyWith<$Res>
+abstract class _$$ExportUploadingImplCopyWith<$Res>
     implements $ExportEventCopyWith<$Res> {
-  factory _$$ExportUploadingCopyWith(
-          _$ExportUploading value, $Res Function(_$ExportUploading) then) =
-      __$$ExportUploadingCopyWithImpl<$Res>;
+  factory _$$ExportUploadingImplCopyWith(
+    _$ExportUploadingImpl value,
+    $Res Function(_$ExportUploadingImpl) then,
+  ) = __$$ExportUploadingImplCopyWithImpl<$Res>;
   @override
   @useResult
   $Res call({String rideId, String target});
 }
 
 /// @nodoc
-class __$$ExportUploadingCopyWithImpl<$Res>
-    extends _$ExportEventCopyWithImpl<$Res, _$ExportUploading>
-    implements _$$ExportUploadingCopyWith<$Res> {
-  __$$ExportUploadingCopyWithImpl(
-      _$ExportUploading _value, $Res Function(_$ExportUploading) _then)
-      : super(_value, _then);
+class __$$ExportUploadingImplCopyWithImpl<$Res>
+    extends _$ExportEventCopyWithImpl<$Res, _$ExportUploadingImpl>
+    implements _$$ExportUploadingImplCopyWith<$Res> {
+  __$$ExportUploadingImplCopyWithImpl(
+    _$ExportUploadingImpl _value,
+    $Res Function(_$ExportUploadingImpl) _then,
+  ) : super(_value, _then);
 
+  /// Create a copy of ExportEvent
+  /// with the given fields replaced by the non-null parameter values.
   @pragma('vm:prefer-inline')
   @override
-  $Res call({
-    Object? rideId = null,
-    Object? target = null,
-  }) {
-    return _then(_$ExportUploading(
-      null == rideId
-          ? _value.rideId
-          : rideId // ignore: cast_nullable_to_non_nullable
-              as String,
-      null == target
-          ? _value.target
-          : target // ignore: cast_nullable_to_non_nullable
-              as String,
-    ));
+  $Res call({Object? rideId = null, Object? target = null}) {
+    return _then(
+      _$ExportUploadingImpl(
+        null == rideId
+            ? _value.rideId
+            : rideId // ignore: cast_nullable_to_non_nullable
+                  as String,
+        null == target
+            ? _value.target
+            : target // ignore: cast_nullable_to_non_nullable
+                  as String,
+      ),
+    );
   }
 }
 
 /// @nodoc
 
-class _$ExportUploading implements ExportUploading {
-  const _$ExportUploading(this.rideId, this.target);
+class _$ExportUploadingImpl implements ExportUploading {
+  const _$ExportUploadingImpl(this.rideId, this.target);
 
   @override
   final String rideId;
@@ -3572,10 +3773,10 @@ class _$ExportUploading implements ExportUploading {
   }
 
   @override
-  bool operator ==(dynamic other) {
+  bool operator ==(Object other) {
     return identical(this, other) ||
         (other.runtimeType == runtimeType &&
-            other is _$ExportUploading &&
+            other is _$ExportUploadingImpl &&
             (identical(other.rideId, rideId) || other.rideId == rideId) &&
             (identical(other.target, target) || other.target == target));
   }
@@ -3583,11 +3784,16 @@ class _$ExportUploading implements ExportUploading {
   @override
   int get hashCode => Object.hash(runtimeType, rideId, target);
 
-  @JsonKey(ignore: true)
+  /// Create a copy of ExportEvent
+  /// with the given fields replaced by the non-null parameter values.
+  @JsonKey(includeFromJson: false, includeToJson: false)
   @override
   @pragma('vm:prefer-inline')
-  _$$ExportUploadingCopyWith<_$ExportUploading> get copyWith =>
-      __$$ExportUploadingCopyWithImpl<_$ExportUploading>(this, _$identity);
+  _$$ExportUploadingImplCopyWith<_$ExportUploadingImpl> get copyWith =>
+      __$$ExportUploadingImplCopyWithImpl<_$ExportUploadingImpl>(
+        this,
+        _$identity,
+      );
 
   @override
   @optionalTypeArgs
@@ -3596,7 +3802,7 @@ class _$ExportUploading implements ExportUploading {
     required TResult Function(String rideId, String target) uploading,
     required TResult Function(String rideId, String target) success,
     required TResult Function(String rideId, String target, String error)
-        failed,
+    failed,
   }) {
     return uploading(rideId, target);
   }
@@ -3667,60 +3873,66 @@ class _$ExportUploading implements ExportUploading {
 
 abstract class ExportUploading implements ExportEvent {
   const factory ExportUploading(final String rideId, final String target) =
-      _$ExportUploading;
+      _$ExportUploadingImpl;
 
   @override
   String get rideId;
   @override
   String get target;
+
+  /// Create a copy of ExportEvent
+  /// with the given fields replaced by the non-null parameter values.
   @override
-  @JsonKey(ignore: true)
-  _$$ExportUploadingCopyWith<_$ExportUploading> get copyWith =>
+  @JsonKey(includeFromJson: false, includeToJson: false)
+  _$$ExportUploadingImplCopyWith<_$ExportUploadingImpl> get copyWith =>
       throw _privateConstructorUsedError;
 }
 
 /// @nodoc
-abstract class _$$ExportSuccessCopyWith<$Res>
+abstract class _$$ExportSuccessImplCopyWith<$Res>
     implements $ExportEventCopyWith<$Res> {
-  factory _$$ExportSuccessCopyWith(
-          _$ExportSuccess value, $Res Function(_$ExportSuccess) then) =
-      __$$ExportSuccessCopyWithImpl<$Res>;
+  factory _$$ExportSuccessImplCopyWith(
+    _$ExportSuccessImpl value,
+    $Res Function(_$ExportSuccessImpl) then,
+  ) = __$$ExportSuccessImplCopyWithImpl<$Res>;
   @override
   @useResult
   $Res call({String rideId, String target});
 }
 
 /// @nodoc
-class __$$ExportSuccessCopyWithImpl<$Res>
-    extends _$ExportEventCopyWithImpl<$Res, _$ExportSuccess>
-    implements _$$ExportSuccessCopyWith<$Res> {
-  __$$ExportSuccessCopyWithImpl(
-      _$ExportSuccess _value, $Res Function(_$ExportSuccess) _then)
-      : super(_value, _then);
+class __$$ExportSuccessImplCopyWithImpl<$Res>
+    extends _$ExportEventCopyWithImpl<$Res, _$ExportSuccessImpl>
+    implements _$$ExportSuccessImplCopyWith<$Res> {
+  __$$ExportSuccessImplCopyWithImpl(
+    _$ExportSuccessImpl _value,
+    $Res Function(_$ExportSuccessImpl) _then,
+  ) : super(_value, _then);
 
+  /// Create a copy of ExportEvent
+  /// with the given fields replaced by the non-null parameter values.
   @pragma('vm:prefer-inline')
   @override
-  $Res call({
-    Object? rideId = null,
-    Object? target = null,
-  }) {
-    return _then(_$ExportSuccess(
-      null == rideId
-          ? _value.rideId
-          : rideId // ignore: cast_nullable_to_non_nullable
-              as String,
-      null == target
-          ? _value.target
-          : target // ignore: cast_nullable_to_non_nullable
-              as String,
-    ));
+  $Res call({Object? rideId = null, Object? target = null}) {
+    return _then(
+      _$ExportSuccessImpl(
+        null == rideId
+            ? _value.rideId
+            : rideId // ignore: cast_nullable_to_non_nullable
+                  as String,
+        null == target
+            ? _value.target
+            : target // ignore: cast_nullable_to_non_nullable
+                  as String,
+      ),
+    );
   }
 }
 
 /// @nodoc
 
-class _$ExportSuccess implements ExportSuccess {
-  const _$ExportSuccess(this.rideId, this.target);
+class _$ExportSuccessImpl implements ExportSuccess {
+  const _$ExportSuccessImpl(this.rideId, this.target);
 
   @override
   final String rideId;
@@ -3733,10 +3945,10 @@ class _$ExportSuccess implements ExportSuccess {
   }
 
   @override
-  bool operator ==(dynamic other) {
+  bool operator ==(Object other) {
     return identical(this, other) ||
         (other.runtimeType == runtimeType &&
-            other is _$ExportSuccess &&
+            other is _$ExportSuccessImpl &&
             (identical(other.rideId, rideId) || other.rideId == rideId) &&
             (identical(other.target, target) || other.target == target));
   }
@@ -3744,11 +3956,13 @@ class _$ExportSuccess implements ExportSuccess {
   @override
   int get hashCode => Object.hash(runtimeType, rideId, target);
 
-  @JsonKey(ignore: true)
+  /// Create a copy of ExportEvent
+  /// with the given fields replaced by the non-null parameter values.
+  @JsonKey(includeFromJson: false, includeToJson: false)
   @override
   @pragma('vm:prefer-inline')
-  _$$ExportSuccessCopyWith<_$ExportSuccess> get copyWith =>
-      __$$ExportSuccessCopyWithImpl<_$ExportSuccess>(this, _$identity);
+  _$$ExportSuccessImplCopyWith<_$ExportSuccessImpl> get copyWith =>
+      __$$ExportSuccessImplCopyWithImpl<_$ExportSuccessImpl>(this, _$identity);
 
   @override
   @optionalTypeArgs
@@ -3757,7 +3971,7 @@ class _$ExportSuccess implements ExportSuccess {
     required TResult Function(String rideId, String target) uploading,
     required TResult Function(String rideId, String target) success,
     required TResult Function(String rideId, String target, String error)
-        failed,
+    failed,
   }) {
     return success(rideId, target);
   }
@@ -3828,37 +4042,44 @@ class _$ExportSuccess implements ExportSuccess {
 
 abstract class ExportSuccess implements ExportEvent {
   const factory ExportSuccess(final String rideId, final String target) =
-      _$ExportSuccess;
+      _$ExportSuccessImpl;
 
   @override
   String get rideId;
   @override
   String get target;
+
+  /// Create a copy of ExportEvent
+  /// with the given fields replaced by the non-null parameter values.
   @override
-  @JsonKey(ignore: true)
-  _$$ExportSuccessCopyWith<_$ExportSuccess> get copyWith =>
+  @JsonKey(includeFromJson: false, includeToJson: false)
+  _$$ExportSuccessImplCopyWith<_$ExportSuccessImpl> get copyWith =>
       throw _privateConstructorUsedError;
 }
 
 /// @nodoc
-abstract class _$$ExportFailedCopyWith<$Res>
+abstract class _$$ExportFailedImplCopyWith<$Res>
     implements $ExportEventCopyWith<$Res> {
-  factory _$$ExportFailedCopyWith(
-          _$ExportFailed value, $Res Function(_$ExportFailed) then) =
-      __$$ExportFailedCopyWithImpl<$Res>;
+  factory _$$ExportFailedImplCopyWith(
+    _$ExportFailedImpl value,
+    $Res Function(_$ExportFailedImpl) then,
+  ) = __$$ExportFailedImplCopyWithImpl<$Res>;
   @override
   @useResult
   $Res call({String rideId, String target, String error});
 }
 
 /// @nodoc
-class __$$ExportFailedCopyWithImpl<$Res>
-    extends _$ExportEventCopyWithImpl<$Res, _$ExportFailed>
-    implements _$$ExportFailedCopyWith<$Res> {
-  __$$ExportFailedCopyWithImpl(
-      _$ExportFailed _value, $Res Function(_$ExportFailed) _then)
-      : super(_value, _then);
+class __$$ExportFailedImplCopyWithImpl<$Res>
+    extends _$ExportEventCopyWithImpl<$Res, _$ExportFailedImpl>
+    implements _$$ExportFailedImplCopyWith<$Res> {
+  __$$ExportFailedImplCopyWithImpl(
+    _$ExportFailedImpl _value,
+    $Res Function(_$ExportFailedImpl) _then,
+  ) : super(_value, _then);
 
+  /// Create a copy of ExportEvent
+  /// with the given fields replaced by the non-null parameter values.
   @pragma('vm:prefer-inline')
   @override
   $Res call({
@@ -3866,27 +4087,29 @@ class __$$ExportFailedCopyWithImpl<$Res>
     Object? target = null,
     Object? error = null,
   }) {
-    return _then(_$ExportFailed(
-      null == rideId
-          ? _value.rideId
-          : rideId // ignore: cast_nullable_to_non_nullable
-              as String,
-      null == target
-          ? _value.target
-          : target // ignore: cast_nullable_to_non_nullable
-              as String,
-      null == error
-          ? _value.error
-          : error // ignore: cast_nullable_to_non_nullable
-              as String,
-    ));
+    return _then(
+      _$ExportFailedImpl(
+        null == rideId
+            ? _value.rideId
+            : rideId // ignore: cast_nullable_to_non_nullable
+                  as String,
+        null == target
+            ? _value.target
+            : target // ignore: cast_nullable_to_non_nullable
+                  as String,
+        null == error
+            ? _value.error
+            : error // ignore: cast_nullable_to_non_nullable
+                  as String,
+      ),
+    );
   }
 }
 
 /// @nodoc
 
-class _$ExportFailed implements ExportFailed {
-  const _$ExportFailed(this.rideId, this.target, this.error);
+class _$ExportFailedImpl implements ExportFailed {
+  const _$ExportFailedImpl(this.rideId, this.target, this.error);
 
   @override
   final String rideId;
@@ -3901,10 +4124,10 @@ class _$ExportFailed implements ExportFailed {
   }
 
   @override
-  bool operator ==(dynamic other) {
+  bool operator ==(Object other) {
     return identical(this, other) ||
         (other.runtimeType == runtimeType &&
-            other is _$ExportFailed &&
+            other is _$ExportFailedImpl &&
             (identical(other.rideId, rideId) || other.rideId == rideId) &&
             (identical(other.target, target) || other.target == target) &&
             (identical(other.error, error) || other.error == error));
@@ -3913,11 +4136,13 @@ class _$ExportFailed implements ExportFailed {
   @override
   int get hashCode => Object.hash(runtimeType, rideId, target, error);
 
-  @JsonKey(ignore: true)
+  /// Create a copy of ExportEvent
+  /// with the given fields replaced by the non-null parameter values.
+  @JsonKey(includeFromJson: false, includeToJson: false)
   @override
   @pragma('vm:prefer-inline')
-  _$$ExportFailedCopyWith<_$ExportFailed> get copyWith =>
-      __$$ExportFailedCopyWithImpl<_$ExportFailed>(this, _$identity);
+  _$$ExportFailedImplCopyWith<_$ExportFailedImpl> get copyWith =>
+      __$$ExportFailedImplCopyWithImpl<_$ExportFailedImpl>(this, _$identity);
 
   @override
   @optionalTypeArgs
@@ -3926,7 +4151,7 @@ class _$ExportFailed implements ExportFailed {
     required TResult Function(String rideId, String target) uploading,
     required TResult Function(String rideId, String target) success,
     required TResult Function(String rideId, String target, String error)
-        failed,
+    failed,
   }) {
     return failed(rideId, target, error);
   }
@@ -3997,16 +4222,21 @@ class _$ExportFailed implements ExportFailed {
 
 abstract class ExportFailed implements ExportEvent {
   const factory ExportFailed(
-          final String rideId, final String target, final String error) =
-      _$ExportFailed;
+    final String rideId,
+    final String target,
+    final String error,
+  ) = _$ExportFailedImpl;
 
   @override
   String get rideId;
   @override
   String get target;
   String get error;
+
+  /// Create a copy of ExportEvent
+  /// with the given fields replaced by the non-null parameter values.
   @override
-  @JsonKey(ignore: true)
-  _$$ExportFailedCopyWith<_$ExportFailed> get copyWith =>
+  @JsonKey(includeFromJson: false, includeToJson: false)
+  _$$ExportFailedImplCopyWith<_$ExportFailedImpl> get copyWith =>
       throw _privateConstructorUsedError;
 }

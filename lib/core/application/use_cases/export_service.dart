@@ -3,6 +3,7 @@ import 'dart:typed_data';
 
 import '../../domain/entities/entities.dart';
 import '../../domain/ports/export_port.dart';
+import '../../domain/value_objects/value_objects.dart';
 import '../../../infrastructure/files/fit_encoder.dart';
 import '../../../infrastructure/files/tcx_encoder.dart';
 
@@ -28,13 +29,14 @@ class ExportService {
     Ride ride,
     ExportFormat format, {
     required String baseDirectory,
+    Watts? ftp,
   }) async {
     final datePrefix = _datePrefix(ride.startTime);
     final shortId = ride.id.length > 8 ? ride.id.substring(0, 8) : ride.id;
 
     switch (format) {
       case ExportFormat.fit:
-        final bytes = encodeFit(ride);
+        final bytes = encodeFit(ride, ftp: ftp);
         final file = File('$baseDirectory/${datePrefix}_$shortId.fit');
         await file.writeAsBytes(bytes);
         return file;
@@ -54,7 +56,8 @@ class ExportService {
   }
 
   /// Encodes [ride] to FIT binary.
-  Uint8List encodeFit(Ride ride) => _fitEncoder.encode(ride);
+  Uint8List encodeFit(Ride ride, {Watts? ftp}) =>
+      _fitEncoder.encode(ride, ftp: ftp);
 
   /// Encodes [ride] to TCX XML string.
   String encodeTcx(Ride ride) => _tcxEncoder.encode(ride);

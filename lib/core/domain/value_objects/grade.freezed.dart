@@ -12,13 +12,16 @@ part of 'grade.dart';
 T _$identity<T>(T value) => value;
 
 final _privateConstructorUsedError = UnsupportedError(
-    'It seems like you constructed your class using `MyClass._()`. This constructor is only meant to be used by freezed and you are not supposed to need it nor use it.\nPlease check the documentation here for more information: https://github.com/rrousselGit/freezed#custom-getters-and-methods');
+  'It seems like you constructed your class using `MyClass._()`. This constructor is only meant to be used by freezed and you are not supposed to need it nor use it.\nPlease check the documentation here for more information: https://github.com/rrousselGit/freezed#adding-getters-and-methods-to-our-models',
+);
 
 /// @nodoc
 mixin _$Grade {
   double get percent => throw _privateConstructorUsedError;
 
-  @JsonKey(ignore: true)
+  /// Create a copy of Grade
+  /// with the given fields replaced by the non-null parameter values.
+  @JsonKey(includeFromJson: false, includeToJson: false)
   $GradeCopyWith<Grade> get copyWith => throw _privateConstructorUsedError;
 }
 
@@ -40,53 +43,63 @@ class _$GradeCopyWithImpl<$Res, $Val extends Grade>
   // ignore: unused_field
   final $Res Function($Val) _then;
 
+  /// Create a copy of Grade
+  /// with the given fields replaced by the non-null parameter values.
   @pragma('vm:prefer-inline')
   @override
-  $Res call({
-    Object? percent = null,
-  }) {
-    return _then(_value.copyWith(
-      percent: null == percent
-          ? _value.percent
-          : percent // ignore: cast_nullable_to_non_nullable
-              as double,
-    ) as $Val);
+  $Res call({Object? percent = null}) {
+    return _then(
+      _value.copyWith(
+            percent: null == percent
+                ? _value.percent
+                : percent // ignore: cast_nullable_to_non_nullable
+                      as double,
+          )
+          as $Val,
+    );
   }
 }
 
 /// @nodoc
-abstract class _$$_GradeCopyWith<$Res> implements $GradeCopyWith<$Res> {
-  factory _$$_GradeCopyWith(_$_Grade value, $Res Function(_$_Grade) then) =
-      __$$_GradeCopyWithImpl<$Res>;
+abstract class _$$GradeImplCopyWith<$Res> implements $GradeCopyWith<$Res> {
+  factory _$$GradeImplCopyWith(
+    _$GradeImpl value,
+    $Res Function(_$GradeImpl) then,
+  ) = __$$GradeImplCopyWithImpl<$Res>;
   @override
   @useResult
   $Res call({double percent});
 }
 
 /// @nodoc
-class __$$_GradeCopyWithImpl<$Res> extends _$GradeCopyWithImpl<$Res, _$_Grade>
-    implements _$$_GradeCopyWith<$Res> {
-  __$$_GradeCopyWithImpl(_$_Grade _value, $Res Function(_$_Grade) _then)
-      : super(_value, _then);
+class __$$GradeImplCopyWithImpl<$Res>
+    extends _$GradeCopyWithImpl<$Res, _$GradeImpl>
+    implements _$$GradeImplCopyWith<$Res> {
+  __$$GradeImplCopyWithImpl(
+    _$GradeImpl _value,
+    $Res Function(_$GradeImpl) _then,
+  ) : super(_value, _then);
 
+  /// Create a copy of Grade
+  /// with the given fields replaced by the non-null parameter values.
   @pragma('vm:prefer-inline')
   @override
-  $Res call({
-    Object? percent = null,
-  }) {
-    return _then(_$_Grade(
-      null == percent
-          ? _value.percent
-          : percent // ignore: cast_nullable_to_non_nullable
-              as double,
-    ));
+  $Res call({Object? percent = null}) {
+    return _then(
+      _$GradeImpl(
+        null == percent
+            ? _value.percent
+            : percent // ignore: cast_nullable_to_non_nullable
+                  as double,
+      ),
+    );
   }
 }
 
 /// @nodoc
 
-class _$_Grade extends _Grade {
-  const _$_Grade(this.percent) : super._();
+class _$GradeImpl extends _Grade {
+  const _$GradeImpl(this.percent) : super._();
 
   @override
   final double percent;
@@ -97,31 +110,36 @@ class _$_Grade extends _Grade {
   }
 
   @override
-  bool operator ==(dynamic other) {
+  bool operator ==(Object other) {
     return identical(this, other) ||
         (other.runtimeType == runtimeType &&
-            other is _$_Grade &&
+            other is _$GradeImpl &&
             (identical(other.percent, percent) || other.percent == percent));
   }
 
   @override
   int get hashCode => Object.hash(runtimeType, percent);
 
-  @JsonKey(ignore: true)
+  /// Create a copy of Grade
+  /// with the given fields replaced by the non-null parameter values.
+  @JsonKey(includeFromJson: false, includeToJson: false)
   @override
   @pragma('vm:prefer-inline')
-  _$$_GradeCopyWith<_$_Grade> get copyWith =>
-      __$$_GradeCopyWithImpl<_$_Grade>(this, _$identity);
+  _$$GradeImplCopyWith<_$GradeImpl> get copyWith =>
+      __$$GradeImplCopyWithImpl<_$GradeImpl>(this, _$identity);
 }
 
 abstract class _Grade extends Grade {
-  const factory _Grade(final double percent) = _$_Grade;
+  const factory _Grade(final double percent) = _$GradeImpl;
   const _Grade._() : super._();
 
   @override
   double get percent;
+
+  /// Create a copy of Grade
+  /// with the given fields replaced by the non-null parameter values.
   @override
-  @JsonKey(ignore: true)
-  _$$_GradeCopyWith<_$_Grade> get copyWith =>
+  @JsonKey(includeFromJson: false, includeToJson: false)
+  _$$GradeImplCopyWith<_$GradeImpl> get copyWith =>
       throw _privateConstructorUsedError;
 }

@@ -1,0 +1,264 @@
+import 'package:drift/native.dart';
+import 'package:flutter_test/flutter_test.dart';
+import 'package:open_bike/core/domain/entities/entities.dart';
+import 'package:open_bike/core/domain/value_objects/value_objects.dart';
+import 'package:open_bike/infrastructure/persistence/app_database.dart';
+import 'package:open_bike/infrastructure/persistence/drift_storage.dart';
+
+AppDatabase _createInMemoryDb() => AppDatabase(NativeDatabase.memory());
+
+Ride _testRide({String id = 'ride-001'}) {
+  final start = DateTime.utc(2025, 6, 15, 10, 0, 0);
+  return Ride(
+    id: id,
+    startTime: start,
+    endTime: start.add(const Duration(seconds: 60)),
+    status: RideStatus.finished,
+    readings: [
+      SensorReading(
+        timestamp: start,
+        power: const Watts(200),
+        heartRate: const HeartRate(140),
+        cadence: const Cadence(90),
+        speed: const Speed(32.5),
+        distance: const Distance(120),
+        grade: const Grade(4.5),
+      ),
+      SensorReading(
+        timestamp: start.add(const Duration(seconds: 1)),
+        power: const Watts(210),
+        grade: const Grade(-2.0),
+      ),
+    ],
+  );
+}
+
+void main() {
+  late AppDatabase db;
+  late DriftStorage storage;
+
+  setUp(() {
+    db = _createInMemoryDb();
+    storage = DriftStorage(db);
+  });
+
+  tearDown(() async {
+    await db.close();
+  });
+
+  // ===========================================================================
+  // Rides
+  // ===========================================================================
+
+  group('DriftStorage — rides', () {
+    test('saveRide then getRide round-trips core fields', () async {
+      final ride = _testRide();
+      await storage.saveRide(ride);
+
+      final loaded = await storage.getRide(ride.id);
+      expect(loaded, isNotNull);
+      expect(loaded!.id, ride.id);
+      expect(loaded.startTime.isAtSameMomentAs(ride.startTime), isTrue);
+      expect(loaded.endTime!.isAtSameMomentAs(ride.endTime!), isTrue);
+      expect(loaded.status, RideStatus.finished);
+    });
+
+    test('getRide returns null for unknown id', () async {
+      final loaded = await storage.getRide('missing');
+      expect(loaded, isNull);
+    });
+
+    test('getRides returns all rides ordered by start time descending',
+        () async {
+      final older = _testRide(id: 'ride-old');
+      final newer = _testRide(id: 'ride-new').copyWith(
+        startTime: older.startTime.add(const Duration(hours: 1)),
+      );
+      await storage.saveRide(older);
+      await storage.saveRide(newer);
+
+      final rides = await storage.getRides();
+      expect(rides.map((r) => r.id).toList(), ['ride-new', 'ride-old']);
+    });
+
+    test('saveRide upserts on conflicting id', () async {
+      final ride = _testRide();
+      await storage.saveRide(ride);
+      await storage.saveRide(ride.copyWith(status: RideStatus.active));
+
+      final rides = await storage.getRides();
+      expect(rides, hasLength(1));
+      expect(rides.single.status, RideStatus.active);
+    });
+  });
+
+  // ===========================================================================
+  // Sensor readings — including gradePercent round-trip
+  // ===========================================================================
+
+  group('DriftStorage — sensor readings', () {
+    test('saveSensorReadings then getSensorReadings round-trips grade',
+        () async {
+      final ride = _testRide();
+      await storage.saveRide(ride);
+      await storage.saveSensorReadings(ride.id, ride.readings);
+
+      final readings = await storage.getSensorReadings(ride.id);
+      expect(readings, hasLength(2));
+      expect(readings[0].grade?.percent, closeTo(4.5, 0.0001));
+      expect(readings[1].grade?.percent, closeTo(-2.0, 0.0001));
+    });
+
+    test('readings without grade round-trip as null', () async {
+      final ride = _testRide();
+      await storage.saveRide(ride);
+      await storage.saveSensorReadings(ride.id, [
+        SensorReading(timestamp: ride.startTime, power: const Watts(150)),
+      ]);
+
+      final readings = await storage.getSensorReadings(ride.id);
+      expect(readings.single.grade, isNull);
+    });
+
+    test('other fields round-trip alongside grade', () async {
+      final ride = _testRide();
+      await storage.saveRide(ride);
+      await storage.saveSensorReadings(ride.id, ride.readings);
+
+      final readings = await storage.getSensorReadings(ride.id);
+      expect(readings.first.power?.value, 200);
+      expect(readings.first.heartRate?.bpm, 140);
+      expect(readings.first.cadence?.rpm, 90);
+      expect(readings.first.speed?.kmh, closeTo(32.5, 0.0001));
+      expect(readings.first.distance?.meters, closeTo(120, 0.0001));
+    });
+  });
+
+  // ===========================================================================
+  // Laps
+  // ===========================================================================
+
+  group('DriftStorage — laps', () {
+    test('saveLaps then getLaps round-trips', () async {
+      final ride = _testRide();
+      await storage.saveRide(ride);
+      final laps = [
+        Lap(
+          startIndex: 0,
+          endIndex: 29,
+          startTime: ride.startTime,
+          duration: const Duration(seconds: 30),
+        ),
+        Lap(
+          startIndex: 30,
+          endIndex: 59,
+          startTime: ride.startTime.add(const Duration(seconds: 30)),
+          duration: const Duration(seconds: 30),
+        ),
+      ];
+      await storage.saveLaps(ride.id, laps);
+
+      final loaded = await storage.getLaps(ride.id);
+      expect(loaded, hasLength(2));
+      expect(loaded[0].startIndex, 0);
+      expect(loaded[1].startIndex, 30);
+    });
+  });
+
+  // ===========================================================================
+  // User profile
+  // ===========================================================================
+
+  group('DriftStorage — user profile', () {
+    test('saveProfile then getProfile round-trips', () async {
+      const profile = UserProfile(
+        name: 'Test Rider',
+        ftp: Watts(250),
+        maxHr: HeartRate(190),
+        restingHr: HeartRate(55),
+        weight: 72.0,
+        height: 1.8,
+      );
+      await storage.saveProfile(profile);
+
+      final loaded = await storage.getProfile();
+      expect(loaded, isNotNull);
+      expect(loaded!.name, 'Test Rider');
+      expect(loaded.ftp.value, 250);
+      expect(loaded.maxHr.bpm, 190);
+      expect(loaded.restingHr.bpm, 55);
+      expect(loaded.weight, 72.0);
+      expect(loaded.height, 1.8);
+    });
+
+    test('getProfile returns null when none saved', () async {
+      final loaded = await storage.getProfile();
+      expect(loaded, isNull);
+    });
+
+    test('saveProfile upserts the single default profile', () async {
+      const profileA = UserProfile(
+        name: 'A',
+        ftp: Watts(200),
+        maxHr: HeartRate(180),
+        restingHr: HeartRate(60),
+        weight: 70,
+        height: 1.75,
+      );
+      const profileB = UserProfile(
+        name: 'B',
+        ftp: Watts(220),
+        maxHr: HeartRate(185),
+        restingHr: HeartRate(58),
+        weight: 68,
+        height: 1.7,
+      );
+      await storage.saveProfile(profileA);
+      await storage.saveProfile(profileB);
+
+      final loaded = await storage.getProfile();
+      expect(loaded!.name, 'B');
+      expect(loaded.ftp.value, 220);
+    });
+  });
+
+  // ===========================================================================
+  // deleteRide cascade
+  // ===========================================================================
+
+  group('DriftStorage — deleteRide', () {
+    test('removes the ride and all dependent rows', () async {
+      final ride = _testRide();
+      await storage.saveRide(ride);
+      await storage.saveSensorReadings(ride.id, ride.readings);
+      await storage.saveLaps(ride.id, [
+        Lap(
+          startIndex: 0,
+          endIndex: 1,
+          startTime: ride.startTime,
+          duration: const Duration(seconds: 2),
+        ),
+      ]);
+
+      await storage.deleteRide(ride.id);
+
+      expect(await storage.getRide(ride.id), isNull);
+      expect(await storage.getSensorReadings(ride.id), isEmpty);
+      expect(await storage.getLaps(ride.id), isEmpty);
+    });
+
+    test('deleting one ride does not affect another', () async {
+      final ride1 = _testRide(id: 'ride-1');
+      final ride2 = _testRide(id: 'ride-2');
+      await storage.saveRide(ride1);
+      await storage.saveRide(ride2);
+      await storage.saveSensorReadings(ride1.id, ride1.readings);
+      await storage.saveSensorReadings(ride2.id, ride2.readings);
+
+      await storage.deleteRide(ride1.id);
+
+      expect(await storage.getRide(ride2.id), isNotNull);
+      expect(await storage.getSensorReadings(ride2.id), hasLength(2));
+    });
+  });
+}

@@ -21,7 +21,7 @@ runtime permissions — the manifests just never declared them.
 
 ## Tasks
 
-### 1. Android (`android/app/src/main/AndroidManifest.xml`, `android/app/build.gradle`)
+### 1. Android (`android/app/src/main/AndroidManifest.xml`, `android/app/build.gradle.kts`)
 - [ ] Declare permissions:
       ```xml
       <uses-permission android:name="android.permission.BLUETOOTH_SCAN"

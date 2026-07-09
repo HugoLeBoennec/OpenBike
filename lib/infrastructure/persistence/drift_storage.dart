@@ -148,6 +148,7 @@ class DriftStorage implements StoragePort {
             heartRateBpm: Value(r.heartRate?.bpm),
             speedKmh: Value(r.speed?.kmh),
             distanceM: Value(r.distance?.meters),
+            gradePercent: Value(r.grade?.percent),
           ),
         ),
       );
@@ -172,6 +173,7 @@ class DriftStorage implements StoragePort {
           row.heartRateBpm != null ? HeartRate(row.heartRateBpm!) : null,
       speed: row.speedKmh != null ? Speed(row.speedKmh!) : null,
       distance: row.distanceM != null ? Distance(row.distanceM!) : null,
+      grade: row.gradePercent != null ? Grade(row.gradePercent!) : null,
     );
   }
 

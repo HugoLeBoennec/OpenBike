@@ -73,7 +73,7 @@ class LiveChart extends ConsumerWidget {
               if (ftp.value > 0)
                 HorizontalLine(
                   y: ftp.value,
-                  color: Colors.yellow.withOpacity(0.4),
+                  color: Colors.yellow.withValues(alpha: 0.4),
                   strokeWidth: 1,
                   dashArray: [4, 4],
                 ),
@@ -129,7 +129,7 @@ class LiveChart extends ConsumerWidget {
       return LinearGradient(
         begin: Alignment.bottomCenter,
         end: Alignment.topCenter,
-        colors: [Colors.blue.withOpacity(0.3), Colors.blue.withOpacity(0.05)],
+        colors: [Colors.blue.withValues(alpha: 0.3), Colors.blue.withValues(alpha: 0.05)],
       );
     }
 
@@ -141,9 +141,9 @@ class LiveChart extends ConsumerWidget {
       final maxW = zone.maxWatts(ftp).value;
       final stopMin = (minW / maxY).clamp(0.0, 1.0);
       final stopMax = (maxW / maxY).clamp(0.0, 1.0);
-      colors.add(zone.color.withOpacity(0.35));
+      colors.add(zone.color.withValues(alpha: 0.35));
       stops.add(stopMin);
-      colors.add(zone.color.withOpacity(0.35));
+      colors.add(zone.color.withValues(alpha: 0.35));
       stops.add(stopMax);
     }
 
@@ -168,7 +168,7 @@ class LiveChart extends ConsumerWidget {
       spots: spots,
       isCurved: true,
       curveSmoothness: 0.2,
-      color: Colors.red.withOpacity(0.6),
+      color: Colors.red.withValues(alpha: 0.6),
       barWidth: 1,
       isStrokeCapRound: false,
       dotData: FlDotData(show: false),

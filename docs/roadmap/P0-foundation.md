@@ -1,7 +1,7 @@
 ---
 phase: P0
 title: Foundation — CI green, repo hygiene, correctness fixes
-status: NOT_STARTED
+status: DONE
 depends_on: []
 validation:
   - flutter analyze
@@ -21,11 +21,11 @@ paths matters because coding agents in later phases will otherwise extend the wr
 ## Tasks
 
 ### 1. Make CI green
-- [ ] Run `flutter pub get`, `flutter analyze`, `flutter test` locally/CI. Fix every
+- [x] Run `flutter pub get`, `flutter analyze`, `flutter test` locally/CI. Fix every
       analyzer error and test failure found. If a failure reveals a real bug, fix the bug
       (not the test).
       **Accept:** `CI` workflow green on this branch, all jobs (Linux job may be skipped/red — it is `continue-on-error`).
-- [ ] Reconcile pubspec toolchain drift: the `dependency_overrides` comment claims
+- [x] Reconcile pubspec toolchain drift: the `dependency_overrides` comment claims
       "pre-Dart 3.6 compatibility" but `pubspec.lock` was generated with Dart ≥3.10 /
       Flutter ≥3.38 (see `sdks:` at the bottom of the lock). Decide the supported
       Flutter version, update the pubspec `environment:` and CI `FLUTTER_VERSION`
@@ -34,26 +34,26 @@ paths matters because coding agents in later phases will otherwise extend the wr
       **Accept:** pubspec comment/constraints match reality; `flutter pub get` clean.
 
 ### 2. Delete superseded legacy code (verify no references first with grep)
-- [ ] `lib/infrastructure/ble/ftms_client.dart` — old FTMS client without control
+- [x] `lib/infrastructure/ble/ftms_client.dart` — old FTMS client without control
       handshake; superseded by `lib/infrastructure/ble/ftms/`.
-- [ ] `lib/infrastructure/ble/ble_sensor_reader.dart` — partial reader (stub CSC cadence
+- [x] `lib/infrastructure/ble/ble_sensor_reader.dart` — partial reader (stub CSC cadence
       at lines 89–91); superseded by `lib/infrastructure/ble/sensors/`.
-- [ ] `lib/core/application/use_cases/execute_workout.dart` — simple duplicate of
+- [x] `lib/core/application/use_cases/execute_workout.dart` — simple duplicate of
       `WorkoutEngine` (steady-state only, own `WorkoutProgress` class); superseded by
       `lib/core/application/services/workout_engine.dart`.
-- [ ] `lib/infrastructure/api/strava_client.dart`, `garmin_client.dart`,
+- [x] `lib/infrastructure/api/strava_client.dart`, `garmin_client.dart`,
       `training_peaks_client.dart` — pure TODO stubs implementing the legacy `ExportPort`;
       the real path is `ExportPlugin` (`lib/plugins/exports/`). Also delete
       `lib/core/application/use_cases/export_activity.dart` (drives the stubs) and, if it
       then has no remaining implementations, remove `ExportPort` from
       `lib/core/domain/ports/export_port.dart` **keeping** the `ExportFormat`/`ExportStatus`
       enums (still used by `ExportService`) — move them if needed.
-- [ ] Update barrels (`ble.dart`, `use_cases.dart`, etc.) and any tests referencing the
+- [x] Update barrels (`ble.dart`, `use_cases.dart`, etc.) and any tests referencing the
       deleted files.
       **Accept:** `flutter analyze` clean; `grep -r "FtmsClient\b\|BleSensorReader\|ExecuteWorkout\b" lib test` returns nothing.
 
 ### 3. Correctness fixes
-- [ ] **FIT encoder FTP bug** — `lib/infrastructure/files/fit_encoder.dart`: `encode()`
+- [x] **FIT encoder FTP bug** — `lib/infrastructure/files/fit_encoder.dart`: `encode()`
       never forwards the athlete FTP to `_writeSession`, so threshold_power/TSS/IF are
       always computed against the hard-coded `Watts(200)` fallback. Thread an
       `Watts? ftp` parameter from `encode()` callers (`ExportService`,
@@ -61,25 +61,25 @@ paths matters because coding agents in later phases will otherwise extend the wr
       profile / `ride.ftpAtTime`.
       **Accept:** unit test in `test/infrastructure/files/encoders_test.dart` proving a
       ride encoded with FTP 250 writes threshold_power 250 and matching TSS/IF.
-- [ ] **`gradePercent` never persisted** — `lib/infrastructure/persistence/drift_storage.dart`
+- [x] **`gradePercent` never persisted** — `lib/infrastructure/persistence/drift_storage.dart`
       `saveSensorReadings` skips the existing `gradePercent` column. Persist it (grade is
       available during SIM rides via `SimulationProgress`; extend `SensorReading` if the
       value isn't carried through — check `RecordingEngine`).
       **Accept:** round-trip test: save readings with grade, read back, grade intact.
-- [ ] **Destructive migrations** — `lib/infrastructure/persistence/app_database.dart:155-168`
+- [x] **Destructive migrations** — `lib/infrastructure/persistence/app_database.dart:155-168`
       drops all tables on upgrade. Replace with incremental Drift migrations (keep the
       drop only for `from < 2` if unavoidable, add proper steps from v2 onward) and call
       `createIndices()` from `onCreate` and post-migration in `onUpgrade`.
       **Accept:** migration test using drift's testing utilities (v2 → v3 no-op migration
       preserves data); indices exist after fresh create.
-- [ ] **Storage test coverage** — add `test/infrastructure/persistence/drift_storage_test.dart`
+- [x] **Storage test coverage** — add `test/infrastructure/persistence/drift_storage_test.dart`
       (in-memory `NativeDatabase.memory()`, pattern in
       `test/infrastructure/exports/export_queue_service_test.dart`): CRUD for rides, readings, laps,
       profile; `deleteRide` cascade behavior.
       **Accept:** tests pass.
 
 ### 4. Branding hygiene (code-level; platform files are P1)
-- [ ] Rename the Strava redirect scheme constant from `pedalhub://strava/callback` to
+- [x] Rename the Strava redirect scheme constant from `pedalhub://strava/callback` to
       `openbike://strava/callback` in `lib/plugins/exports/strava_export_plugin.dart`
       (platform registration of the scheme happens in P1 — keep the constant in one place
       so P1 only touches platform files).

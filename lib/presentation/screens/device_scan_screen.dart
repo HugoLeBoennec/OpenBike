@@ -334,7 +334,7 @@ class _SimulatorToggle extends StatelessWidget {
           Switch(
             value: value,
             onChanged: onChanged,
-            activeColor: Colors.deepPurple,
+            activeThumbColor: Colors.deepPurple,
           ),
         ],
       ),
