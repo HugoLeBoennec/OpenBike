@@ -7,12 +7,13 @@ import '../../core/domain/entities/entities.dart';
 import '../../core/domain/ports/storage_port.dart';
 import '../../core/domain/ports/trainer_port.dart';
 import '../../core/domain/value_objects/value_objects.dart';
-import '../../core/events/app_event.dart';
 import '../../core/events/event_bus.dart';
 import '../../core/application/services/connection_monitor.dart';
+import '../../core/application/services/device_pairing_service.dart';
 import '../../core/application/services/services.dart';
 import '../../infrastructure/ant/ant_usb_transport.dart';
 import '../../infrastructure/ble/ble_transport.dart';
+import '../../infrastructure/ble/sensors/sensor_fusion.dart';
 import '../../infrastructure/preferences/app_preferences.dart';
 import '../../infrastructure/simulator/simulator.dart';
 import '../../infrastructure/persistence/persistence.dart';
@@ -139,6 +140,80 @@ final bleScanResultsProvider = StreamProvider<List<BleScannedDevice>>((ref) {
 final savedDeviceIdsProvider = StateProvider<List<String>>((ref) => []);
 
 // ---------------------------------------------------------------------------
+// Multi-sensor pairing (roles) & fusion
+// ---------------------------------------------------------------------------
+
+/// Merges every paired sensor's readings into one fused stream, with a
+/// dedicated role's device winning over the trainer's own embedded sensor
+/// for the same field. See [DevicePairingService].
+final sensorFusionProvider = Provider<SensorFusion>((ref) {
+  final fusion = SensorFusion(eventBus: ref.watch(eventBusProvider));
+  ref.onDispose(fusion.dispose);
+  return fusion;
+});
+
+/// Connects a device to a [SensorRole] and wires it into [sensorFusionProvider].
+final devicePairingServiceProvider = Provider<DevicePairingService>((ref) {
+  final service = DevicePairingService(
+    registry: ref.watch(pluginRegistryProvider),
+    sensorFusion: ref.watch(sensorFusionProvider),
+  );
+  ref.onDispose(service.dispose);
+  return service;
+});
+
+/// Current role → paired device assignments.
+///
+/// Seed with `pairedDevicesProvider.overrideWith((ref) => appPrefs.pairedDevices)`
+/// in main(); the device-management screen updates this (and persists via
+/// [AppPreferences.setPairedDevices]) whenever the user assigns or forgets a role.
+final pairedDevicesProvider = StateProvider<PairedDevices>((ref) {
+  return const PairedDevices();
+});
+
+final _autoReconnectLog = Logger('AutoReconnectPairedRoles');
+
+/// Watch this once near app start (e.g. from `HomeScreen`) to attempt
+/// reconnecting every saved role pairing.
+///
+/// A [Provider] body only runs once per [ProviderScope] lifetime — reading
+/// [pairedDevicesProvider] with `ref.read` (a snapshot, not a subscription)
+/// means this fires exactly once rather than on every future role change.
+/// Each role's reconnect is independent and best-effort: a failure is
+/// logged and skipped so one missing device doesn't block the others.
+final autoReconnectPairedRolesProvider = Provider<void>((ref) {
+  if (ref.watch(devModeProvider)) return; // simulator builds skip real BLE
+
+  final paired = ref.read(pairedDevicesProvider);
+  final service = ref.read(devicePairingServiceProvider);
+
+  Future.microtask(() async {
+    for (final entry in paired.byRole.entries) {
+      final role = entry.key;
+      final saved = entry.value;
+      if (service.portForRole(role) != null) continue;
+
+      final device = TrainerDevice(
+        id: saved.deviceId,
+        name: saved.name,
+        protocol: saved.protocol,
+      );
+      try {
+        final port = await service.assign(role, device);
+        if (role == SensorRole.trainer) {
+          ref.read(trainerDeviceProvider.notifier).state = device;
+          ref.read(activeTrainerPortProvider.notifier).state = port;
+        }
+        _autoReconnectLog.info('Auto-reconnected $role → ${saved.name}');
+      } catch (e) {
+        _autoReconnectLog.warning(
+            'Auto-reconnect failed for $role (${saved.name}): $e');
+      }
+    }
+  });
+});
+
+// ---------------------------------------------------------------------------
 // Dev mode + simulator
 // ---------------------------------------------------------------------------
 
@@ -198,19 +273,24 @@ final sensorReadingsProvider = StateProvider<List<SensorReading>>((ref) => []);
 // Live sensor bridge (EventBus → UI providers)
 // ---------------------------------------------------------------------------
 
-/// Watch this in [RideScreen] to bridge [SensorEvent] from the [EventBus]
-/// into the live UI providers ([livePowerProvider], [liveCadenceProvider], etc.).
+/// Watch this in [RideScreen] to bridge fused sensor readings from
+/// [sensorFusionProvider] into the live UI providers ([livePowerProvider],
+/// [liveCadenceProvider], etc.).
 ///
 /// Without this, the ride screen data fields stay at zero because nothing
 /// pushes trainer data into the Riverpod state layer.
+///
+/// Reads come from [SensorFusion] rather than raw sensor events so that
+/// multiple simultaneously-paired devices (trainer + dedicated HR strap,
+/// say) merge into one reading instead of each device's event clobbering
+/// the fields the other device just set.
 final _bridgeLog = Logger('LiveSensorBridge');
 
 final liveSensorBridgeProvider = Provider<void>((ref) {
-  final eventBus = ref.watch(eventBusProvider);
-  _bridgeLog.info('[BLE-DEBUG] LiveSensorBridge listening for SensorEvents');
-  final sub = eventBus.on<SensorEvent>().listen((event) {
-    final r = event.reading;
-    _bridgeLog.fine('[BLE-DEBUG] SensorEvent received — '
+  final fusion = ref.watch(sensorFusionProvider);
+  _bridgeLog.info('[BLE-DEBUG] LiveSensorBridge listening for fused readings');
+  final sub = fusion.stream.listen((r) {
+    _bridgeLog.fine('[BLE-DEBUG] Fused reading — '
         'power=${r.power}, cadence=${r.cadence}, '
         'speed=${r.speed}, hr=${r.heartRate}');
     Future.microtask(() {

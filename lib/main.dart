@@ -57,6 +57,8 @@ void main() async {
         appPreferencesProvider.overrideWithValue(appPrefs),
         // Seed saved device IDs from preferences.
         savedDeviceIdsProvider.overrideWith((ref) => appPrefs.savedDeviceIds),
+        // Seed per-role paired device assignments from preferences.
+        pairedDevicesProvider.overrideWith((ref) => appPrefs.pairedDevices),
         // Seed profile from DB so zones/FTP are available immediately.
         if (savedProfile != null)
           userProfileProvider.overrideWith((ref) => savedProfile),
