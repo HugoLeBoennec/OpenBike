@@ -79,6 +79,48 @@ void main() {
       await tester.pumpAndSettle();
       expect(find.text('Dark'), findsOneWidget);
     });
+
+    testWidgets('crash reporting toggle defaults off and flips on tap',
+        (tester) async {
+      await tester.pumpWidget(_wrap(storage, appPrefs, AppTheme.dark));
+      await tester.pumpAndSettle();
+
+      // The About section is below the fold — scroll it into view.
+      await tester.scrollUntilVisible(find.text('Crash reporting'), 200);
+      await tester.pumpAndSettle();
+
+      final tile = find.ancestor(
+        of: find.text('Crash reporting'),
+        matching: find.byType(ListTile),
+      );
+      expect(tile, findsOneWidget);
+      expect(find.descendant(of: tile, matching: find.text('Off')),
+          findsOneWidget);
+      expect(appPrefs.crashReportingEnabled, isFalse);
+
+      await tester.tap(find.text('Crash reporting'));
+      await tester.pumpAndSettle();
+
+      expect(find.descendant(of: tile, matching: find.text('On')),
+          findsOneWidget);
+      expect(appPrefs.crashReportingEnabled, isTrue);
+    });
+
+    testWidgets('open-source licenses tile opens the license page',
+        (tester) async {
+      await tester.pumpWidget(_wrap(storage, appPrefs, AppTheme.dark));
+      await tester.pumpAndSettle();
+
+      await tester.scrollUntilVisible(find.text('Open-source licenses'), 200);
+      await tester.pumpAndSettle();
+
+      expect(find.text('Open-source licenses'), findsOneWidget);
+      await tester.tap(find.text('Open-source licenses'));
+      await tester.pumpAndSettle();
+
+      expect(find.text('OpenBike'), findsWidgets);
+      expect(tester.takeException(), isNull);
+    });
   });
 
   group('UserProfile — copyWith for settings edits', () {

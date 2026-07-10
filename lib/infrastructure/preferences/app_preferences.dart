@@ -23,6 +23,9 @@ class AppPreferences {
   static const _kAutoPauseEnabled = 'auto_pause_enabled';
   static const _kHasBackfilledPersonalRecords = 'has_backfilled_personal_records';
   static const _kAutoUploadTargets = 'auto_upload_targets';
+  static const _kCrashReportingEnabled = 'crash_reporting_enabled';
+  static const _kHasAskedCrashReportingConsent =
+      'has_asked_crash_reporting_consent';
   static const _kWindowX = 'window_x';
   static const _kWindowY = 'window_y';
   static const _kWindowWidth = 'window_width';
@@ -150,6 +153,23 @@ class AppPreferences {
     }
     return _prefs.setStringList(_kAutoUploadTargets, targets.toList());
   }
+
+  // -------------------------------------------------------------------------
+  // Crash reporting (opt-in, default off — see docs/release/analytics.md)
+  // -------------------------------------------------------------------------
+
+  bool get crashReportingEnabled =>
+      _prefs.getBool(_kCrashReportingEnabled) ?? false;
+
+  Future<void> setCrashReportingEnabled(bool value) =>
+      _prefs.setBool(_kCrashReportingEnabled, value);
+
+  /// Whether the one-time post-onboarding consent prompt has been shown.
+  bool get hasAskedCrashReportingConsent =>
+      _prefs.getBool(_kHasAskedCrashReportingConsent) ?? false;
+
+  Future<void> setHasAskedCrashReportingConsent(bool value) =>
+      _prefs.setBool(_kHasAskedCrashReportingConsent, value);
 
   // -------------------------------------------------------------------------
   // Desktop window bounds (macOS / Windows / Linux only)

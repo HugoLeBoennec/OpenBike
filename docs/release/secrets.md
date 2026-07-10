@@ -74,3 +74,11 @@ inside the compiled app binary (they identify the app, not a user) but
 shouldn't be searchable in the public repo's history. User-specific
 services with no public API surface at all (Records, OpenCoach) don't use
 this path — see `docs/release/private-plugins.md`.
+
+## `SENTRY_DSN` (opt-in crash reporting)
+
+Same mechanism, one flag: `--dart-define=SENTRY_DSN=<dsn>`, read in
+`lib/main.dart`'s `main()` and passed to
+`CrashReportingService.run` (`lib/infrastructure/observability/crash_reporting_service.dart`).
+Absent in public/dev/CI builds, exactly like the Strava credentials above —
+see `docs/release/analytics.md` for the full opt-in/no-PII design.

@@ -22,6 +22,7 @@ import 'infrastructure/ble/sensors/sensor_device_plugin.dart';
 import 'infrastructure/desktop/desktop_window_service.dart';
 import 'infrastructure/files/erg_parser.dart';
 import 'infrastructure/files/zwo_parser.dart';
+import 'infrastructure/observability/crash_reporting_service.dart';
 import 'infrastructure/persistence/app_database.dart';
 import 'infrastructure/persistence/drift_storage.dart';
 import 'infrastructure/preferences/app_preferences.dart';
@@ -40,6 +41,26 @@ final _log = Logger('main');
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
 
+  // ---- Crash reporting (opt-in, see docs/release/analytics.md) ----
+  // `appPrefs` isn't loaded until inside the wrapped runner below, so
+  // `isEnabled` reads through this mutable holder rather than a value
+  // captured at call time — it's re-evaluated on every event, which is also
+  // what lets the Settings toggle take effect without a restart.
+  AppPreferences? appPrefsHolder;
+  const sentryDsn = String.fromEnvironment('SENTRY_DSN');
+
+  await CrashReportingService.run(
+    dsn: sentryDsn,
+    isEnabled: () => appPrefsHolder?.crashReportingEnabled ?? false,
+    appRunner: () async {
+      await _runApp(onPreferencesLoaded: (prefs) => appPrefsHolder = prefs);
+    },
+  );
+}
+
+Future<void> _runApp({
+  required void Function(AppPreferences) onPreferencesLoaded,
+}) async {
   // ---- Database ----
   final dbDir = await getApplicationDocumentsDirectory();
   final dbFile = File(p.join(dbDir.path, 'open_bike.db'));
@@ -61,6 +82,7 @@ void main() async {
   // ---- Preferences ----
   final prefs = await SharedPreferences.getInstance();
   final appPrefs = AppPreferences(prefs);
+  onPreferencesLoaded(appPrefs);
 
   // ---- Desktop window (macOS/Windows/Linux only — no-op elsewhere) ----
   await initializeDesktopWindow(appPrefs);

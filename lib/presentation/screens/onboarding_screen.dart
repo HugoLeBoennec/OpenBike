@@ -10,6 +10,7 @@ import '../../infrastructure/ble/ble_transport.dart';
 import '../format/unit_formatter.dart';
 import '../state/providers.dart';
 import '../theme/app_theme.dart';
+import '../widgets/crash_reporting_consent_dialog.dart';
 import '../widgets/edit_value_dialog.dart';
 
 /// First-run onboarding — 6-page flow: welcome, profile, units & body,
@@ -79,6 +80,23 @@ class _OnboardingScreenState extends ConsumerState<OnboardingScreen> {
     await ref.read(appPreferencesProvider).setUnitSystem(unitValue);
 
     await ref.read(appPreferencesProvider).setOnboardingCompleted(true);
+    await _maybeAskCrashReportingConsent();
+  }
+
+  /// Asks once, right after onboarding, whether to opt in to crash
+  /// reporting — never shown again regardless of the answer (the choice
+  /// stays editable in Settings). No-op on repeat visits (e.g. "I'll set up
+  /// later" then later completing onboarding again isn't possible since
+  /// [AppPreferences.hasCompletedOnboarding] gates the route, but the guard
+  /// keeps this safe either way).
+  Future<void> _maybeAskCrashReportingConsent() async {
+    final appPrefs = ref.read(appPreferencesProvider);
+    if (appPrefs.hasAskedCrashReportingConsent || !mounted) return;
+
+    final enabled = await showCrashReportingConsentDialog(context);
+    ref.read(crashReportingEnabledProvider.notifier).state = enabled;
+    await appPrefs.setCrashReportingEnabled(enabled);
+    await appPrefs.setHasAskedCrashReportingConsent(true);
   }
 
   /// "I'll set up later" — saves whatever defaults are set so far and lands

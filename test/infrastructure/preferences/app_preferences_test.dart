@@ -142,4 +142,30 @@ void main() {
       expect(appPrefs.autoUploadTargets, {'garmin-connect-export'});
     });
   });
+
+  group('AppPreferences — crash reporting consent', () {
+    test('defaults to off and not-yet-asked', () async {
+      final appPrefs = await makePrefs();
+      expect(appPrefs.crashReportingEnabled, isFalse);
+      expect(appPrefs.hasAskedCrashReportingConsent, isFalse);
+    });
+
+    test('setCrashReportingEnabled persists across reload', () async {
+      final appPrefs = await makePrefs();
+      await appPrefs.setCrashReportingEnabled(true);
+
+      final reloaded = AppPreferences(await SharedPreferences.getInstance());
+      expect(reloaded.crashReportingEnabled, isTrue);
+    });
+
+    test('setHasAskedCrashReportingConsent persists across reload', () async {
+      final appPrefs = await makePrefs();
+      await appPrefs.setHasAskedCrashReportingConsent(true);
+
+      final reloaded = AppPreferences(await SharedPreferences.getInstance());
+      expect(reloaded.hasAskedCrashReportingConsent, isTrue);
+      // Declining still records that the prompt was shown.
+      expect(reloaded.crashReportingEnabled, isFalse);
+    });
+  });
 }

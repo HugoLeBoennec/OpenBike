@@ -119,8 +119,30 @@ class SettingsScreen extends ConsumerWidget {
           _SettingsTile(
             icon: Icons.info_outline,
             title: 'OpenBike',
-            value: 'v0.1.0',
+            value: 'v1.0.0',
             onTap: () {},
+          ),
+          _SettingsTile(
+            icon: Icons.description_outlined,
+            title: 'Open-source licenses',
+            value: '',
+            onTap: () => showLicensePage(
+              context: context,
+              applicationName: 'OpenBike',
+              applicationVersion: '1.0.0',
+            ),
+          ),
+          _SettingsTile(
+            icon: Icons.privacy_tip_outlined,
+            title: 'Crash reporting',
+            value: ref.watch(crashReportingEnabledProvider) ? 'On' : 'Off',
+            valueColor:
+                ref.watch(crashReportingEnabledProvider) ? Colors.green : null,
+            onTap: () {
+              final next = !ref.read(crashReportingEnabledProvider);
+              ref.read(crashReportingEnabledProvider.notifier).state = next;
+              ref.read(appPreferencesProvider).setCrashReportingEnabled(next);
+            },
           ),
 
           // ----- Dev Tools (DEV_MODE only) -----

@@ -1,7 +1,7 @@
 name: open_bike
 description: Open-source indoor cycling app — smart trainer control, structured workouts, route simulation.
 publish_to: 'none'
-version: 0.1.0+1
+version: 1.0.0+1
 
 environment:
   sdk: '>=3.10.0 <4.0.0'
@@ -83,6 +83,13 @@ dependencies:
   # resolved transitively via flutter_secure_storage_windows; pinned
   # directly since we call into it too.
   ffi: ^2.1.0
+
+  # Opt-in crash reporting (default off) — see
+  # lib/infrastructure/observability/crash_reporting_service.dart and
+  # docs/release/analytics.md. Only initialized when a DSN is supplied via
+  # --dart-define=SENTRY_DSN at build time; a build with no DSN never talks
+  # to Sentry at all, opt-in or not.
+  sentry_flutter: ^9.24.0
 
 
 dev_dependencies:

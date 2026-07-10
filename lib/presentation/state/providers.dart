@@ -77,6 +77,14 @@ final autoPauseEnabledProvider = StateProvider<bool>((ref) {
   return ref.read(appPreferencesProvider).autoPauseEnabled;
 });
 
+/// Opt-in crash reporting toggle (see docs/release/analytics.md). Sentry
+/// itself reads this live via [CrashReportingService.isEnabled] rather than
+/// this provider, so flipping it in Settings takes effect immediately
+/// without an app restart.
+final crashReportingEnabledProvider = StateProvider<bool>((ref) {
+  return ref.read(appPreferencesProvider).crashReportingEnabled;
+});
+
 // ---------------------------------------------------------------------------
 // Database & storage
 // ---------------------------------------------------------------------------
