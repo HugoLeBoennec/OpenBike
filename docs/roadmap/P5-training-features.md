@@ -1,7 +1,7 @@
 ---
 phase: P5
 title: Training features — calendar, PMC, personal records
-status: NOT_STARTED
+status: IN_PROGRESS
 depends_on: [P4]
 validation:
   - flutter analyze
