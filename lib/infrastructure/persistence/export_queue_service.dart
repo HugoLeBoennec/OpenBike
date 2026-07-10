@@ -83,7 +83,7 @@ class ExportQueueService {
   final Map<String, ExportPlugin> _plugins;
   final Connectivity _connectivity;
 
-  static const int _maxRetries = 5;
+  static const int maxRetries = 5;
 
   final _queueController =
       StreamController<List<ExportQueueItem>>.broadcast();
@@ -150,7 +150,7 @@ class ExportQueueService {
       final rows = await (_db.select(_db.exportQueue)
             ..where((t) =>
                 t.status.isIn(['pending', 'failed']) &
-                t.retryCount.isSmallerThanValue(_maxRetries))
+                t.retryCount.isSmallerThanValue(maxRetries))
             ..orderBy([(t) => OrderingTerm.asc(t.createdAt)]))
           .get();
 
@@ -210,7 +210,7 @@ class ExportQueueService {
       ));
     } catch (e) {
       final nextRetry = item.retryCount + 1;
-      if (nextRetry >= _maxRetries) {
+      if (nextRetry >= maxRetries) {
         await _markFailed(item.id, e.toString());
       } else {
         // Schedule retry with exponential backoff.
@@ -236,7 +236,7 @@ class ExportQueueService {
           ..where((t) => t.id.equals(id)))
         .write(ExportQueueCompanion(
       status: const Value('failed'),
-      retryCount: const Value(_maxRetries),
+      retryCount: const Value(maxRetries),
       errorMessage: Value(error),
     ));
   }

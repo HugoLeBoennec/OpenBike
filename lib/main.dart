@@ -24,8 +24,10 @@ import 'infrastructure/simulator/simulator.dart';
 import 'plugins/exports/garmin_export_plugin.dart';
 import 'plugins/exports/strava_export_plugin.dart';
 import 'plugins/plugin_registry.dart';
+import 'plugins/private_plugins.dart';
 import 'presentation/router.dart';
 import 'presentation/state/providers.dart';
+import 'presentation/widgets/strava_deep_link_listener.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -40,6 +42,13 @@ void main() async {
   final bleTransport = BleTransport();
   final registry = PluginRegistry();
   _registerPlugins(registry, eventBus, bleTransport);
+
+  // ---- Restore export plugin sessions (e.g. Strava OAuth tokens) ----
+  for (final plugin in registry.getExportPlugins()) {
+    if (plugin is StravaExportPlugin) {
+      await plugin.restoreSession();
+    }
+  }
 
   // ---- Preferences ----
   final prefs = await SharedPreferences.getInstance();
@@ -148,6 +157,11 @@ void _registerPlugins(
 
   registry.registerFormat(ZwoParser());
   registry.registerFormat(ErgMrcParser());
+
+  // ---- Private-package plugins (open-core seam) ----
+  // No-op unless a release build has swapped in the real registration file.
+  // See docs/release/private-plugins.md.
+  registerPrivatePlugins(registry);
 }
 
 class OpenBikeApp extends StatelessWidget {
@@ -157,15 +171,17 @@ class OpenBikeApp extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return MaterialApp.router(
-      title: 'OpenBike',
-      debugShowCheckedModeBanner: false,
-      theme: ThemeData(
-        useMaterial3: true,
-        colorSchemeSeed: Colors.deepOrange,
-        brightness: Brightness.dark,
+    return StravaDeepLinkListener(
+      child: MaterialApp.router(
+        title: 'OpenBike',
+        debugShowCheckedModeBanner: false,
+        theme: ThemeData(
+          useMaterial3: true,
+          colorSchemeSeed: Colors.deepOrange,
+          brightness: Brightness.dark,
+        ),
+        routerConfig: router,
       ),
-      routerConfig: router,
     );
   }
 }

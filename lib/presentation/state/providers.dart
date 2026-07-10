@@ -769,17 +769,32 @@ final exportQueueProvider = StreamProvider<List<ExportQueueItem>>((ref) {
   return ref.watch(exportQueueServiceProvider).queueStream;
 });
 
-/// Strava authentication state — `true` if the Strava plugin is authenticated.
-final stravaAuthProvider = Provider<bool>((ref) {
-  final plugins = ref.watch(exportPluginsProvider);
-  final strava = plugins['strava-export'];
-  return strava?.isAuthenticated ?? false;
-});
-
 /// Action provider to export a [Ride] to a given target (e.g. 'strava-export').
 ///
 /// Usage: `ref.read(exportRideProvider)('ride-id', 'strava-export');`
 final exportRideProvider = Provider<Future<void> Function(String rideId, String target)>((ref) {
   final queueService = ref.watch(exportQueueServiceProvider);
   return queueService.enqueue;
+});
+
+/// Watch this once from [RideScreen] to auto-enqueue exports for every
+/// service the user has enabled auto-upload for (Settings → Connections),
+/// as soon as a ride finishes recording.
+final autoUploadProvider = Provider<void>((ref) {
+  final eventBus = ref.watch(eventBusProvider);
+  final sub = eventBus.on<RideEvent>().listen((event) {
+    if (event is! RideStopped) return;
+    final targets = ref.read(appPreferencesProvider).autoUploadTargets;
+    if (targets.isEmpty) return;
+
+    final plugins = ref.read(exportPluginsProvider);
+    final queueService = ref.read(exportQueueServiceProvider);
+    for (final target in targets) {
+      final plugin = plugins[target];
+      if (plugin != null && plugin.isAuthenticated) {
+        queueService.enqueue(event.ride.id, target);
+      }
+    }
+  });
+  ref.onDispose(sub.cancel);
 });

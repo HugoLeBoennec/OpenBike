@@ -206,6 +206,8 @@ class _RideScreenState extends ConsumerState<RideScreen> {
     ref.watch(backgroundRecordingServiceProvider);
     // Links a finished ride back to the calendar entry it was started from.
     ref.watch(scheduledWorkoutLinkerProvider);
+    // Auto-enqueues exports for any service with auto-upload enabled.
+    ref.watch(autoUploadProvider);
 
     return PopScope(
       canPop: false,

@@ -1,9 +1,12 @@
+import 'dart:math' as math;
 import 'dart:typed_data';
 
 import 'package:flutter_test/flutter_test.dart';
 import 'package:open_bike/core/domain/entities/entities.dart';
 import 'package:open_bike/core/domain/value_objects/value_objects.dart';
 import 'package:open_bike/infrastructure/files/fit_encoder.dart';
+import 'package:open_bike/infrastructure/files/gpx_encoder.dart';
+import 'package:open_bike/infrastructure/files/gpx_parser.dart';
 import 'package:open_bike/infrastructure/files/tcx_encoder.dart';
 import 'package:xml/xml.dart';
 
@@ -32,6 +35,30 @@ Ride _testRide() {
     status: RideStatus.finished,
     readings: readings,
   );
+}
+
+/// Route matching the test ride's distance range (0..~501.5m), points every
+/// 50m (pure-latitude steps, sized so consecutive-point Haversine distance
+/// is exactly 50m — matching [GpxRouteParser]'s re-derived distances on
+/// round-trip) so trkpt interpolation exercises the bracket-search path.
+Route _testRoute() {
+  const earthRadiusMeters = 6371000.0;
+  final latStepDeg = (50.0 / earthRadiusMeters) * 180 / math.pi;
+
+  final points = <RoutePoint>[
+    for (var i = 0; i <= 12; i++)
+      RoutePoint(
+        position: GeoPoint(
+          lat: 48.8566 + i * latStepDeg,
+          lon: 2.3522,
+          elevation: 35.0 + i,
+        ),
+        distanceFromStart: i * 50.0,
+        smoothedElevation: 35.0 + i,
+        grade: Grade.flat,
+      ),
+  ];
+  return Route(id: 'route-001', name: 'Test Route', points: points);
 }
 
 // ---------------------------------------------------------------------------
@@ -138,13 +165,17 @@ double _sessionTss(Uint8List bytes) => _readMessageFields(bytes, 18)[35]! / 10.0
 
 void main() {
   late Ride ride;
+  late Route route;
   late FitEncoder fitEncoder;
   late TcxEncoder tcxEncoder;
+  late GpxEncoder gpxEncoder;
 
   setUp(() {
     ride = _testRide();
+    route = _testRoute();
     fitEncoder = FitEncoder();
     tcxEncoder = TcxEncoder();
+    gpxEncoder = GpxEncoder();
   });
 
   // =========================================================================
@@ -424,6 +455,84 @@ void main() {
     test('encode is deterministic', () {
       final a = tcxEncoder.encode(ride);
       final b = tcxEncoder.encode(ride);
+      expect(a, equals(b));
+    });
+  });
+
+  // =========================================================================
+  // GPX encoder
+  // =========================================================================
+
+  group('GpxEncoder', () {
+    test('produces valid XML', () {
+      final xml = gpxEncoder.encode(ride, route);
+      expect(XmlDocument.parse(xml), isNotNull);
+    });
+
+    test('root element is gpx with topografix namespace', () {
+      final xml = gpxEncoder.encode(ride, route);
+      final doc = XmlDocument.parse(xml);
+      expect(doc.rootElement.name.local, 'gpx');
+      expect(doc.rootElement.getAttribute('xmlns'),
+          'http://www.topografix.com/GPX/1/1');
+    });
+
+    test('emits one trkpt per distance-tagged reading', () {
+      final xml = gpxEncoder.encode(ride, route);
+      final doc = XmlDocument.parse(xml);
+      final trkpts = doc.rootElement.findAllElements('trkpt');
+      expect(trkpts.length, ride.readings.where((r) => r.distance != null).length);
+    });
+
+    test('trkpt has hr/cad via gpxtpx and power via pwr extension', () {
+      final xml = gpxEncoder.encode(ride, route);
+      final doc = XmlDocument.parse(xml);
+      final tp = doc.rootElement.findAllElements('trkpt').first;
+      final hr = tp.findAllElements('gpxtpx:hr').first.innerText;
+      final cad = tp.findAllElements('gpxtpx:cad').first.innerText;
+      final pwr = tp.findAllElements('pwr:PowerInWatts').first.innerText;
+      expect(int.parse(hr), ride.readings.first.heartRate!.bpm);
+      expect(int.parse(cad), ride.readings.first.cadence!.rpm.round());
+      expect(int.parse(pwr), ride.readings.first.power!.value.round());
+    });
+
+    test('throws GpxExportUnsupported for an empty route', () {
+      final emptyRoute = Route(id: 'r', name: 'Empty', points: const []);
+      expect(() => gpxEncoder.encode(ride, emptyRoute),
+          throwsA(isA<GpxExportUnsupported>()));
+    });
+
+    test('throws GpxExportUnsupported when no readings have distance', () {
+      final noDistanceRide = ride.copyWith(
+        readings: ride.readings
+            .map((r) => r.copyWith(distance: null))
+            .toList(),
+      );
+      expect(() => gpxEncoder.encode(noDistanceRide, route),
+          throwsA(isA<GpxExportUnsupported>()));
+    });
+
+    test('round-trips through GpxRouteParser with matching point count', () {
+      final xml = gpxEncoder.encode(ride, route);
+      final reparsed = GpxRouteParser().parse(xml);
+
+      final expectedPoints =
+          ride.readings.where((r) => r.distance != null).length;
+      expect(reparsed.points.length, expectedPoints);
+    });
+
+    test('round-trips with matching total distance', () {
+      final xml = gpxEncoder.encode(ride, route);
+      final reparsed = GpxRouteParser().parse(xml);
+
+      final lastReadingDistance = ride.readings.last.distance!.meters;
+      expect(reparsed.totalDistance.meters,
+          closeTo(lastReadingDistance, lastReadingDistance * 0.01));
+    });
+
+    test('encode is deterministic', () {
+      final a = gpxEncoder.encode(ride, route);
+      final b = gpxEncoder.encode(ride, route);
       expect(a, equals(b));
     });
   });

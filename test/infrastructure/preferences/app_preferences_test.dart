@@ -116,4 +116,30 @@ void main() {
       expect(appPrefs.savedDeviceIds, containsAll(['legacy-id', 'power-1']));
     });
   });
+
+  group('AppPreferences — autoUploadTargets', () {
+    test('defaults to empty (auto-upload off for everything)', () async {
+      final appPrefs = await makePrefs();
+      expect(appPrefs.autoUploadTargets, isEmpty);
+      expect(appPrefs.isAutoUploadEnabled('strava-export'), isFalse);
+    });
+
+    test('enabling a target persists it', () async {
+      final appPrefs = await makePrefs();
+      await appPrefs.setAutoUploadEnabled('strava-export', true);
+
+      expect(appPrefs.isAutoUploadEnabled('strava-export'), isTrue);
+      expect(appPrefs.autoUploadTargets, {'strava-export'});
+    });
+
+    test('disabling a target removes it without touching others', () async {
+      final appPrefs = await makePrefs();
+      await appPrefs.setAutoUploadEnabled('strava-export', true);
+      await appPrefs.setAutoUploadEnabled('garmin-connect-export', true);
+
+      await appPrefs.setAutoUploadEnabled('strava-export', false);
+
+      expect(appPrefs.autoUploadTargets, {'garmin-connect-export'});
+    });
+  });
 }

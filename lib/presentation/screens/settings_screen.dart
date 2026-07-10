@@ -5,6 +5,7 @@ import 'package:go_router/go_router.dart';
 import '../../core/domain/entities/user_profile.dart';
 import '../../core/domain/value_objects/value_objects.dart';
 import '../state/providers.dart';
+import '../widgets/connections_section.dart';
 import '../widgets/edit_value_dialog.dart';
 
 /// Settings screen — user profile, display, connections.
@@ -14,7 +15,6 @@ class SettingsScreen extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final profile = ref.watch(userProfileProvider);
-    final stravaAuth = ref.watch(stravaAuthProvider);
 
     return Scaffold(
       backgroundColor: Colors.black,
@@ -69,15 +69,7 @@ class SettingsScreen extends ConsumerWidget {
 
           // ----- Connections -----
           _SectionHeader('CONNECTIONS'),
-          _SettingsTile(
-            icon: Icons.cloud_upload_outlined,
-            title: 'Strava',
-            value: stravaAuth ? 'Connected' : 'Not connected',
-            valueColor: stravaAuth ? Colors.green : Colors.white54,
-            onTap: () {
-              // TODO: OAuth flow
-            },
-          ),
+          const ConnectionsSection(),
 
           const SizedBox(height: 8),
 
