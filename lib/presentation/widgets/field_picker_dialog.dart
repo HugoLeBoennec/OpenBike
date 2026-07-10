@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 
 import '../models/data_field_type.dart';
+import '../theme/app_theme.dart';
 
 /// Dialog allowing the user to pick which data field to display in a cell.
 class FieldPickerDialog extends StatelessWidget {
@@ -15,9 +16,10 @@ class FieldPickerDialog extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final tokens = context.tokens;
     return SimpleDialog(
       title: const Text('Select Field'),
-      backgroundColor: const Color(0xFF222222),
+      backgroundColor: tokens.surfaceTier2,
       children: DataFieldType.values.map((type) {
         final isSelected = type == currentType;
         return SimpleDialogOption(
@@ -30,7 +32,7 @@ class FieldPickerDialog extends StatelessWidget {
               SizedBox(
                 width: 24,
                 child: isSelected
-                    ? const Icon(Icons.check, size: 16, color: Colors.white)
+                    ? Icon(Icons.check, size: 16, color: tokens.textPrimary)
                     : null,
               ),
               const SizedBox(width: 8),
@@ -38,7 +40,9 @@ class FieldPickerDialog extends StatelessWidget {
                 child: Text(
                   type.label,
                   style: TextStyle(
-                    color: isSelected ? Colors.white : Colors.white70,
+                    color: isSelected
+                        ? tokens.textPrimary
+                        : tokens.textSecondary,
                     fontWeight:
                         isSelected ? FontWeight.bold : FontWeight.normal,
                   ),
@@ -46,7 +50,7 @@ class FieldPickerDialog extends StatelessWidget {
               ),
               Text(
                 type.unit,
-                style: const TextStyle(color: Colors.grey, fontSize: 12),
+                style: TextStyle(color: tokens.textTertiary, fontSize: 12),
               ),
             ],
           ),

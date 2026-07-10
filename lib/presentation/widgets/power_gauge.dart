@@ -6,6 +6,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../core/domain/entities/power_zone.dart';
 import '../../core/domain/value_objects/value_objects.dart';
 import '../state/providers.dart';
+import '../theme/app_theme.dart';
 
 /// Circular arc gauge (270°) colored by power zone with a needle indicator.
 class PowerGauge extends ConsumerWidget {
@@ -16,38 +17,45 @@ class PowerGauge extends ConsumerWidget {
     final power = ref.watch(livePowerProvider);
     final ftp = ref.watch(ftpProvider);
     final zones = ref.watch(powerZonesProvider);
+    final tokens = context.tokens;
 
     return LayoutBuilder(
       builder: (context, constraints) {
         final size = min(constraints.maxWidth, constraints.maxHeight);
         return Center(
-          child: SizedBox(
-            width: size,
-            height: size,
-            child: CustomPaint(
-              painter: _PowerGaugePainter(
-                power: power.value,
-                ftp: ftp.value,
-                maxPower: ftp.value * 2,
-                zones: zones,
-              ),
-              child: Center(
-                child: Column(
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    Text(
-                      '${power.value.round()}',
-                      style: const TextStyle(
-                        fontSize: 48,
-                        fontWeight: FontWeight.bold,
-                        color: Colors.white,
+          child: Semantics(
+            label: 'Power gauge',
+            value: '${power.value.round()} watts',
+            child: SizedBox(
+              width: size,
+              height: size,
+              child: CustomPaint(
+                painter: _PowerGaugePainter(
+                  power: power.value,
+                  ftp: ftp.value,
+                  maxPower: ftp.value * 2,
+                  zones: zones,
+                  trackColor: tokens.rideSurfaceLine,
+                  needleColor: tokens.rideOnSurface,
+                ),
+                child: Center(
+                  child: Column(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      Text(
+                        '${power.value.round()}',
+                        style: TextStyle(
+                          fontSize: 48,
+                          fontWeight: FontWeight.bold,
+                          color: tokens.rideOnSurface,
+                        ),
                       ),
-                    ),
-                    const Text(
-                      'watts',
-                      style: TextStyle(fontSize: 14, color: Colors.grey),
-                    ),
-                  ],
+                      const Text(
+                        'watts',
+                        style: TextStyle(fontSize: 14, color: Colors.grey),
+                      ),
+                    ],
+                  ),
                 ),
               ),
             ),
@@ -68,12 +76,16 @@ class _PowerGaugePainter extends CustomPainter {
     required this.ftp,
     required this.maxPower,
     required this.zones,
+    required this.trackColor,
+    required this.needleColor,
   });
 
   final double power;
   final double ftp;
   final double maxPower;
   final List<PowerZone> zones;
+  final Color trackColor;
+  final Color needleColor;
 
   static const _startAngle = 135.0 * pi / 180;
   static const _sweepAngle = 270.0 * pi / 180;
@@ -92,7 +104,7 @@ class _PowerGaugePainter extends CustomPainter {
       _sweepAngle,
       false,
       Paint()
-        ..color = const Color(0xFF333333)
+        ..color = trackColor
         ..style = PaintingStyle.stroke
         ..strokeWidth = _strokeWidth
         ..strokeCap = StrokeCap.round,
@@ -136,7 +148,7 @@ class _PowerGaugePainter extends CustomPainter {
         needleStart,
         needleEnd,
         Paint()
-          ..color = Colors.white
+          ..color = needleColor
           ..strokeWidth = 3
           ..strokeCap = StrokeCap.round,
       );
@@ -166,5 +178,8 @@ class _PowerGaugePainter extends CustomPainter {
 
   @override
   bool shouldRepaint(covariant _PowerGaugePainter old) =>
-      power != old.power || ftp != old.ftp;
+      power != old.power ||
+      ftp != old.ftp ||
+      trackColor != old.trackColor ||
+      needleColor != old.needleColor;
 }

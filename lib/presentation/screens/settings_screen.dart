@@ -5,6 +5,7 @@ import 'package:go_router/go_router.dart';
 import '../../core/domain/entities/user_profile.dart';
 import '../../core/domain/value_objects/value_objects.dart';
 import '../state/providers.dart';
+import '../theme/app_theme.dart';
 import '../widgets/connections_section.dart';
 import '../widgets/edit_value_dialog.dart';
 
@@ -15,12 +16,11 @@ class SettingsScreen extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final profile = ref.watch(userProfileProvider);
+    final formatter = ref.watch(unitFormatterProvider);
 
     return Scaffold(
-      backgroundColor: Colors.black,
       appBar: AppBar(
         title: const Text('Settings'),
-        backgroundColor: Colors.black,
       ),
       body: ListView(
         children: [
@@ -36,7 +36,7 @@ class SettingsScreen extends ConsumerWidget {
             icon: Icons.monitor_weight_outlined,
             title: 'Weight',
             value: profile?.weight != null
-                ? '${profile!.weight.toStringAsFixed(1)} kg'
+                ? formatter.weightKg(profile!.weight)
                 : 'Not set',
             onTap: () => _editWeight(context, ref, profile),
           ),
@@ -44,7 +44,7 @@ class SettingsScreen extends ConsumerWidget {
             icon: Icons.height,
             title: 'Height',
             value: profile?.height != null
-                ? '${profile!.height.round()} cm'
+                ? formatter.heightCm(profile!.height)
                 : 'Not set',
             onTap: () => _editHeight(context, ref, profile),
           ),
@@ -91,10 +91,10 @@ class SettingsScreen extends ConsumerWidget {
           _SettingsTile(
             icon: Icons.dark_mode,
             title: 'Theme',
-            value: ref.watch(themeModeProvider) == 'dark' ? 'Dark' : 'System',
+            value: _themeLabel(ref.watch(themeModeProvider)),
             onTap: () {
               final current = ref.read(themeModeProvider);
-              final next = current == 'dark' ? 'system' : 'dark';
+              final next = _nextThemeMode(current);
               ref.read(themeModeProvider.notifier).state = next;
               ref.read(appPreferencesProvider).setThemeMode(next);
             },
@@ -137,6 +137,31 @@ class SettingsScreen extends ConsumerWidget {
         ],
       ),
     );
+  }
+
+  static String _themeLabel(String mode) {
+    switch (mode) {
+      case 'light':
+        return 'Light';
+      case 'system':
+        return 'System';
+      case 'dark':
+      default:
+        return 'Dark';
+    }
+  }
+
+  /// Cycles Dark -> Light -> System -> Dark on tap.
+  static String _nextThemeMode(String current) {
+    switch (current) {
+      case 'dark':
+        return 'light';
+      case 'light':
+        return 'system';
+      case 'system':
+      default:
+        return 'dark';
+    }
   }
 
   UserProfile _defaultProfile() {
@@ -258,8 +283,8 @@ class _SectionHeader extends StatelessWidget {
       padding: const EdgeInsets.fromLTRB(16, 20, 16, 4),
       child: Text(
         title,
-        style: const TextStyle(
-          color: Colors.white54,
+        style: TextStyle(
+          color: context.tokens.textTertiary,
           fontSize: 11,
           fontWeight: FontWeight.w600,
           letterSpacing: 1.2,
@@ -290,21 +315,22 @@ class _SettingsTile extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final tokens = context.tokens;
     return ListTile(
-      leading: Icon(icon, color: Colors.white54, size: 22),
-      title: Text(title, style: const TextStyle(color: Colors.white)),
+      leading: Icon(icon, color: tokens.textTertiary, size: 22),
+      title: Text(title, style: TextStyle(color: tokens.textPrimary)),
       trailing: Row(
         mainAxisSize: MainAxisSize.min,
         children: [
           Text(
             value,
             style: TextStyle(
-              color: valueColor ?? Colors.white54,
+              color: valueColor ?? tokens.textTertiary,
               fontSize: 14,
             ),
           ),
           const SizedBox(width: 4),
-          const Icon(Icons.chevron_right, color: Colors.white24, size: 20),
+          Icon(Icons.chevron_right, color: tokens.textDisabled, size: 20),
         ],
       ),
       onTap: onTap,

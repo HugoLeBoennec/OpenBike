@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../state/providers.dart';
+import '../theme/app_theme.dart';
 import '../widgets/ride_summary_widgets.dart';
 
 /// Post-ride detail screen — metrics, power chart, zone distribution, export.
@@ -17,21 +18,30 @@ class RideDetailScreen extends ConsumerWidget {
     final zones = ref.watch(powerZonesProvider);
 
     return Scaffold(
-      backgroundColor: Colors.black,
       appBar: AppBar(
         title: const Text('Ride Detail'),
-        backgroundColor: Colors.black,
       ),
       body: rideAsync.when(
-        loading: () => const Center(
-            child: CircularProgressIndicator(color: Colors.white30)),
+        loading: () => const Center(child: CircularProgressIndicator()),
         error: (e, _) => Center(
-            child: Text('Error: $e', style: const TextStyle(color: Colors.red))),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Text('Couldn\'t load ride: $e',
+                  style: const TextStyle(color: Colors.red)),
+              const SizedBox(height: 8),
+              TextButton(
+                onPressed: () => ref.invalidate(rideDetailProvider(rideId)),
+                child: const Text('Retry'),
+              ),
+            ],
+          ),
+        ),
         data: (ride) {
           if (ride == null) {
-            return const Center(
+            return Center(
               child: Text('Ride not found.',
-                  style: TextStyle(color: Colors.white54)),
+                  style: TextStyle(color: context.tokens.textTertiary)),
             );
           }
           return ListView(

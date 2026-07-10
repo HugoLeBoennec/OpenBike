@@ -4,6 +4,7 @@ import 'package:flutter_map/flutter_map.dart';
 import 'package:latlong2/latlong.dart' as latlong;
 
 import '../../core/domain/entities/route.dart';
+import '../theme/app_theme.dart';
 
 /// OSM mini-map showing the GPX track and the rider's current position.
 ///
@@ -29,10 +30,11 @@ class RouteMiniMap extends StatelessWidget {
         final isOffline =
             results != null && results.every((r) => r == ConnectivityResult.none);
         if (isOffline) {
-          return const Center(
+          return Center(
             child: Text(
               'Map unavailable offline',
-              style: TextStyle(color: Colors.white38, fontSize: 12),
+              style: TextStyle(
+                  color: context.tokens.rideOnSurfaceMuted, fontSize: 12),
             ),
           );
         }

@@ -8,6 +8,7 @@ import 'package:uuid/uuid.dart';
 
 import '../../core/domain/entities/workout.dart';
 import '../state/providers.dart';
+import '../theme/app_theme.dart';
 import '../widgets/workout_mini_profile.dart';
 
 /// Workout library — lists imported workouts and allows importing new ones.
@@ -21,22 +22,20 @@ class WorkoutBuilderScreen extends ConsumerWidget {
     final workouts = ref.watch(workoutListProvider);
 
     return Scaffold(
-      backgroundColor: Colors.black,
       appBar: AppBar(
         title: const Text('Workouts'),
-        backgroundColor: Colors.black,
       ),
       body: workouts.isEmpty
           ? Center(
               child: Column(
                 mainAxisSize: MainAxisSize.min,
                 children: [
-                  Icon(Icons.fitness_center, size: 48, color: Colors.white24),
+                  Icon(Icons.fitness_center, size: 48, color: context.tokens.textDisabled),
                   const SizedBox(height: 16),
-                  const Text(
+                  Text(
                     'No workouts yet.\nImport a .zwo, .erg, or .mrc file.',
                     textAlign: TextAlign.center,
-                    style: TextStyle(color: Colors.white54, fontSize: 14),
+                    style: TextStyle(color: context.tokens.textTertiary, fontSize: 14),
                   ),
                 ],
               ),
@@ -57,7 +56,7 @@ class WorkoutBuilderScreen extends ConsumerWidget {
         key: const Key('workoutFab'),
         backgroundColor: Colors.blue,
         onPressed: () => _showAddMenu(context, ref),
-        child: const Icon(Icons.add, color: Colors.white),
+        child: Icon(Icons.add, color: context.tokens.textPrimary),
       ),
     );
   }
@@ -65,24 +64,24 @@ class WorkoutBuilderScreen extends ConsumerWidget {
   void _showAddMenu(BuildContext context, WidgetRef ref) {
     showModalBottomSheet<void>(
       context: context,
-      backgroundColor: const Color(0xFF1A1A1A),
+      backgroundColor: context.tokens.surfaceTier2,
       builder: (ctx) => SafeArea(
         child: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
             ListTile(
               key: const Key('newWorkoutTile'),
-              leading: const Icon(Icons.add, color: Colors.white),
-              title: const Text('New workout', style: TextStyle(color: Colors.white)),
+              leading: Icon(Icons.add, color: context.tokens.textPrimary),
+              title: Text('New workout', style: TextStyle(color: context.tokens.textPrimary)),
               onTap: () {
                 Navigator.pop(ctx);
                 context.push('/workouts/new');
               },
             ),
             ListTile(
-              leading: const Icon(Icons.file_open, color: Colors.white),
-              title: const Text('Import file (.zwo / .erg / .mrc)',
-                  style: TextStyle(color: Colors.white)),
+              leading: Icon(Icons.file_open, color: context.tokens.textPrimary),
+              title: Text('Import file (.zwo / .erg / .mrc)',
+                  style: TextStyle(color: context.tokens.textPrimary)),
               onTap: () {
                 Navigator.pop(ctx);
                 _importWorkout(context, ref);
@@ -151,11 +150,11 @@ class WorkoutBuilderScreen extends ConsumerWidget {
     showDialog(
       context: context,
       builder: (ctx) => AlertDialog(
-        backgroundColor: const Color(0xFF1A1A1A),
-        title: const Text('Delete Workout',
-            style: TextStyle(color: Colors.white)),
-        content: const Text('Remove this workout from the library?',
-            style: TextStyle(color: Colors.white70)),
+        backgroundColor: context.tokens.surfaceTier2,
+        title: Text('Delete Workout',
+            style: TextStyle(color: context.tokens.textPrimary)),
+        content: Text('Remove this workout from the library?',
+            style: TextStyle(color: context.tokens.textSecondary)),
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(ctx),
@@ -200,7 +199,7 @@ class _WorkoutTile extends StatelessWidget {
     return Container(
       margin: const EdgeInsets.symmetric(horizontal: 12, vertical: 3),
       decoration: BoxDecoration(
-        color: Colors.white.withValues(alpha: 0.05),
+        color: context.tokens.surfaceTier2,
         borderRadius: BorderRadius.circular(12),
       ),
       child: ListTile(
@@ -212,16 +211,16 @@ class _WorkoutTile extends StatelessWidget {
         ),
         title: Text(
           workout.name,
-          style: const TextStyle(
-            color: Colors.white,
+          style: TextStyle(
+            color: context.tokens.textPrimary,
             fontWeight: FontWeight.w600,
           ),
         ),
         subtitle: Text(
           '$stepCount steps • $minutes min',
-          style: const TextStyle(color: Colors.white54, fontSize: 12),
+          style: TextStyle(color: context.tokens.textTertiary, fontSize: 12),
         ),
-        trailing: const Icon(Icons.chevron_right, color: Colors.white30),
+        trailing: Icon(Icons.chevron_right, color: context.tokens.textDisabled),
         onTap: onTap,
         onLongPress: onLongPress,
       ),

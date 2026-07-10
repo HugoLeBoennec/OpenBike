@@ -7,6 +7,7 @@ import '../../core/application/services/tss_estimator.dart';
 import '../../core/domain/entities/workout.dart';
 import '../../core/domain/entities/workout_step.dart';
 import '../state/providers.dart';
+import '../theme/app_theme.dart';
 import '../widgets/workout_mini_profile.dart';
 
 /// Create/edit UI for a [Workout] — step list (reorder/duplicate/delete),
@@ -64,10 +65,8 @@ class _WorkoutEditorScreenState extends ConsumerState<WorkoutEditorScreen> {
     final tss = estimateWorkoutTss(_steps);
 
     return Scaffold(
-      backgroundColor: Colors.black,
       appBar: AppBar(
         title: Text(_isEditing ? 'Edit Workout' : 'New Workout'),
-        backgroundColor: Colors.black,
         actions: [
           TextButton(
             key: const Key('workoutSaveButton'),
@@ -82,20 +81,20 @@ class _WorkoutEditorScreenState extends ConsumerState<WorkoutEditorScreen> {
           TextField(
             key: const Key('workoutNameField'),
             controller: _nameController,
-            style: const TextStyle(color: Colors.white),
-            decoration: const InputDecoration(
+            style: TextStyle(color: context.tokens.textPrimary),
+            decoration: InputDecoration(
               labelText: 'Name',
-              labelStyle: TextStyle(color: Colors.white54),
+              labelStyle: TextStyle(color: context.tokens.textTertiary),
             ),
           ),
           const SizedBox(height: 8),
           TextField(
             key: const Key('workoutDescriptionField'),
             controller: _descController,
-            style: const TextStyle(color: Colors.white),
-            decoration: const InputDecoration(
+            style: TextStyle(color: context.tokens.textPrimary),
+            decoration: InputDecoration(
               labelText: 'Description',
-              labelStyle: TextStyle(color: Colors.white54),
+              labelStyle: TextStyle(color: context.tokens.textTertiary),
             ),
           ),
           const SizedBox(height: 20),
@@ -119,10 +118,10 @@ class _WorkoutEditorScreenState extends ConsumerState<WorkoutEditorScreen> {
             ),
             const SizedBox(height: 20),
           ],
-          const Text(
+          Text(
             'STEPS',
             style: TextStyle(
-              color: Colors.white54,
+              color: context.tokens.textTertiary,
               fontSize: 11,
               fontWeight: FontWeight.w600,
               letterSpacing: 1.2,
@@ -173,7 +172,7 @@ class _WorkoutEditorScreenState extends ConsumerState<WorkoutEditorScreen> {
     final step = await showModalBottomSheet<WorkoutStep>(
       context: context,
       isScrollControlled: true,
-      backgroundColor: const Color(0xFF1A1A1A),
+      backgroundColor: context.tokens.surfaceTier2,
       builder: (_) => const _StepEditorSheet(),
     );
     if (step != null) setState(() => _steps.add(step));
@@ -183,7 +182,7 @@ class _WorkoutEditorScreenState extends ConsumerState<WorkoutEditorScreen> {
     final step = await showModalBottomSheet<WorkoutStep>(
       context: context,
       isScrollControlled: true,
-      backgroundColor: const Color(0xFF1A1A1A),
+      backgroundColor: context.tokens.surfaceTier2,
       builder: (_) => _StepEditorSheet(initial: _steps[index]),
     );
     if (step != null) setState(() => _steps[index] = step);
@@ -237,11 +236,11 @@ class _TotalStat extends StatelessWidget {
     return Column(
       children: [
         Text(value,
-            style: const TextStyle(color: Colors.white, fontSize: 18, fontWeight: FontWeight.w700)),
+            style: TextStyle(color: context.tokens.textPrimary, fontSize: 18, fontWeight: FontWeight.w700)),
         const SizedBox(height: 2),
         Text(label,
-            style: const TextStyle(
-                color: Colors.white54, fontSize: 10, fontWeight: FontWeight.w600, letterSpacing: 1)),
+            style: TextStyle(
+                color: context.tokens.textTertiary, fontSize: 10, fontWeight: FontWeight.w600, letterSpacing: 1)),
       ],
     );
   }
@@ -272,23 +271,23 @@ class _StepTile extends StatelessWidget {
     return Container(
       margin: const EdgeInsets.only(bottom: 6),
       decoration: BoxDecoration(
-        color: Colors.white.withValues(alpha: 0.05),
+        color: context.tokens.surfaceTier2,
         borderRadius: BorderRadius.circular(8),
       ),
       child: ListTile(
         onTap: onTap,
         leading: ReorderableDragStartListener(
           index: index,
-          child: const Icon(Icons.drag_handle, color: Colors.white38),
+          child: Icon(Icons.drag_handle, color: context.tokens.textDisabled),
         ),
-        title: Text(_typeLabel(step.type), style: const TextStyle(color: Colors.white)),
-        subtitle: Text(_subtitle(step), style: const TextStyle(color: Colors.white54, fontSize: 12)),
+        title: Text(_typeLabel(step.type), style: TextStyle(color: context.tokens.textPrimary)),
+        subtitle: Text(_subtitle(step), style: TextStyle(color: context.tokens.textTertiary, fontSize: 12)),
         trailing: Row(
           mainAxisSize: MainAxisSize.min,
           children: [
             IconButton(
               key: Key('duplicateStepButton-$index'),
-              icon: const Icon(Icons.copy, size: 18, color: Colors.white38),
+              icon: Icon(Icons.copy, size: 18, color: context.tokens.textDisabled),
               onPressed: onDuplicate,
             ),
             IconButton(
@@ -414,8 +413,8 @@ class _StepEditorSheetState extends State<_StepEditorSheet> {
             DropdownButtonFormField<StepType>(
               key: const Key('stepTypeDropdown'),
               initialValue: _type,
-              dropdownColor: const Color(0xFF1A1A1A),
-              style: const TextStyle(color: Colors.white),
+              dropdownColor: context.tokens.surfaceTier2,
+              style: TextStyle(color: context.tokens.textPrimary),
               decoration: const InputDecoration(labelText: 'Type'),
               items: StepType.values
                   .map((t) => DropdownMenuItem(value: t, child: Text(_label(t))))
@@ -523,7 +522,7 @@ class _StepEditorSheetState extends State<_StepEditorSheet> {
       key: key,
       controller: controller,
       keyboardType: const TextInputType.numberWithOptions(decimal: true),
-      style: const TextStyle(color: Colors.white),
+      style: TextStyle(color: context.tokens.textPrimary),
       decoration: InputDecoration(labelText: label),
     );
   }

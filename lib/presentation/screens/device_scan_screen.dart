@@ -6,6 +6,7 @@ import '../../core/domain/entities/entities.dart';
 import '../../infrastructure/ble/ble_transport.dart';
 import '../../infrastructure/simulator/simulator.dart';
 import '../state/providers.dart';
+import '../theme/app_theme.dart';
 import '../widgets/sensor_role_labels.dart';
 
 final _log = Logger('DeviceScanScreen');
@@ -73,10 +74,8 @@ class _DeviceScanScreenState extends ConsumerState<DeviceScanScreen> {
     final pairedDevices = ref.watch(pairedDevicesProvider);
 
     return Scaffold(
-      backgroundColor: Colors.black,
       appBar: AppBar(
         title: const Text('Devices'),
-        backgroundColor: Colors.black,
       ),
       body: ListView(
         padding: const EdgeInsets.symmetric(vertical: 8),
@@ -147,13 +146,13 @@ class _DeviceScanScreenState extends ConsumerState<DeviceScanScreen> {
             _SectionHeader(
                 _scanningSimulator ? 'SCANNING…' : 'SIMULATOR DEVICES'),
             if (_simulatorDevices.isEmpty && !_scanningSimulator)
-              const Padding(
-                padding: EdgeInsets.all(32),
+              Padding(
+                padding: const EdgeInsets.all(32),
                 child: Center(
                   child: Text(
                     'No simulator plugin registered.\nEnsure DEV_MODE=true.',
                     textAlign: TextAlign.center,
-                    style: TextStyle(color: Colors.white54, fontSize: 14),
+                    style: TextStyle(color: context.tokens.textTertiary, fontSize: 14),
                   ),
                 ),
               ),
@@ -172,10 +171,7 @@ class _DeviceScanScreenState extends ConsumerState<DeviceScanScreen> {
                   child: SizedBox(
                     width: 24,
                     height: 24,
-                    child: CircularProgressIndicator(
-                      strokeWidth: 2,
-                      color: Colors.white30,
-                    ),
+                    child: CircularProgressIndicator(strokeWidth: 2),
                   ),
                 ),
               ),
@@ -187,14 +183,14 @@ class _DeviceScanScreenState extends ConsumerState<DeviceScanScreen> {
             scanResults.when(
               data: (devices) {
                 if (devices.isEmpty && !isScanning) {
-                  return const Padding(
-                    padding: EdgeInsets.all(32),
+                  return Padding(
+                    padding: const EdgeInsets.all(32),
                     child: Center(
                       child: Text(
                         'Tap the scan button to search\nfor nearby cycling devices.',
                         textAlign: TextAlign.center,
-                        style:
-                            TextStyle(color: Colors.white54, fontSize: 14),
+                        style: TextStyle(
+                            color: context.tokens.textTertiary, fontSize: 14),
                       ),
                     ),
                   );
@@ -218,32 +214,48 @@ class _DeviceScanScreenState extends ConsumerState<DeviceScanScreen> {
                           child: SizedBox(
                             width: 24,
                             height: 24,
-                            child: CircularProgressIndicator(
-                              strokeWidth: 2,
-                              color: Colors.white30,
-                            ),
+                            child: CircularProgressIndicator(strokeWidth: 2),
                           ),
                         ),
                       ),
                   ],
                 );
               },
-              loading: () => const SizedBox.shrink(),
-              error: (_, __) => const SizedBox.shrink(),
+              loading: () => const Padding(
+                padding: EdgeInsets.all(24),
+                child: Center(child: CircularProgressIndicator()),
+              ),
+              error: (e, _) => Padding(
+                padding: const EdgeInsets.all(24),
+                child: Center(
+                  child: Column(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      Text('Scan failed: $e',
+                          style: const TextStyle(color: Colors.red, fontSize: 13)),
+                      const SizedBox(height: 8),
+                      TextButton(
+                        onPressed: _startScan,
+                        child: const Text('Retry'),
+                      ),
+                    ],
+                  ),
+                ),
+              ),
             ),
           ],
         ],
       ),
       floatingActionButton: FloatingActionButton(
         backgroundColor: (isScanning || _scanningSimulator)
-            ? Colors.white24
+            ? context.tokens.textDisabled
             : Colors.blue,
+        foregroundColor: Colors.white,
         onPressed: (isScanning || _scanningSimulator) ? null : _startScan,
         child: Icon(
           (isScanning || _scanningSimulator)
               ? Icons.bluetooth_searching
               : Icons.search,
-          color: Colors.white,
         ),
       ),
     );
@@ -385,6 +397,7 @@ class _RoleSlotTile extends StatelessWidget {
   Widget build(BuildContext context) {
     final assigned = device != null;
 
+    final tokens = context.tokens;
     return Container(
       key: ValueKey('role-slot-${role.name}'),
       margin: const EdgeInsets.symmetric(horizontal: 12, vertical: 2),
@@ -393,7 +406,7 @@ class _RoleSlotTile extends StatelessWidget {
             ? Colors.green.withValues(alpha: 0.12)
             : isAssigning
                 ? Colors.amber.withValues(alpha: 0.12)
-                : Colors.white.withValues(alpha: 0.05),
+                : tokens.surfaceTier2,
         borderRadius: BorderRadius.circular(12),
         border: isAssigning
             ? Border.all(color: Colors.amber.withValues(alpha: 0.4))
@@ -402,16 +415,16 @@ class _RoleSlotTile extends StatelessWidget {
       child: ListTile(
         leading: Icon(
           roleIcon(role),
-          color: assigned ? Colors.green : Colors.white38,
+          color: assigned ? Colors.green : tokens.textDisabled,
         ),
         title: Text(
           roleLabel(role),
-          style: const TextStyle(color: Colors.white, fontWeight: FontWeight.w600),
+          style: TextStyle(color: tokens.textPrimary, fontWeight: FontWeight.w600),
         ),
         subtitle: Text(
           assigned ? device!.name : 'Tap to assign',
           style: TextStyle(
-            color: assigned ? Colors.white70 : Colors.white38,
+            color: assigned ? tokens.textSecondary : tokens.textDisabled,
             fontSize: 12,
           ),
         ),
@@ -427,18 +440,18 @@ class _RoleSlotTile extends StatelessWidget {
                   if (assigned) ...[
                     IconButton(
                       key: ValueKey('rename-${role.name}'),
-                      icon: const Icon(Icons.edit, color: Colors.white38, size: 20),
+                      icon: Icon(Icons.edit, color: tokens.textDisabled, size: 20),
                       onPressed: () => _showRenameDialog(context),
                     ),
                     IconButton(
                       key: ValueKey('forget-${role.name}'),
-                      icon: const Icon(Icons.link_off, color: Colors.white54, size: 20),
+                      icon: Icon(Icons.link_off, color: tokens.textTertiary, size: 20),
                       onPressed: onForget,
                     ),
                   ] else
                     Icon(
                       isAssigning ? Icons.radio_button_checked : Icons.add,
-                      color: isAssigning ? Colors.amber : Colors.white24,
+                      color: isAssigning ? Colors.amber : tokens.textDisabled,
                     ),
                 ],
               ),
@@ -456,7 +469,6 @@ class _RoleSlotTile extends StatelessWidget {
         content: TextField(
           controller: controller,
           autofocus: true,
-          style: const TextStyle(color: Colors.white),
         ),
         actions: [
           TextButton(
@@ -485,13 +497,14 @@ class _SimulatorToggle extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final tokens = context.tokens;
     return Container(
       margin: const EdgeInsets.symmetric(horizontal: 12, vertical: 4),
       padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
       decoration: BoxDecoration(
         color: value
             ? Colors.deepPurple.withValues(alpha: 0.15)
-            : Colors.white.withValues(alpha: 0.05),
+            : tokens.surfaceTier2,
         borderRadius: BorderRadius.circular(12),
         border: value
             ? Border.all(color: Colors.deepPurple.withValues(alpha: 0.3))
@@ -500,13 +513,13 @@ class _SimulatorToggle extends StatelessWidget {
       child: Row(
         children: [
           Icon(Icons.computer,
-              color: value ? Colors.deepPurple : Colors.white38, size: 20),
+              color: value ? Colors.deepPurple : tokens.textDisabled, size: 20),
           const SizedBox(width: 12),
           Expanded(
             child: Text(
               'Simulator Mode',
               style: TextStyle(
-                color: value ? Colors.deepPurple.shade200 : Colors.white54,
+                color: value ? Colors.deepPurple.shade200 : tokens.textTertiary,
                 fontWeight: FontWeight.w600,
               ),
             ),
@@ -537,6 +550,7 @@ class _SimulatorDeviceTile extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final tokens = context.tokens;
     return Container(
       margin: const EdgeInsets.symmetric(horizontal: 12, vertical: 2),
       decoration: BoxDecoration(
@@ -547,18 +561,18 @@ class _SimulatorDeviceTile extends StatelessWidget {
         leading: const Icon(Icons.computer, color: Colors.deepPurple),
         title: Text(
           device.name,
-          style: const TextStyle(color: Colors.white),
+          style: TextStyle(color: tokens.textPrimary),
         ),
         subtitle: Row(
           children: [
             _ProtocolBadge(device.protocol.name),
             const SizedBox(width: 8),
             if (device.isControllable)
-              const Text('Controllable',
-                  style: TextStyle(color: Colors.white38, fontSize: 10)),
+              Text('Controllable',
+                  style: TextStyle(color: tokens.textDisabled, fontSize: 10)),
           ],
         ),
-        trailing: const Icon(Icons.chevron_right, color: Colors.white30),
+        trailing: Icon(Icons.chevron_right, color: tokens.textDisabled),
         onTap: onTap,
       ),
     );
@@ -579,8 +593,8 @@ class _SectionHeader extends StatelessWidget {
       padding: const EdgeInsets.fromLTRB(16, 12, 16, 4),
       child: Text(
         title,
-        style: const TextStyle(
-          color: Colors.white54,
+        style: TextStyle(
+          color: context.tokens.textTertiary,
           fontSize: 11,
           fontWeight: FontWeight.w600,
           letterSpacing: 1.2,
@@ -611,20 +625,21 @@ class _ScannedDeviceTile extends StatelessWidget {
         ? scanned.device.name
         : 'Unknown Device';
 
+    final tokens = context.tokens;
     return Container(
       margin: const EdgeInsets.symmetric(horizontal: 12, vertical: 2),
       decoration: BoxDecoration(
-        color: Colors.white.withValues(alpha: 0.05),
+        color: tokens.surfaceTier2,
         borderRadius: BorderRadius.circular(12),
       ),
       child: ListTile(
         leading: Icon(
           _deviceIcon(scanned.device.protocol.name),
-          color: Colors.white70,
+          color: tokens.textSecondary,
         ),
         title: Text(
           name,
-          style: const TextStyle(color: Colors.white),
+          style: TextStyle(color: tokens.textPrimary),
         ),
         subtitle: Row(
           children: [
@@ -633,7 +648,7 @@ class _ScannedDeviceTile extends StatelessWidget {
             _RssiIndicator(rssi: scanned.rssi),
           ],
         ),
-        trailing: const Icon(Icons.chevron_right, color: Colors.white30),
+        trailing: Icon(Icons.chevron_right, color: tokens.textDisabled),
         onTap: onTap,
       ),
     );
@@ -650,16 +665,17 @@ class _ProtocolBadge extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final tokens = context.tokens;
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
       decoration: BoxDecoration(
-        color: Colors.white.withValues(alpha: 0.1),
+        color: tokens.surfaceTier3,
         borderRadius: BorderRadius.circular(4),
       ),
       child: Text(
         _protocolLabel(protocol),
-        style: const TextStyle(
-          color: Colors.white54,
+        style: TextStyle(
+          color: tokens.textTertiary,
           fontSize: 10,
           fontWeight: FontWeight.w600,
         ),
@@ -698,7 +714,7 @@ class _RssiIndicator extends StatelessWidget {
           height: 6.0 + i * 3,
           margin: const EdgeInsets.only(right: 1),
           decoration: BoxDecoration(
-            color: active ? Colors.green : Colors.white12,
+            color: active ? Colors.green : context.tokens.textDisabled,
             borderRadius: BorderRadius.circular(1),
           ),
         );

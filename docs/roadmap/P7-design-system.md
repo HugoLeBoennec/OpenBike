@@ -22,15 +22,15 @@ pass.
 ## Tasks
 
 ### 1. Theme architecture
-- [ ] Create `lib/presentation/theme/` with `app_theme.dart`: `light` + `dark`
+- [x] Create `lib/presentation/theme/` with `app_theme.dart`: `light` + `dark`
       `ThemeData` (Material 3, seed stays deep-orange unless assets say otherwise) and a
       `ThemeExtension` for app tokens: surface tiers (the current
       black/#111111/#1A1A1A hierarchy), zone colors (single source — currently
       duplicated across PowerGauge/ZoneBar/LiveChart), data-field text styles
       (monospace numerals), spacing scale.
-- [ ] Apply `themeMode: ref.watch(themeModeProvider)` in `OpenBikeApp`
+- [x] Apply `themeMode: ref.watch(themeModeProvider)` in `OpenBikeApp`
       (`main.dart`) — add `light` to the Settings options (currently dark/system only).
-- [ ] Sweep widgets/screens replacing hard-coded colors with theme tokens. The ride
+- [x] Sweep widgets/screens replacing hard-coded colors with theme tokens. The ride
       screen may deliberately stay near-black in both modes (readability on a trainer) —
       make that an explicit token (`rideSurface`), not `Colors.black` literals.
       **Accept:** golden or widget tests for both themes on Home + Settings; `grep -rn
@@ -38,12 +38,12 @@ pass.
       `theme/` files.
 
 ### 2. Consistency & states pass
-- [ ] Uniform card/list style across Home, History, Workouts (radius, elevation,
+- [x] Uniform card/list style across Home, History, Workouts (radius, elevation,
       padding from tokens).
-- [ ] Every async screen gets proper loading (skeleton or spinner), error (retry
+- [x] Every async screen gets proper loading (skeleton or spinner), error (retry
       action), and empty states (History and Workouts have empty states — bring the rest
       to parity: scan, calendar, trends when they exist).
-- [ ] Number formatting util respecting `unitSystemProvider` everywhere (km/mi, kg/lb,
+- [x] Number formatting util respecting `unitSystemProvider` everywhere (km/mi, kg/lb,
       m/ft) — currently applied inconsistently.
       **Accept:** unit tests for the formatter; manual checklist in PR description with
       screenshots per screen.

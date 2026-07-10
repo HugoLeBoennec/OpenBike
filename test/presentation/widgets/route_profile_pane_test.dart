@@ -4,6 +4,7 @@ import 'package:flutter/material.dart' hide Route;
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:mocktail/mocktail.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 
 import 'package:open_bike/core/application/services/physics_engine.dart';
 import 'package:open_bike/core/application/services/route_simulator.dart';
@@ -12,6 +13,7 @@ import 'package:open_bike/core/domain/entities/route_point.dart';
 import 'package:open_bike/core/domain/ports/trainer_port.dart';
 import 'package:open_bike/core/domain/value_objects/value_objects.dart';
 import 'package:open_bike/core/events/event_bus.dart';
+import 'package:open_bike/infrastructure/preferences/app_preferences.dart';
 import 'package:open_bike/presentation/state/providers.dart';
 import 'package:open_bike/presentation/widgets/route_profile_pane.dart';
 
@@ -87,11 +89,15 @@ void main() {
     final controller = StreamController<SimulationProgress>();
     addTearDown(controller.close);
 
+    SharedPreferences.setMockInitialValues({});
+    final appPrefs = AppPreferences(await SharedPreferences.getInstance());
+
     await tester.pumpWidget(
       ProviderScope(
         overrides: [
           routeSimulatorProvider.overrideWithValue(sim),
           simulationProgressProvider.overrideWith((ref) => controller.stream),
+          appPreferencesProvider.overrideWithValue(appPrefs),
         ],
         child: const MaterialApp(home: Scaffold(body: RouteProfilePane())),
       ),

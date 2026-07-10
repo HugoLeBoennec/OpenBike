@@ -4,7 +4,9 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../core/application/services/services.dart';
 import '../../core/domain/entities/entities.dart';
+import '../../core/domain/value_objects/value_objects.dart';
 import '../state/providers.dart';
+import '../theme/app_theme.dart';
 import '../widgets/personal_records_panel.dart';
 
 /// Performance Management Chart — CTL/ATL/TSB trend, weekly TSS, totals, and
@@ -44,24 +46,32 @@ class _TrendsScreenState extends ConsumerState<TrendsScreen> {
     final recordsAsync = ref.watch(personalRecordsProvider);
 
     return Scaffold(
-      backgroundColor: Colors.black,
       appBar: AppBar(
         title: const Text('Trends'),
-        backgroundColor: Colors.black,
       ),
       body: fitnessAsync.when(
-        loading: () => const Center(
-            child: CircularProgressIndicator(color: Colors.white30)),
+        loading: () => const Center(child: CircularProgressIndicator()),
         error: (e, _) => Center(
-            child:
-                Text('Error: $e', style: const TextStyle(color: Colors.red))),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Text('Couldn\'t load trends: $e',
+                  style: const TextStyle(color: Colors.red)),
+              const SizedBox(height: 8),
+              TextButton(
+                onPressed: () => ref.invalidate(fitnessHistoryProvider),
+                child: const Text('Retry'),
+              ),
+            ],
+          ),
+        ),
         data: (allPoints) {
           if (allPoints.isEmpty) {
-            return const Center(
+            return Center(
               child: Text(
                 'No ride history yet.\nComplete a ride to see fitness trends.',
                 textAlign: TextAlign.center,
-                style: TextStyle(color: Colors.white38, fontSize: 13),
+                style: TextStyle(color: context.tokens.textDisabled, fontSize: 13),
               ),
             );
           }
@@ -130,9 +140,11 @@ class _RangeSelector extends StatelessWidget {
                 selected: r == selected,
                 onSelected: (_) => onSelected(r),
                 selectedColor: Colors.deepOrange,
-                backgroundColor: Colors.white.withValues(alpha: 0.05),
+                backgroundColor: context.tokens.surfaceTier2,
                 labelStyle: TextStyle(
-                  color: r == selected ? Colors.white : Colors.white54,
+                  color: r == selected
+                      ? Colors.white
+                      : context.tokens.textTertiary,
                   fontSize: 12,
                 ),
               ),
@@ -147,12 +159,13 @@ class _RangeSelector extends StatelessWidget {
 // Totals row
 // ---------------------------------------------------------------------------
 
-class _TotalsRow extends StatelessWidget {
+class _TotalsRow extends ConsumerWidget {
   const _TotalsRow({required this.rides});
   final List<Ride> rides;
 
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context, WidgetRef ref) {
+    final formatter = ref.watch(unitFormatterProvider);
     final now = DateTime.now();
     final weekAgo = now.subtract(const Duration(days: 7));
     final monthAgo = now.subtract(const Duration(days: 30));
@@ -162,8 +175,8 @@ class _TotalsRow extends StatelessWidget {
 
     final weekTime = weekRides.fold<Duration>(
         Duration.zero, (sum, r) => sum + r.activeDuration);
-    final weekDistanceKm =
-        weekRides.fold<double>(0, (sum, r) => sum + r.totalDistance.km);
+    final weekDistance = weekRides.fold<Distance>(
+        Distance.zero, (sum, r) => sum + r.totalDistance);
     final monthTss =
         monthRides.fold<double>(0, (sum, r) => sum + (r.cachedTss ?? 0));
 
@@ -172,7 +185,9 @@ class _TotalsRow extends StatelessWidget {
       children: [
         _TotalStat(label: 'TIME (7D)', value: _formatHours(weekTime)),
         _TotalStat(
-            label: 'DISTANCE (7D)', value: '${weekDistanceKm.toStringAsFixed(0)} km'),
+            label: 'DISTANCE (7D)',
+            value:
+                '${formatter.distanceValue(weekDistance).toStringAsFixed(0)} ${formatter.distanceUnit}'),
         _TotalStat(label: 'TSS (30D)', value: monthTss.round().toString()),
       ],
     );
@@ -191,15 +206,16 @@ class _TotalStat extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final tokens = context.tokens;
     return Column(
       children: [
         Text(value,
-            style: const TextStyle(
-                color: Colors.white, fontSize: 20, fontWeight: FontWeight.w700)),
+            style: TextStyle(
+                color: tokens.textPrimary, fontSize: 20, fontWeight: FontWeight.w700)),
         const SizedBox(height: 2),
         Text(label,
-            style: const TextStyle(
-                color: Colors.white54,
+            style: TextStyle(
+                color: tokens.textTertiary,
                 fontSize: 10,
                 fontWeight: FontWeight.w600,
                 letterSpacing: 1)),
@@ -308,7 +324,7 @@ class _LegendStat extends StatelessWidget {
           ],
         ),
         const SizedBox(height: 2),
-        Text(label, style: const TextStyle(color: Colors.white54, fontSize: 10)),
+        Text(label, style: TextStyle(color: context.tokens.textTertiary, fontSize: 10)),
       ],
     );
   }
@@ -361,7 +377,7 @@ class _WeeklyTssChart extends StatelessWidget {
               reservedSize: 32,
               getTitlesWidget: (value, _) => Text(
                 value.toInt().toString(),
-                style: const TextStyle(color: Colors.white30, fontSize: 10),
+                style: TextStyle(color: context.tokens.textDisabled, fontSize: 10),
               ),
             ),
           ),
@@ -388,8 +404,8 @@ class _SectionLabel extends StatelessWidget {
   Widget build(BuildContext context) {
     return Text(
       text,
-      style: const TextStyle(
-        color: Colors.white54,
+      style: TextStyle(
+        color: context.tokens.textTertiary,
         fontSize: 11,
         fontWeight: FontWeight.w600,
         letterSpacing: 1.2,

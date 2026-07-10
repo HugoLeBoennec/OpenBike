@@ -7,6 +7,7 @@ import '../../infrastructure/oauth/desktop_oauth_loopback_server.dart';
 import '../../plugins/exports/strava_export_plugin.dart';
 import '../../plugins/plugin_interfaces.dart';
 import '../state/providers.dart';
+import '../theme/app_theme.dart';
 
 /// Initiates the OAuth flow for [plugin].
 ///
@@ -49,11 +50,11 @@ class ConnectionsSection extends ConsumerWidget {
     final plugins = ref.watch(exportPluginsProvider);
 
     if (plugins.isEmpty) {
-      return const Padding(
-        padding: EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+      return Padding(
+        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
         child: Text(
           'No export plugins configured.',
-          style: TextStyle(color: Colors.white38, fontSize: 13),
+          style: TextStyle(color: context.tokens.textDisabled, fontSize: 13),
         ),
       );
     }
@@ -124,12 +125,13 @@ class _ConnectionTileState extends ConsumerState<ConnectionTile> {
     final isAuthenticated = widget.plugin.isAuthenticated;
     final manifest = widget.plugin.manifest;
 
+    final tokens = context.tokens;
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         ListTile(
-          leading: Icon(_icon, color: Colors.white54, size: 22),
-          title: Text(manifest.name, style: const TextStyle(color: Colors.white)),
+          leading: Icon(_icon, color: tokens.textTertiary, size: 22),
+          title: Text(manifest.name, style: TextStyle(color: tokens.textPrimary)),
           subtitle: _error != null
               ? Text(_error!,
                   style: const TextStyle(color: Colors.redAccent, fontSize: 12))
@@ -150,8 +152,8 @@ class _ConnectionTileState extends ConsumerState<ConnectionTile> {
                         ),
                       ),
                     )
-              : const Text('Available',
-                  style: TextStyle(color: Colors.white54, fontSize: 14)),
+              : Text('Available',
+                  style: TextStyle(color: tokens.textTertiary, fontSize: 14)),
           onTap: _requiresAuth && !_busy ? _toggleConnection : null,
         ),
         Padding(
@@ -164,14 +166,16 @@ class _ConnectionTileState extends ConsumerState<ConnectionTile> {
                   style: TextStyle(
                     color: isAuthenticated || !_requiresAuth
                         ? Colors.green
-                        : Colors.white54,
+                        : tokens.textTertiary,
                     fontSize: 12,
                   ),
                 ),
               ),
               Text('Auto-upload',
                   style: TextStyle(
-                    color: isAuthenticated ? Colors.white70 : Colors.white24,
+                    color: isAuthenticated
+                        ? tokens.textSecondary
+                        : tokens.textDisabled,
                     fontSize: 12,
                   )),
               Switch(

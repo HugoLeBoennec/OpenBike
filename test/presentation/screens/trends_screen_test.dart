@@ -2,11 +2,13 @@ import 'package:drift/native.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 
 import 'package:open_bike/core/domain/entities/entities.dart';
 import 'package:open_bike/core/domain/value_objects/value_objects.dart';
 import 'package:open_bike/infrastructure/persistence/app_database.dart';
 import 'package:open_bike/infrastructure/persistence/drift_storage.dart';
+import 'package:open_bike/infrastructure/preferences/app_preferences.dart';
 import 'package:open_bike/presentation/screens/trends_screen.dart';
 import 'package:open_bike/presentation/state/providers.dart';
 
@@ -20,9 +22,12 @@ List<SensorReading> _steadyPower(DateTime start, double watts, int seconds) {
   ];
 }
 
-Widget _wrap(DriftStorage storage) {
+Widget _wrap(DriftStorage storage, AppPreferences appPrefs) {
   return ProviderScope(
-    overrides: [storageProvider.overrideWithValue(storage)],
+    overrides: [
+      storageProvider.overrideWithValue(storage),
+      appPreferencesProvider.overrideWithValue(appPrefs),
+    ],
     child: const MaterialApp(home: TrendsScreen()),
   );
 }
@@ -30,10 +35,13 @@ Widget _wrap(DriftStorage storage) {
 void main() {
   late AppDatabase db;
   late DriftStorage storage;
+  late AppPreferences appPrefs;
 
-  setUp(() {
+  setUp(() async {
     db = AppDatabase(NativeDatabase.memory());
     storage = DriftStorage(db);
+    SharedPreferences.setMockInitialValues({});
+    appPrefs = AppPreferences(await SharedPreferences.getInstance());
   });
 
   tearDown(() async {
@@ -41,7 +49,7 @@ void main() {
   });
 
   testWidgets('shows an empty-state message with no ride history', (tester) async {
-    await tester.pumpWidget(_wrap(storage));
+    await tester.pumpWidget(_wrap(storage, appPrefs));
     await tester.pumpAndSettle();
 
     expect(find.textContaining('No ride history yet'), findsOneWidget);
@@ -60,7 +68,7 @@ void main() {
     await storage.saveRide(ride, ftp: const Watts(200));
     await storage.saveSensorReadings(ride.id, ride.readings);
 
-    await tester.pumpWidget(_wrap(storage));
+    await tester.pumpWidget(_wrap(storage, appPrefs));
     await tester.pumpAndSettle();
 
     expect(find.text('FITNESS / FATIGUE / FORM'), findsOneWidget);
@@ -87,7 +95,7 @@ void main() {
     await storage.saveRide(ride, ftp: const Watts(200));
     await storage.saveSensorReadings(ride.id, ride.readings);
 
-    await tester.pumpWidget(_wrap(storage));
+    await tester.pumpWidget(_wrap(storage, appPrefs));
     await tester.pumpAndSettle();
 
     expect(find.byKey(const Key('range-3M')), findsOneWidget);
@@ -118,7 +126,7 @@ void main() {
       ),
     ]);
 
-    await tester.pumpWidget(_wrap(storage));
+    await tester.pumpWidget(_wrap(storage, appPrefs));
     await tester.pumpAndSettle();
 
     await tester.scrollUntilVisible(find.text('PERSONAL RECORDS'), 200);

@@ -6,6 +6,7 @@ import 'package:uuid/uuid.dart';
 import '../../core/domain/entities/entities.dart';
 import '../models/ride_extra.dart';
 import '../state/providers.dart';
+import '../theme/app_theme.dart';
 import '../widgets/workout_mini_profile.dart';
 
 /// Training calendar — month grid + day list. Tap a day to schedule a
@@ -30,14 +31,12 @@ class _CalendarScreenState extends ConsumerState<CalendarScreen> {
     final workouts = ref.watch(workoutListProvider);
 
     return Scaffold(
-      backgroundColor: Colors.black,
       appBar: AppBar(
         title: const Text('Calendar'),
-        backgroundColor: Colors.black,
       ),
       body: scheduledAsync.when(
         loading: () => const Center(
-            child: CircularProgressIndicator(color: Colors.white30)),
+            child: CircularProgressIndicator()),
         error: (e, _) => Center(
             child:
                 Text('Error: $e', style: const TextStyle(color: Colors.red))),
@@ -67,7 +66,7 @@ class _CalendarScreenState extends ConsumerState<CalendarScreen> {
                 scheduledByDay: byDay,
                 onDayTap: (day) => setState(() => _selectedDay = day),
               ),
-              const Divider(color: Color(0xFF222222), height: 1),
+              Divider(color: context.tokens.surfaceTier3Line, height: 1),
               Expanded(
                 child: _DayList(
                   day: _selectedDay,
@@ -88,7 +87,7 @@ class _CalendarScreenState extends ConsumerState<CalendarScreen> {
         key: const Key('scheduleWorkoutFab'),
         backgroundColor: Colors.blue,
         onPressed: workouts.isEmpty ? null : () => _showScheduleSheet(context),
-        child: const Icon(Icons.add, color: Colors.white),
+        child: Icon(Icons.add, color: context.tokens.textPrimary),
       ),
     );
   }
@@ -104,7 +103,7 @@ class _CalendarScreenState extends ConsumerState<CalendarScreen> {
     final workouts = ref.read(workoutListProvider);
     showModalBottomSheet<void>(
       context: context,
-      backgroundColor: const Color(0xFF1A1A1A),
+      backgroundColor: context.tokens.surfaceTier2,
       isScrollControlled: true,
       builder: (ctx) => SafeArea(
         child: SizedBox(
@@ -115,8 +114,8 @@ class _CalendarScreenState extends ConsumerState<CalendarScreen> {
                 padding: const EdgeInsets.all(16),
                 child: Text(
                   'Schedule for ${_formatDate(_selectedDay)}',
-                  style: const TextStyle(
-                      color: Colors.white,
+                  style: TextStyle(
+                      color: context.tokens.textPrimary,
                       fontWeight: FontWeight.w600,
                       fontSize: 16),
                 ),
@@ -133,10 +132,10 @@ class _CalendarScreenState extends ConsumerState<CalendarScreen> {
                         child: WorkoutMiniProfile(steps: w.steps),
                       ),
                       title: Text(w.name,
-                          style: const TextStyle(color: Colors.white)),
+                          style: TextStyle(color: context.tokens.textPrimary)),
                       subtitle: Text(
                         '${w.totalDuration.inMinutes} min',
-                        style: const TextStyle(color: Colors.white54),
+                        style: TextStyle(color: context.tokens.textTertiary),
                       ),
                       onTap: () async {
                         Navigator.pop(ctx);
@@ -198,17 +197,17 @@ class _MonthHeader extends StatelessWidget {
         children: [
           IconButton(
             key: const Key('prevMonthButton'),
-            icon: const Icon(Icons.chevron_left, color: Colors.white54),
+            icon: Icon(Icons.chevron_left, color: context.tokens.textTertiary),
             onPressed: onPrev,
           ),
           Text(
             '${_months[month.month - 1]} ${month.year}',
-            style: const TextStyle(
-                color: Colors.white, fontSize: 16, fontWeight: FontWeight.w600),
+            style: TextStyle(
+                color: context.tokens.textPrimary, fontSize: 16, fontWeight: FontWeight.w600),
           ),
           IconButton(
             key: const Key('nextMonthButton'),
-            icon: const Icon(Icons.chevron_right, color: Colors.white54),
+            icon: Icon(Icons.chevron_right, color: context.tokens.textTertiary),
             onPressed: onNext,
           ),
         ],
@@ -289,7 +288,7 @@ class _MonthGrid extends StatelessWidget {
                   Expanded(
                     child: Center(
                       child: Text(label,
-                          style: const TextStyle(color: Colors.white38, fontSize: 11)),
+                          style: TextStyle(color: context.tokens.textDisabled, fontSize: 11)),
                     ),
                   ),
               ],
@@ -338,7 +337,7 @@ class _DayCell extends StatelessWidget {
               Text(
                 '$day',
                 style: TextStyle(
-                  color: isSelected ? Colors.white : Colors.white70,
+                  color: isSelected ? context.tokens.textPrimary : context.tokens.textSecondary,
                   fontWeight: isToday ? FontWeight.w700 : FontWeight.w400,
                   fontSize: 13,
                 ),
@@ -349,7 +348,7 @@ class _DayCell extends StatelessWidget {
                   width: 4,
                   height: 4,
                   decoration: BoxDecoration(
-                    color: isSelected ? Colors.white : Colors.blue,
+                    color: isSelected ? context.tokens.textPrimary : Colors.blue,
                     shape: BoxShape.circle,
                   ),
                 ),
@@ -383,11 +382,11 @@ class _DayList extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     if (scheduled.isEmpty) {
-      return const Center(
+      return Center(
         child: Text(
           'Nothing scheduled.\nTap + to plan a workout.',
           textAlign: TextAlign.center,
-          style: TextStyle(color: Colors.white38, fontSize: 13),
+          style: TextStyle(color: context.tokens.textDisabled, fontSize: 13),
         ),
       );
     }
@@ -435,13 +434,13 @@ class _ScheduledTile extends StatelessWidget {
       key: Key('scheduledTile-${scheduled.id}'),
       margin: const EdgeInsets.symmetric(horizontal: 12, vertical: 3),
       decoration: BoxDecoration(
-        color: Colors.white.withValues(alpha: 0.05),
+        color: context.tokens.surfaceTier2,
         borderRadius: BorderRadius.circular(12),
       ),
       child: ListTile(
         contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
         leading: workout == null
-            ? const Icon(Icons.fitness_center, color: Colors.white24)
+            ? Icon(Icons.fitness_center, color: context.tokens.textDisabled)
             : SizedBox(
                 width: 40,
                 height: 28,
@@ -449,11 +448,11 @@ class _ScheduledTile extends StatelessWidget {
               ),
         title: Text(
           workout?.name ?? 'Unknown workout',
-          style: const TextStyle(color: Colors.white, fontWeight: FontWeight.w600),
+          style: TextStyle(color: context.tokens.textPrimary, fontWeight: FontWeight.w600),
         ),
         subtitle: scheduled.notes != null
             ? Text(scheduled.notes!,
-                style: const TextStyle(color: Colors.white54, fontSize: 12))
+                style: TextStyle(color: context.tokens.textTertiary, fontSize: 12))
             : null,
         trailing: isDone
             ? GestureDetector(
@@ -475,7 +474,7 @@ class _ScheduledTile extends StatelessWidget {
                       child: const Text('Start', style: TextStyle(fontSize: 12)),
                     ),
                   IconButton(
-                    icon: const Icon(Icons.close, color: Colors.white24, size: 18),
+                    icon: Icon(Icons.close, color: context.tokens.textDisabled, size: 18),
                     onPressed: onDelete,
                   ),
                 ],

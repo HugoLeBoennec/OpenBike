@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 
 import '../../core/domain/entities/entities.dart';
 import '../state/providers.dart';
+import '../theme/app_theme.dart';
 
 /// Best mean-max power per duration bucket (5s/1min/5min/20min), all-time.
 /// Shown on the History and Trends screens.
@@ -14,11 +15,11 @@ class PersonalRecordsPanel extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     if (records.isEmpty) {
-      return const Padding(
-        padding: EdgeInsets.symmetric(vertical: 16),
+      return Padding(
+        padding: const EdgeInsets.symmetric(vertical: 16),
         child: Text(
           'No personal records yet — complete a ride to set some.',
-          style: TextStyle(color: Colors.white38, fontSize: 13),
+          style: TextStyle(color: context.tokens.textDisabled, fontSize: 13),
         ),
       );
     }
@@ -28,7 +29,7 @@ class PersonalRecordsPanel extends StatelessWidget {
     return Container(
       padding: const EdgeInsets.symmetric(vertical: 12),
       decoration: BoxDecoration(
-        color: Colors.white.withValues(alpha: 0.05),
+        color: context.tokens.surfaceTier2,
         borderRadius: BorderRadius.circular(12),
       ),
       child: Row(
@@ -61,8 +62,8 @@ class _PrStat extends StatelessWidget {
         ),
         const SizedBox(height: 2),
         Text(label,
-            style: const TextStyle(
-                color: Colors.white54,
+            style: TextStyle(
+                color: context.tokens.textTertiary,
                 fontSize: 10,
                 fontWeight: FontWeight.w600,
                 letterSpacing: 1)),

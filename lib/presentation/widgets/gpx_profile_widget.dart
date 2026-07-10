@@ -1,8 +1,13 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
+
 import '../../core/domain/entities/route_point.dart';
+import '../../core/domain/value_objects/value_objects.dart';
+import '../format/unit_formatter.dart';
+import '../state/providers.dart';
 
 /// Displays the elevation profile of a GPX route.
-class GpxProfileWidget extends StatelessWidget {
+class GpxProfileWidget extends ConsumerWidget {
   final List<RoutePoint> points;
   final int? currentPointIndex;
 
@@ -13,18 +18,31 @@ class GpxProfileWidget extends StatelessWidget {
   });
 
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context, WidgetRef ref) {
     if (points.isEmpty) {
       return const Center(child: Text('No route loaded'));
     }
 
-    return CustomPaint(
-      painter: _ElevationPainter(
-        points: points,
-        currentPointIndex: currentPointIndex,
-        color: Theme.of(context).colorScheme.primary,
+    final current = currentPointIndex != null && currentPointIndex! < points.length
+        ? points[currentPointIndex!]
+        : null;
+    final semanticsValue = current != null
+        ? '${current.grade.percent.toStringAsFixed(1)} percent grade, '
+            '${current.smoothedElevation.round()} meters elevation'
+        : 'Elevation profile';
+
+    return Semantics(
+      label: 'Route elevation profile',
+      value: semanticsValue,
+      child: CustomPaint(
+        painter: _ElevationPainter(
+          points: points,
+          currentPointIndex: currentPointIndex,
+          color: Theme.of(context).colorScheme.primary,
+          formatter: ref.watch(unitFormatterProvider),
+        ),
+        size: Size.infinite,
       ),
-      size: Size.infinite,
     );
   }
 }
@@ -33,11 +51,13 @@ class _ElevationPainter extends CustomPainter {
   final List<RoutePoint> points;
   final int? currentPointIndex;
   final Color color;
+  final UnitFormatter formatter;
 
   _ElevationPainter({
     required this.points,
     required this.currentPointIndex,
     required this.color,
+    required this.formatter,
   });
 
   @override
@@ -93,10 +113,9 @@ class _ElevationPainter extends CustomPainter {
 
       // Stats text.
       final grade = pt.grade.percent;
-      final distRemaining =
-          (points.last.distanceFromStart - pt.distanceFromStart) / 1000;
+      final metersRemaining = points.last.distanceFromStart - pt.distanceFromStart;
       final text = '${grade.toStringAsFixed(1)}%  '
-          '${distRemaining.toStringAsFixed(1)} km left';
+          '${formatter.distance(Distance(metersRemaining))} left';
       final tp = TextPainter(
         text: TextSpan(
           text: text,

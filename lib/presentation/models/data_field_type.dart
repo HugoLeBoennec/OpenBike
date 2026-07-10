@@ -92,6 +92,22 @@ extension DataFieldTypeX on DataFieldType {
     }
   }
 
+  /// Unit-system-aware suffix — same as [unit] except for speed/distance/
+  /// elevation, which switch between metric and imperial via
+  /// [unitFormatterProvider].
+  String unitFor(WidgetRef ref) {
+    switch (this) {
+      case DataFieldType.speed:
+        return ref.watch(unitFormatterProvider).speedUnit;
+      case DataFieldType.distance:
+        return ref.watch(unitFormatterProvider).distanceUnit;
+      case DataFieldType.elevation:
+        return ref.watch(unitFormatterProvider).elevationUnit;
+      default:
+        return unit;
+    }
+  }
+
   bool get isPowerField =>
       this == DataFieldType.power ||
       this == DataFieldType.avgPower ||
@@ -116,10 +132,16 @@ extension DataFieldTypeX on DataFieldType {
       case DataFieldType.heartRate:
         return ref.watch(liveHeartRateProvider).bpm.toString();
       case DataFieldType.speed:
-        return ref.watch(liveSpeedProvider).kmh.toStringAsFixed(1);
+        final formatter = ref.watch(unitFormatterProvider);
+        return formatter
+            .speedValue(ref.watch(liveSpeedProvider))
+            .toStringAsFixed(1);
       case DataFieldType.distance:
         final ride = ref.watch(currentRideProvider);
-        return ride?.totalDistance.km.toStringAsFixed(2) ?? '0.00';
+        final formatter = ref.watch(unitFormatterProvider);
+        return ride != null
+            ? formatter.distanceValue(ride.totalDistance).toStringAsFixed(2)
+            : '0.00';
       case DataFieldType.elapsedTime:
         final elapsed = ref.watch(rideElapsedProvider);
         return elapsed.when(
@@ -150,8 +172,12 @@ extension DataFieldTypeX on DataFieldType {
         );
       case DataFieldType.elevation:
         final sim = ref.watch(simulationProgressProvider);
+        final formatter = ref.watch(unitFormatterProvider);
         return sim.when(
-          data: (p) => p.currentPoint.smoothedElevation.round().toString(),
+          data: (p) => formatter
+              .elevationValue(p.currentPoint.smoothedElevation)
+              .round()
+              .toString(),
           loading: () => '0',
           error: (_, __) => '--',
         );

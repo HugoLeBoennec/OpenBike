@@ -27,6 +27,7 @@ import 'plugins/plugin_registry.dart';
 import 'plugins/private_plugins.dart';
 import 'presentation/router.dart';
 import 'presentation/state/providers.dart';
+import 'presentation/theme/app_theme.dart';
 import 'presentation/widgets/strava_deep_link_listener.dart';
 
 void main() async {
@@ -164,24 +165,35 @@ void _registerPlugins(
   registerPrivatePlugins(registry);
 }
 
-class OpenBikeApp extends StatelessWidget {
+class OpenBikeApp extends ConsumerWidget {
   const OpenBikeApp({super.key, required this.router});
 
   final GoRouter router;
 
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context, WidgetRef ref) {
+    final themeMode = _parseThemeMode(ref.watch(themeModeProvider));
     return StravaDeepLinkListener(
       child: MaterialApp.router(
         title: 'OpenBike',
         debugShowCheckedModeBanner: false,
-        theme: ThemeData(
-          useMaterial3: true,
-          colorSchemeSeed: Colors.deepOrange,
-          brightness: Brightness.dark,
-        ),
+        theme: AppTheme.light,
+        darkTheme: AppTheme.dark,
+        themeMode: themeMode,
         routerConfig: router,
       ),
     );
+  }
+
+  ThemeMode _parseThemeMode(String value) {
+    switch (value) {
+      case 'light':
+        return ThemeMode.light;
+      case 'system':
+        return ThemeMode.system;
+      case 'dark':
+      default:
+        return ThemeMode.dark;
+    }
   }
 }

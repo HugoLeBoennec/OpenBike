@@ -6,6 +6,7 @@ import '../../core/domain/entities/power_zone.dart';
 import '../../core/domain/entities/ride.dart';
 import '../../core/domain/value_objects/value_objects.dart';
 import '../state/providers.dart';
+import '../theme/app_theme.dart';
 import '../widgets/ftp_test_prompt.dart';
 import '../widgets/ride_summary_widgets.dart';
 
@@ -26,10 +27,8 @@ class RideSummaryScreen extends ConsumerWidget {
     return PopScope(
       canPop: false,
       child: Scaffold(
-        backgroundColor: Colors.black,
         appBar: AppBar(
           title: const Text('Ride Summary'),
-          backgroundColor: Colors.black,
           automaticallyImplyLeading: false,
         ),
         body: Stack(
@@ -50,16 +49,26 @@ class RideSummaryScreen extends ConsumerWidget {
     WidgetRef ref,
   ) {
     return rideAsync.when(
-          loading: () => const Center(
-              child: CircularProgressIndicator(color: Colors.white30)),
+          loading: () => const Center(child: CircularProgressIndicator()),
           error: (e, _) => Center(
-              child:
-                  Text('Error: $e', style: const TextStyle(color: Colors.red))),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Text('Couldn\'t load ride: $e',
+                    style: const TextStyle(color: Colors.red)),
+                const SizedBox(height: 8),
+                TextButton(
+                  onPressed: () => ref.invalidate(rideDetailProvider(rideId)),
+                  child: const Text('Retry'),
+                ),
+              ],
+            ),
+          ),
           data: (ride) {
             if (ride == null) {
-              return const Center(
+              return Center(
                 child: Text('Ride not found.',
-                    style: TextStyle(color: Colors.white54)),
+                    style: TextStyle(color: context.tokens.textTertiary)),
               );
             }
             final newPrDurations = ref.watch(newPersonalRecordsForRideProvider(ride.id));

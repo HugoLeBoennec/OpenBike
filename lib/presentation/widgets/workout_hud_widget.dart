@@ -6,6 +6,7 @@ import '../../core/domain/entities/workout.dart';
 import '../../core/domain/entities/workout_step.dart';
 import '../../core/domain/value_objects/value_objects.dart';
 import '../state/providers.dart';
+import '../theme/app_theme.dart';
 import 'workout_mini_profile.dart';
 
 /// In-ride HUD for a structured workout: current step + target, countdown,
@@ -52,7 +53,7 @@ class _WorkoutHudContent extends ConsumerWidget {
         : null;
 
     return Container(
-      color: const Color(0xFF0A0A0A),
+      color: context.tokens.rideSurfaceDeep,
       padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
       child: Column(
         mainAxisSize: MainAxisSize.min,

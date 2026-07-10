@@ -12,6 +12,7 @@ import '../../core/events/app_event.dart';
 import '../models/data_field_type.dart';
 import '../models/ride_extra.dart';
 import '../state/providers.dart';
+import '../theme/app_theme.dart';
 import '../widgets/connection_banner.dart';
 import '../widgets/data_field_grid.dart';
 import '../widgets/live_chart.dart';
@@ -215,7 +216,7 @@ class _RideScreenState extends ConsumerState<RideScreen> {
         if (!didPop) _confirmExit(context);
       },
       child: Scaffold(
-        backgroundColor: Colors.black,
+        backgroundColor: context.tokens.rideSurface,
         body: SafeArea(
           child: Column(
             children: [
@@ -478,8 +479,8 @@ class _PageDots extends StatelessWidget {
           decoration: BoxDecoration(
             shape: BoxShape.circle,
             color: i == current
-                ? Colors.white
-                : Colors.white.withValues(alpha: 0.3),
+                ? context.tokens.rideOnSurface
+                : context.tokens.rideOnSurface.withValues(alpha: 0.3),
           ),
         );
       }),

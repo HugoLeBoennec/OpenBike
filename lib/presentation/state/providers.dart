@@ -23,6 +23,7 @@ import '../../infrastructure/simulator/simulator.dart';
 import '../../infrastructure/persistence/persistence.dart';
 import '../../plugins/plugin_interfaces.dart';
 import '../../plugins/plugin_registry.dart';
+import '../format/unit_formatter.dart';
 import '../models/ride_screen_config.dart';
 
 // ---------------------------------------------------------------------------
@@ -58,6 +59,14 @@ final hasCompletedOnboardingProvider = Provider<bool>((ref) {
 
 final unitSystemProvider = StateProvider<String>((ref) {
   return ref.read(appPreferencesProvider).unitSystem;
+});
+
+/// Metric/imperial number formatter derived from [unitSystemProvider] —
+/// the single place widgets should go for distance/speed/weight/height
+/// display strings instead of converting inline.
+final unitFormatterProvider = Provider<UnitFormatter>((ref) {
+  final system = ref.watch(unitSystemProvider);
+  return UnitFormatter(unitSystemFromString(system));
 });
 
 final themeModeProvider = StateProvider<String>((ref) {
