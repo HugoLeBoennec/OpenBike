@@ -115,3 +115,95 @@ jobs:
           cache: true
       - run: flutter pub get
       - run: flutter build linux --debug
+      - name: Package tar.gz bundle
+        run: |
+          cd build/linux/x64/debug/bundle
+          tar czf ../../../../../OpenBike-linux-x64.tar.gz .
+      - uses: actions/upload-artifact@v4
+        with:
+          name: OpenBike-linux-x64
+          path: OpenBike-linux-x64.tar.gz
+          if-no-files-found: error
+
+  # ---------------------------------------------------------------------------
+  # Tag-triggered release packaging — macOS DMG + Windows MSIX. See
+  # docs/roadmap/P8-desktop.md and docs/release/macos-signing.md.
+  # Unsigned/self-signed by default; real signing kicks in only when the
+  # relevant secrets are configured (store-signing decision is P9's).
+  # ---------------------------------------------------------------------------
+
+  build-macos-release:
+    name: Package macOS DMG
+    runs-on: macos-latest
+    needs: [build-macos]
+    if: startsWith(github.ref, 'refs/tags/')
+    steps:
+      - uses: actions/checkout@v4
+      - uses: subosito/flutter-action@v2
+        with:
+          flutter-version: ${{ env.FLUTTER_VERSION }}
+          channel: stable
+          cache: true
+      - run: flutter pub get
+      - run: flutter build macos --release
+      - name: Sign (Developer ID)
+        if: ${{ secrets.MACOS_CERTIFICATE_P12 != '' }}
+        env:
+          MACOS_CERTIFICATE_P12: ${{ secrets.MACOS_CERTIFICATE_P12 }}
+          MACOS_CERTIFICATE_PASSWORD: ${{ secrets.MACOS_CERTIFICATE_PASSWORD }}
+          MACOS_SIGNING_IDENTITY: ${{ secrets.MACOS_SIGNING_IDENTITY }}
+        run: |
+          echo "$MACOS_CERTIFICATE_P12" | base64 --decode > certificate.p12
+          security create-keychain -p "" build.keychain
+          security default-keychain -s build.keychain
+          security unlock-keychain -p "" build.keychain
+          security import certificate.p12 -k build.keychain -P "$MACOS_CERTIFICATE_PASSWORD" -T /usr/bin/codesign
+          security set-key-partition-list -S apple-tool:,apple:,codesign: -s -k "" build.keychain
+          codesign --deep --force --options runtime \
+            --entitlements macos/Runner/Release.entitlements \
+            --sign "$MACOS_SIGNING_IDENTITY" \
+            "build/macos/Build/Products/Release/open_bike.app"
+      - name: Package DMG
+        run: |
+          brew install create-dmg
+          create-dmg --overwrite --dmg-title OpenBike OpenBike.dmg \
+            "build/macos/Build/Products/Release/open_bike.app"
+      - name: Notarize
+        if: ${{ secrets.MACOS_CERTIFICATE_P12 != '' }}
+        env:
+          APPLE_ID: ${{ secrets.APPLE_ID }}
+          APPLE_APP_SPECIFIC_PASSWORD: ${{ secrets.APPLE_APP_SPECIFIC_PASSWORD }}
+          APPLE_TEAM_ID: ${{ secrets.APPLE_TEAM_ID }}
+        run: |
+          xcrun notarytool submit OpenBike.dmg \
+            --apple-id "$APPLE_ID" \
+            --password "$APPLE_APP_SPECIFIC_PASSWORD" \
+            --team-id "$APPLE_TEAM_ID" \
+            --wait
+          xcrun stapler staple OpenBike.dmg
+      - uses: actions/upload-artifact@v4
+        with:
+          name: OpenBike-macos
+          path: OpenBike.dmg
+          if-no-files-found: error
+
+  build-windows-release:
+    name: Package Windows MSIX
+    runs-on: windows-latest
+    needs: [build-windows]
+    if: startsWith(github.ref, 'refs/tags/')
+    steps:
+      - uses: actions/checkout@v4
+      - uses: subosito/flutter-action@v2
+        with:
+          flutter-version: ${{ env.FLUTTER_VERSION }}
+          channel: stable
+          cache: true
+      - run: flutter pub get
+      - run: flutter build windows --release
+      - run: dart run msix:create --build-windows false
+      - uses: actions/upload-artifact@v4
+        with:
+          name: OpenBike-windows
+          path: build/windows/x64/runner/Release/*.msix
+          if-no-files-found: error
