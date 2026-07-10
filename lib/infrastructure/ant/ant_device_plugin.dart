@@ -61,7 +61,11 @@ class AntDevicePlugin implements DevicePlugin {
         transmissionType: 0,
       );
 
-      // Listen for broadcast data to discover trainers.
+      // Listen for broadcast data to discover trainers. The wildcard
+      // channel (deviceNumber=0) syncs to the first broadcaster it hears,
+      // but only reports which one via an explicit channel-ID request —
+      // so the first broadcast triggers exactly one such request.
+      bool channelIdRequested = false;
       final sub = _transport.messageStream.listen((msg) {
         if (msg.messageId != AntConstants.msgBroadcastData) return;
         if (msg.data.length < 9) return;
@@ -69,25 +73,30 @@ class AntDevicePlugin implements DevicePlugin {
         // Channel number is byte 0, payload bytes 1-8.
         final channelByte = msg.data[0];
         if (channelByte != 0) return;
+        if (channelIdRequested) return;
+        channelIdRequested = true;
 
-        // Use a simple device ID derived from the broadcast source.
-        // In a full implementation we'd request the channel ID to get the
-        // actual device number. For now, use page data to identify.
-        const deviceId = 'ant_fec_0';
-        if (!devices.containsKey(deviceId)) {
-          devices[deviceId] = TrainerDevice(
-            id: deviceId,
-            name: 'ANT+ Trainer',
-            protocol: DeviceProtocol.antFec,
-            isControllable: true,
-            supportedModes: [
-              ControlMode.erg,
-              ControlMode.simulation,
-              ControlMode.resistance,
-            ],
-          );
-          _log.info('Discovered ANT+ FE-C trainer: $deviceId');
-        }
+        _transport.requestChannelId(0).then((channelId) {
+          final deviceId = _deviceId(channelId.deviceNumber);
+          if (!devices.containsKey(deviceId)) {
+            devices[deviceId] = TrainerDevice(
+              id: deviceId,
+              name: 'ANT+ Trainer',
+              protocol: DeviceProtocol.antFec,
+              isControllable: true,
+              supportedModes: [
+                ControlMode.erg,
+                ControlMode.simulation,
+                ControlMode.resistance,
+              ],
+            );
+            _log.info('Discovered ANT+ FE-C trainer: $deviceId');
+          }
+        }).catchError((Object e) {
+          _log.warning('Failed to resolve ANT+ channel ID: $e');
+          // Allow a retry on the next broadcast.
+          channelIdRequested = false;
+        });
       });
 
       // Wait for the scan duration.
@@ -117,11 +126,13 @@ class AntDevicePlugin implements DevicePlugin {
       await _transport.findAndOpenDongle();
     }
 
-    // Initialize a channel locked to the device.
+    // Initialize a channel locked to this specific device — [device.id]
+    // encodes the real device number resolved during scan() (falls back to
+    // the wildcard when connecting to a device discovered another way).
     const channelNumber = 0;
     await _transport.initializeChannel(
       channelNumber: channelNumber,
-      deviceNumber: 0, // Accept any device number for now.
+      deviceNumber: _deviceNumberFromId(device.id),
       deviceType: AntConstants.fecDeviceType,
       transmissionType: 0,
     );
@@ -135,5 +146,18 @@ class AntDevicePlugin implements DevicePlugin {
 
     await adapter.initialize();
     return adapter;
+  }
+
+  static final _deviceIdPattern = RegExp(r'^ant_fec_(\d+)$');
+
+  static String _deviceId(int deviceNumber) => 'ant_fec_$deviceNumber';
+
+  /// Extracts the ANT+ device number encoded in a device id built by
+  /// [_deviceId]. Falls back to the wildcard (0) for ids from another
+  /// source, which locks the channel to "accept any device" instead.
+  static int _deviceNumberFromId(String deviceId) {
+    final match = _deviceIdPattern.firstMatch(deviceId);
+    if (match == null) return 0;
+    return int.parse(match.group(1)!);
   }
 }
