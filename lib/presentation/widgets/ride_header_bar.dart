@@ -6,6 +6,7 @@ import 'package:wakelock_plus/wakelock_plus.dart';
 import '../../core/application/services/recording_engine.dart';
 import '../../core/domain/entities/entities.dart';
 import '../state/providers.dart';
+import 'ride_pause_actions.dart';
 import 'sensor_role_labels.dart';
 
 /// Header bar showing the ride timer and control buttons (pause, lap, stop).
@@ -70,11 +71,10 @@ class RideHeaderBar extends ConsumerWidget {
                 size: 28,
               ),
               onPressed: () {
-                final engine = ref.read(recordingEngineProvider);
                 if (isPaused) {
-                  engine.resume();
+                  resumeRide(ref);
                 } else {
-                  engine.pause();
+                  pauseRide(ref);
                 }
               },
             ),
@@ -85,11 +85,13 @@ class RideHeaderBar extends ConsumerWidget {
               onPressed: () {
                 final engine = ref.read(recordingEngineProvider);
                 final lap = engine.markLap();
+                final avgPower = engine.avgPowerForLap(lap);
                 ScaffoldMessenger.of(context).showSnackBar(
                   SnackBar(
                     content: Text(
                       'Lap ${engine.lapCount} — '
-                      '${_formatDuration(lap.duration)}',
+                      '${_formatDuration(lap.duration)} — '
+                      'avg ${avgPower.value.round()} W',
                     ),
                     duration: const Duration(seconds: 2),
                     backgroundColor: const Color(0xFF333333),

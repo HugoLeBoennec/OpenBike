@@ -193,6 +193,24 @@ class RecordingEngine {
   }
 
   // ---------------------------------------------------------------------------
+  // Lap stats
+  // ---------------------------------------------------------------------------
+
+  /// Average power over [lap]'s reading range, for the last-lap summary.
+  Watts avgPowerForLap(Lap lap) {
+    if (_readings.isEmpty) return Watts.zero;
+    final start = lap.startIndex.clamp(0, _readings.length - 1);
+    final end = lap.endIndex.clamp(0, _readings.length - 1);
+    if (start > end) return Watts.zero;
+
+    final powers = [
+      for (var i = start; i <= end; i++) _readings[i].power?.value ?? 0,
+    ];
+    if (powers.isEmpty) return Watts.zero;
+    return Watts(powers.reduce((a, b) => a + b) / powers.length);
+  }
+
+  // ---------------------------------------------------------------------------
   // stop
   // ---------------------------------------------------------------------------
 

@@ -6,8 +6,8 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
 import '../../core/domain/entities/workout.dart';
-import '../../core/domain/entities/workout_step.dart';
 import '../state/providers.dart';
+import '../widgets/workout_mini_profile.dart';
 
 /// Workout library — lists imported workouts and allows importing new ones.
 ///
@@ -168,7 +168,7 @@ class _WorkoutTile extends StatelessWidget {
         leading: SizedBox(
           width: 48,
           height: 32,
-          child: _WorkoutMiniProfile(steps: workout.steps),
+          child: WorkoutMiniProfile(steps: workout.steps),
         ),
         title: Text(
           workout.name,
@@ -189,73 +189,3 @@ class _WorkoutTile extends StatelessWidget {
   }
 }
 
-// ---------------------------------------------------------------------------
-// Mini workout profile — tiny bar chart of power targets
-// ---------------------------------------------------------------------------
-
-class _WorkoutMiniProfile extends StatelessWidget {
-  const _WorkoutMiniProfile({required this.steps});
-  final List<WorkoutStep> steps;
-
-  @override
-  Widget build(BuildContext context) {
-    if (steps.isEmpty) return const SizedBox.shrink();
-    return CustomPaint(
-      painter: _MiniProfilePainter(steps),
-      size: const Size(48, 32),
-    );
-  }
-}
-
-class _MiniProfilePainter extends CustomPainter {
-  _MiniProfilePainter(this.steps);
-  final List<WorkoutStep> steps;
-
-  @override
-  void paint(Canvas canvas, Size size) {
-    if (steps.isEmpty) return;
-
-    final maxPower = steps.fold<double>(
-      0,
-      (prev, s) => s.powerTargetPercent > prev ? s.powerTargetPercent : prev,
-    );
-    if (maxPower <= 0) return;
-
-    final totalDur = steps.fold<int>(0, (s, step) => s + step.totalDurationSeconds);
-    if (totalDur <= 0) return;
-
-    double x = 0;
-    for (final step in steps) {
-      final w = (step.totalDurationSeconds / totalDur) * size.width;
-      final h = (step.powerTargetPercent / maxPower) * size.height;
-      final y = size.height - h;
-
-      final color = _stepColor(step.type);
-      canvas.drawRect(
-        Rect.fromLTWH(x, y, w.clamp(1, size.width), h),
-        Paint()..color = color,
-      );
-      x += w;
-    }
-  }
-
-  Color _stepColor(StepType type) {
-    switch (type) {
-      case StepType.warmup:
-        return Colors.blue;
-      case StepType.cooldown:
-        return Colors.blue;
-      case StepType.steadyState:
-        return Colors.green;
-      case StepType.interval:
-        return Colors.orange;
-      case StepType.freeRide:
-        return Colors.grey;
-      case StepType.ramp:
-        return Colors.teal;
-    }
-  }
-
-  @override
-  bool shouldRepaint(covariant _MiniProfilePainter old) => old.steps != steps;
-}

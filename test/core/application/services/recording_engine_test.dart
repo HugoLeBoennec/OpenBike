@@ -322,6 +322,50 @@ void main() {
       engine.resume();
       await engine.stop();
     });
+
+    test('avgPowerForLap averages power over the lap reading range', () async {
+      await engine.start();
+
+      // First lap: 3 readings at 100 W.
+      for (var i = 0; i < 3; i++) {
+        eventBus.fire(SensorEvent(
+          reading: SensorReading(
+            timestamp: DateTime.now(),
+            power: const Watts(100),
+          ),
+          deviceId: 'test',
+        ));
+        await Future<void>.delayed(const Duration(milliseconds: 1100));
+      }
+      final lap1 = engine.markLap();
+      expect(engine.avgPowerForLap(lap1).value, closeTo(100, 1));
+
+      // Second lap: 3 readings at 300 W — first lap's average must not
+      // shift once later readings are appended.
+      for (var i = 0; i < 3; i++) {
+        eventBus.fire(SensorEvent(
+          reading: SensorReading(
+            timestamp: DateTime.now(),
+            power: const Watts(300),
+          ),
+          deviceId: 'test',
+        ));
+        await Future<void>.delayed(const Duration(milliseconds: 1100));
+      }
+      final lap2 = engine.markLap();
+
+      expect(engine.avgPowerForLap(lap1).value, closeTo(100, 1));
+      expect(engine.avgPowerForLap(lap2).value, closeTo(300, 1));
+
+      await engine.stop();
+    });
+
+    test('avgPowerForLap returns zero when there are no readings', () async {
+      await engine.start();
+      final lap = engine.markLap();
+      expect(engine.avgPowerForLap(lap), Watts.zero);
+      await engine.stop();
+    });
   });
 
   // =========================================================================

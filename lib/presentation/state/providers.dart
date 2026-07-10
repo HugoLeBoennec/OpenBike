@@ -64,6 +64,10 @@ final themeModeProvider = StateProvider<String>((ref) {
   return ref.read(appPreferencesProvider).themeMode;
 });
 
+final autoPauseEnabledProvider = StateProvider<bool>((ref) {
+  return ref.read(appPreferencesProvider).autoPauseEnabled;
+});
+
 // ---------------------------------------------------------------------------
 // Database & storage
 // ---------------------------------------------------------------------------
@@ -522,6 +526,26 @@ final currentWorkoutProvider = StateProvider<Workout?>((ref) => null);
 
 final workoutListProvider = StateProvider<List<Workout>>((ref) => []);
 
+/// Drives a structured workout against the connected trainer. Mirrors the
+/// [routeSimulatorProvider] pattern: created lazily, requires a connected
+/// trainer, started explicitly from [RideScreen].
+final workoutEngineProvider = Provider<WorkoutEngine>((ref) {
+  final engine = WorkoutEngine(
+    trainerPort: ref.watch(trainerPortProvider),
+    eventBus: ref.watch(eventBusProvider),
+  );
+  ref.onDispose(engine.dispose);
+  return engine;
+});
+
+final workoutEngineStateProvider = StreamProvider<WorkoutEngineState>((ref) {
+  return ref.watch(workoutEngineProvider).stateStream;
+});
+
+final workoutProgressProvider = StreamProvider<WorkoutProgress>((ref) {
+  return ref.watch(workoutEngineProvider).progressStream;
+});
+
 // ---------------------------------------------------------------------------
 // User profile & zones
 // ---------------------------------------------------------------------------
@@ -588,6 +612,10 @@ final simulationStateProvider = StreamProvider<SimulationState>((ref) {
 final simulationProgressProvider = StreamProvider<SimulationProgress>((ref) {
   return ref.watch(routeSimulatorProvider).progressStream;
 });
+
+/// Toggles the OSM mini-map in [RouteProfilePane]. Off by default — it's a
+/// stretch feature (P3 task 3) layered on top of the elevation profile.
+final showMiniMapProvider = StateProvider<bool>((ref) => false);
 
 // ---------------------------------------------------------------------------
 // Export

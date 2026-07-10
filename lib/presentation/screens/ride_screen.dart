@@ -1,7 +1,13 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:go_router/go_router.dart';
 import 'package:wakelock_plus/wakelock_plus.dart';
 
+import '../../core/application/services/auto_pause_detector.dart';
+import '../../core/application/services/recording_engine.dart';
+import '../../core/events/app_event.dart';
 import '../models/data_field_type.dart';
 import '../models/ride_extra.dart';
 import '../state/providers.dart';
@@ -10,6 +16,9 @@ import '../widgets/data_field_grid.dart';
 import '../widgets/live_chart.dart';
 import '../widgets/power_gauge.dart';
 import '../widgets/ride_header_bar.dart';
+import '../widgets/ride_pause_actions.dart';
+import '../widgets/route_profile_pane.dart';
+import '../widgets/workout_hud_widget.dart';
 import '../widgets/zone_bar.dart';
 
 /// Main ride screen — Garmin Edge style dark UI with responsive layouts.
@@ -27,30 +36,144 @@ class RideScreen extends ConsumerStatefulWidget {
 }
 
 class _RideScreenState extends ConsumerState<RideScreen> {
+  StreamSubscription<SimulationEvent>? _simCompletionSub;
+  Timer? _autoPauseTimer;
+  final _autoPauseDetector = AutoPauseDetector();
+  bool _autoPauseDialogShowing = false;
+
   @override
   void initState() {
     super.initState();
     WakelockPlus.enable();
 
-    // If a workout was passed, set it as the current workout.
+    // If a workout was passed, set it as the current workout and start the
+    // ERG-driving engine against the connected trainer.
     if (widget.extra?.workout != null) {
       Future.microtask(() {
-        ref.read(currentWorkoutProvider.notifier).state = widget.extra!.workout;
+        final workout = widget.extra!.workout!;
+        ref.read(currentWorkoutProvider.notifier).state = workout;
+        final ftp = ref.read(ftpProvider);
+        ref.read(workoutEngineProvider).start(workout, ftp);
       });
     }
 
-    // If a route was passed, start the route simulator.
+    // If a route was passed, start the route simulator and watch for
+    // completion so we can prompt to stop & save.
     if (widget.extra?.route != null) {
       Future.microtask(() {
         ref.read(routeSimulatorProvider).start(widget.extra!.route!);
       });
+      _simCompletionSub =
+          ref.read(eventBusProvider).on<SimulationEvent>().listen((event) {
+        if (event is SimulationCompleted) _onRouteCompleted();
+      });
     }
+
+    _autoPauseTimer =
+        Timer.periodic(const Duration(seconds: 1), (_) => _checkAutoPause());
   }
 
   @override
   void dispose() {
+    _simCompletionSub?.cancel();
+    _autoPauseTimer?.cancel();
     WakelockPlus.disable();
     super.dispose();
+  }
+
+  // ─── Auto-pause ────────────────────────────────────────────────────
+
+  void _checkAutoPause() {
+    if (!ref.read(autoPauseEnabledProvider)) return;
+    if (_autoPauseDialogShowing) return;
+
+    final recState = ref.read(recordingStateProvider).valueOrNull;
+    if (recState != RecordingState.recording) return;
+
+    final speedKmh = ref.read(liveSpeedProvider).kmh;
+    final trigger = _autoPauseDetector.onSpeedSample(speedKmh, DateTime.now());
+    if (trigger) _showAutoPausePrompt();
+  }
+
+  Future<void> _showAutoPausePrompt() async {
+    _autoPauseDialogShowing = true;
+    final confirmed = await showDialog<bool>(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        title: const Text('Still riding?'),
+        content: const Text(
+          'Speed has been near zero for a while. Pause recording?',
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.of(ctx).pop(false),
+            child: const Text('Keep going'),
+          ),
+          TextButton(
+            onPressed: () => Navigator.of(ctx).pop(true),
+            child: const Text('Pause'),
+          ),
+        ],
+      ),
+    );
+    _autoPauseDialogShowing = false;
+    if (confirmed == true && mounted) {
+      pauseRide(ref);
+    }
+  }
+
+  // ─── Route completion ──────────────────────────────────────────────
+
+  void _onRouteCompleted() {
+    if (!mounted) return;
+    final recState = ref.read(recordingStateProvider).valueOrNull;
+    final isRecording = recState == RecordingState.recording ||
+        recState == RecordingState.paused;
+
+    showDialog<void>(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        title: const Text('Route completed!'),
+        content: Text(
+          isRecording
+              ? 'You reached the end of the route. Stop and save your ride?'
+              : 'You reached the end of the route.',
+        ),
+        actions: [
+          if (isRecording) ...[
+            TextButton(
+              onPressed: () => Navigator.of(ctx).pop(),
+              child: const Text('Keep riding'),
+            ),
+            TextButton(
+              onPressed: () {
+                Navigator.of(ctx).pop();
+                _stopAndSave();
+              },
+              child: const Text('Stop & Save',
+                  style: TextStyle(color: Colors.redAccent)),
+            ),
+          ] else
+            TextButton(
+              onPressed: () => Navigator.of(ctx).pop(),
+              child: const Text('OK'),
+            ),
+        ],
+      ),
+    );
+  }
+
+  Future<void> _stopAndSave() async {
+    final engine = ref.read(recordingEngineProvider);
+    final ftp = ref.read(ftpProvider);
+    final ride = await engine.stop(ftp: ftp);
+
+    WakelockPlus.disable();
+    ref.invalidate(rideHistoryProvider);
+
+    if (mounted) {
+      context.go('/ride/summary/${ride.id}');
+    }
   }
 
   @override
@@ -118,6 +241,18 @@ class _RideScreenState extends ConsumerState<RideScreen> {
     }
   }
 
+  // ─── Bottom pane — workout HUD / route profile / live chart ───────
+
+  /// Picks the bottom pane by mode: a workout HUD when a structured workout
+  /// is driving the ride, the GPX elevation profile for a route simulation,
+  /// or the default live power/HR chart otherwise.
+  Widget _buildBottomPane(BuildContext context, WidgetRef ref) {
+    final hasWorkout = ref.watch(currentWorkoutProvider) != null;
+    if (hasWorkout) return const WorkoutHudWidget();
+    if (widget.extra?.route != null) return const RouteProfilePane();
+    return const LiveChart();
+  }
+
   // ─── Portrait ──────────────────────────────────────────────────────
 
   Widget _buildPortraitLayout(
@@ -139,9 +274,9 @@ class _RideScreenState extends ConsumerState<RideScreen> {
             columns: config.columns,
           ),
         ),
-        const Expanded(
+        Expanded(
           flex: 2,
-          child: LiveChart(),
+          child: _buildBottomPane(context, ref),
         ),
       ],
     );
@@ -177,14 +312,14 @@ class _RideScreenState extends ConsumerState<RideScreen> {
             ],
           ),
         ),
-        // Right: chart + gauge
+        // Right: chart/HUD/profile + gauge
         Expanded(
           flex: 2,
           child: Column(
             children: [
-              const Expanded(
+              Expanded(
                 flex: 3,
-                child: LiveChart(),
+                child: _buildBottomPane(context, ref),
               ),
               if (config.showPowerGauge)
                 const Expanded(
@@ -228,14 +363,14 @@ class _RideScreenState extends ConsumerState<RideScreen> {
             ],
           ),
         ),
-        // Right: chart + gauge
+        // Right: chart/HUD/profile + gauge
         Expanded(
           flex: 2,
           child: Column(
             children: [
-              const Expanded(
+              Expanded(
                 flex: 3,
-                child: LiveChart(),
+                child: _buildBottomPane(context, ref),
               ),
               if (config.showPowerGauge)
                 const Expanded(

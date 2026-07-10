@@ -107,6 +107,18 @@ class SettingsScreen extends ConsumerWidget {
               ref.read(appPreferencesProvider).setThemeMode(next);
             },
           ),
+          _SettingsTile(
+            icon: Icons.pause_circle_outline,
+            title: 'Auto-pause',
+            value: ref.watch(autoPauseEnabledProvider) ? 'On' : 'Off',
+            valueColor:
+                ref.watch(autoPauseEnabledProvider) ? Colors.green : null,
+            onTap: () {
+              final next = !ref.read(autoPauseEnabledProvider);
+              ref.read(autoPauseEnabledProvider.notifier).state = next;
+              ref.read(appPreferencesProvider).setAutoPauseEnabled(next);
+            },
+          ),
 
           const SizedBox(height: 8),
 

@@ -58,6 +58,10 @@ dependencies:
   # Charts
   fl_chart: ^0.70.2
 
+  # Mini-map (route ride, stretch — behind a toggle, see P3-ride-experience.md)
+  flutter_map: ^7.0.2
+  latlong2: ^0.9.1
+
   # Preferences
   shared_preferences: ^2.3.4
 
