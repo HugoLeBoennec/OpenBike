@@ -18,6 +18,7 @@ import '../widgets/data_field_grid.dart';
 import '../widgets/live_chart.dart';
 import '../widgets/power_gauge.dart';
 import '../widgets/ride_header_bar.dart';
+import '../widgets/ride_keyboard_shortcuts.dart';
 import '../widgets/ride_pause_actions.dart';
 import '../widgets/route_profile_pane.dart';
 import '../widgets/workout_hud_widget.dart';
@@ -215,26 +216,30 @@ class _RideScreenState extends ConsumerState<RideScreen> {
       onPopInvokedWithResult: (didPop, _) {
         if (!didPop) _confirmExit(context);
       },
-      child: Scaffold(
-        backgroundColor: context.tokens.rideSurface,
-        body: SafeArea(
-          child: Column(
-            children: [
-              const ConnectionBanner(),
-              Expanded(
-                child: LayoutBuilder(
-                  builder: (context, constraints) {
-                    if (constraints.maxWidth >= 1200) {
-                      return _buildDesktopLayout(context, ref, constraints);
-                    } else if (constraints.maxWidth >= 600) {
-                      return _buildLandscapeLayout(context, ref, constraints);
-                    } else {
-                      return _buildPortraitLayout(context, ref, constraints);
-                    }
-                  },
+      child: RideKeyboardShortcuts(
+        child: Scaffold(
+          backgroundColor: context.tokens.rideSurface,
+          body: SafeArea(
+            child: Column(
+              children: [
+                const ConnectionBanner(),
+                Expanded(
+                  child: LayoutBuilder(
+                    builder: (context, constraints) {
+                      if (constraints.maxWidth >= 1200) {
+                        return _buildDesktopLayout(context, ref, constraints);
+                      } else if (constraints.maxWidth >= 600) {
+                        return _buildLandscapeLayout(
+                            context, ref, constraints);
+                      } else {
+                        return _buildPortraitLayout(
+                            context, ref, constraints);
+                      }
+                    },
+                  ),
                 ),
-              ),
-            ],
+              ],
+            ),
           ),
         ),
       ),
