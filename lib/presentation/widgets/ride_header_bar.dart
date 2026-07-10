@@ -6,6 +6,7 @@ import 'package:wakelock_plus/wakelock_plus.dart';
 import '../../core/application/services/recording_engine.dart';
 import '../../core/domain/entities/entities.dart';
 import '../state/providers.dart';
+import '../theme/app_theme.dart';
 import 'ride_pause_actions.dart';
 import 'sensor_role_labels.dart';
 
@@ -40,7 +41,7 @@ class RideHeaderBar extends ConsumerWidget {
 
     return Container(
       height: 56,
-      color: const Color(0xFF111111),
+      color: context.tokens.rideSurface,
       padding: const EdgeInsets.symmetric(horizontal: 16),
       child: Row(
         children: [
@@ -94,7 +95,7 @@ class RideHeaderBar extends ConsumerWidget {
                       'avg ${avgPower.value.round()} W',
                     ),
                     duration: const Duration(seconds: 2),
-                    backgroundColor: const Color(0xFF333333),
+                    backgroundColor: context.tokens.surfaceTier2,
                   ),
                 );
               },

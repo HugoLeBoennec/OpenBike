@@ -5,6 +5,7 @@ import 'package:go_router/go_router.dart';
 import '../../core/domain/entities/ride.dart';
 import '../../core/domain/value_objects/value_objects.dart';
 import '../state/providers.dart';
+import '../theme/app_theme.dart';
 import '../widgets/personal_records_panel.dart';
 
 /// Ride history list screen.
@@ -17,14 +18,13 @@ class HistoryScreen extends ConsumerWidget {
     final ftp = ref.watch(ftpProvider);
     final recordsAsync = ref.watch(personalRecordsProvider);
 
+    final tokens = context.tokens;
     return Scaffold(
-      backgroundColor: Colors.black,
       appBar: AppBar(
         title: const Text('History'),
-        backgroundColor: Colors.black,
         actions: [
           IconButton(
-            icon: const Icon(Icons.show_chart, color: Colors.white54),
+            icon: Icon(Icons.show_chart, color: tokens.textTertiary),
             tooltip: 'Trends',
             onPressed: () => context.go('/trends'),
           ),
@@ -36,25 +36,36 @@ class HistoryScreen extends ConsumerWidget {
           ref.invalidate(personalRecordsProvider);
         },
         child: ridesAsync.when(
-          loading: () => const Center(
-              child: CircularProgressIndicator(color: Colors.white30)),
+          loading: () => const Center(child: CircularProgressIndicator()),
           error: (e, _) => Center(
-              child:
-                  Text('Error: $e', style: const TextStyle(color: Colors.red))),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Text('Couldn\'t load history: $e',
+                    style: const TextStyle(color: Colors.red)),
+                const SizedBox(height: 8),
+                TextButton(
+                  onPressed: () => ref.invalidate(rideHistoryProvider),
+                  child: const Text('Retry'),
+                ),
+              ],
+            ),
+          ),
           data: (rides) {
             if (rides.isEmpty) {
               return ListView(
-                children: const [
-                  SizedBox(height: 120),
+                children: [
+                  const SizedBox(height: 120),
                   Center(
                     child: Column(
                       children: [
                         Icon(Icons.directions_bike,
-                            size: 48, color: Colors.white24),
-                        SizedBox(height: 16),
+                            size: 48, color: tokens.textDisabled),
+                        const SizedBox(height: 16),
                         Text(
                           'No rides yet.',
-                          style: TextStyle(color: Colors.white54, fontSize: 14),
+                          style:
+                              TextStyle(color: tokens.textTertiary, fontSize: 14),
                         ),
                       ],
                     ),
@@ -94,7 +105,7 @@ class HistoryScreen extends ConsumerWidget {
 // Ride tile
 // ---------------------------------------------------------------------------
 
-class _RideTile extends StatelessWidget {
+class _RideTile extends ConsumerWidget {
   const _RideTile({
     required this.ride,
     required this.ftp,
@@ -106,22 +117,24 @@ class _RideTile extends StatelessWidget {
   final VoidCallback onTap;
 
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context, WidgetRef ref) {
+    final formatter = ref.watch(unitFormatterProvider);
     final avgW = ride.averagePower.value.round();
     final np = ride.normalizedPower.value.round();
     final tss = ride.tss(ftp).round();
     final dur = _formatDuration(ride.activeDuration);
     final date = _formatDate(ride.startTime);
-    final dist = ride.totalDistance.km;
+    final dist = formatter.distanceValue(ride.totalDistance);
 
     // Intensity-based left border color
     final ifactor = ride.intensityFactor(ftp);
     final borderColor = _intensityColor(ifactor);
 
+    final tokens = context.tokens;
     return Container(
       margin: const EdgeInsets.symmetric(horizontal: 12, vertical: 3),
       decoration: BoxDecoration(
-        color: Colors.white.withValues(alpha: 0.05),
+        color: tokens.surfaceTier2,
         borderRadius: BorderRadius.circular(12),
         border: Border(
           left: BorderSide(color: borderColor, width: 4),
@@ -131,8 +144,7 @@ class _RideTile extends StatelessWidget {
         contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
         title: Text(
           date,
-          style:
-              const TextStyle(color: Colors.white, fontWeight: FontWeight.w600),
+          style: TextStyle(color: tokens.textPrimary, fontWeight: FontWeight.w600),
         ),
         subtitle: Padding(
           padding: const EdgeInsets.only(top: 4),
@@ -142,7 +154,8 @@ class _RideTile extends StatelessWidget {
               const SizedBox(width: 12),
               if (dist > 0) ...[
                 _MiniStat(
-                    value: dist.toStringAsFixed(1), label: 'km'),
+                    value: dist.toStringAsFixed(1),
+                    label: formatter.distanceUnit),
                 const SizedBox(width: 12),
               ],
               _MiniStat(value: '$avgW', label: 'W'),
@@ -162,8 +175,8 @@ class _RideTile extends StatelessWidget {
                 fontWeight: FontWeight.w700,
               ),
             ),
-            const Text('TSS',
-                style: TextStyle(color: Colors.white38, fontSize: 10)),
+            Text('TSS',
+                style: TextStyle(color: tokens.textDisabled, fontSize: 10)),
           ],
         ),
         onTap: onTap,
@@ -193,7 +206,7 @@ class _MiniStat extends StatelessWidget {
   Widget build(BuildContext context) {
     return Text(
       label.isEmpty ? value : '$value $label',
-      style: const TextStyle(color: Colors.white54, fontSize: 12),
+      style: TextStyle(color: context.tokens.textTertiary, fontSize: 12),
     );
   }
 }

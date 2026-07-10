@@ -11,6 +11,7 @@ import '../../core/domain/value_objects/value_objects.dart';
 import '../../infrastructure/files/gpx_parser.dart';
 import '../models/ride_extra.dart';
 import '../state/providers.dart';
+import '../theme/app_theme.dart';
 import '../widgets/ride_summary_widgets.dart';
 import '../widgets/workout_mini_profile.dart';
 
@@ -24,13 +25,11 @@ class HomeScreen extends ConsumerWidget {
     ref.watch(autoReconnectPairedRolesProvider);
 
     return Scaffold(
-      backgroundColor: Colors.black,
       appBar: AppBar(
         title: const Text('OpenBike'),
-        backgroundColor: Colors.black,
         actions: [
           IconButton(
-            icon: const Icon(Icons.settings, color: Colors.white54),
+            icon: Icon(Icons.settings, color: context.tokens.textTertiary),
             onPressed: () => context.go('/settings'),
           ),
         ],
@@ -109,47 +108,57 @@ class _DeviceStatusSection extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final device = ref.watch(trainerDeviceProvider);
+    final tokens = context.tokens;
 
     return InkWell(
       borderRadius: BorderRadius.circular(12),
       onTap: () => context.push('/scan'),
-      child: Container(
-        padding: const EdgeInsets.all(12),
-        decoration: BoxDecoration(
-          color: Colors.white.withValues(alpha: 0.05),
-          borderRadius: BorderRadius.circular(12),
-        ),
-        child: Row(
-          children: [
-            Icon(
-              Icons.bluetooth,
-              color: device != null ? Colors.green : Colors.white38,
-              size: 24,
-            ),
-            const SizedBox(width: 12),
-            Expanded(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  const Text('Devices',
-                      style: TextStyle(
-                          color: Colors.white,
-                          fontWeight: FontWeight.w600)),
-                  Text(
-                    device != null ? device.name : 'No device connected',
-                    style: const TextStyle(color: Colors.white54, fontSize: 12),
-                  ),
-                ],
+      child: Semantics(
+        label: device != null
+            ? 'Devices, connected to ${device.name}'
+            : 'Devices, no device connected',
+        button: true,
+        child: Container(
+          padding: const EdgeInsets.all(12),
+          decoration: BoxDecoration(
+            color: tokens.surfaceTier2,
+            borderRadius: BorderRadius.circular(12),
+          ),
+          child: Row(
+            children: [
+              Icon(
+                Icons.bluetooth,
+                color: device != null ? Colors.green : tokens.textDisabled,
+                size: 24,
               ),
-            ),
-            Icon(
-              device != null ? Icons.circle : Icons.circle_outlined,
-              color: device != null ? Colors.green : Colors.red.withValues(alpha: 0.5),
-              size: 10,
-            ),
-            const SizedBox(width: 8),
-            const Icon(Icons.chevron_right, color: Colors.white24),
-          ],
+              const SizedBox(width: 12),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text('Devices',
+                        style: TextStyle(
+                            color: tokens.textPrimary,
+                            fontWeight: FontWeight.w600)),
+                    Text(
+                      device != null ? device.name : 'No device connected',
+                      style:
+                          TextStyle(color: tokens.textTertiary, fontSize: 12),
+                    ),
+                  ],
+                ),
+              ),
+              Icon(
+                device != null ? Icons.circle : Icons.circle_outlined,
+                color: device != null
+                    ? Colors.green
+                    : Colors.red.withValues(alpha: 0.5),
+                size: 10,
+              ),
+              const SizedBox(width: 8),
+              Icon(Icons.chevron_right, color: tokens.textDisabled),
+            ],
+          ),
         ),
       ),
     );
@@ -200,8 +209,9 @@ class _ActionCard extends StatelessWidget {
                             fontWeight: FontWeight.w700)),
                     const SizedBox(height: 2),
                     Text(subtitle,
-                        style:
-                            const TextStyle(color: Colors.white54, fontSize: 13)),
+                        style: TextStyle(
+                            color: context.tokens.textTertiary,
+                            fontSize: 13)),
                   ],
                 ),
               ),
@@ -230,9 +240,9 @@ class _RecentActivitiesSection extends ConsumerWidget {
         Row(
           mainAxisAlignment: MainAxisAlignment.spaceBetween,
           children: [
-            const Text('Recent Activities',
+            Text('Recent Activities',
                 style: TextStyle(
-                    color: Colors.white54,
+                    color: context.tokens.textTertiary,
                     fontSize: 11,
                     fontWeight: FontWeight.w600,
                     letterSpacing: 1.2)),
@@ -249,17 +259,27 @@ class _RecentActivitiesSection extends ConsumerWidget {
           loading: () => const Center(
               child: Padding(
             padding: EdgeInsets.all(16),
-            child: CircularProgressIndicator(color: Colors.white30),
+            child: CircularProgressIndicator(),
           )),
-          error: (e, _) => Text('Error: $e',
-              style: const TextStyle(color: Colors.red)),
+          error: (e, _) => Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text('Couldn\'t load recent activities: $e',
+                  style: const TextStyle(color: Colors.red, fontSize: 13)),
+              TextButton(
+                onPressed: () => ref.invalidate(rideHistoryProvider),
+                child: const Text('Retry'),
+              ),
+            ],
+          ),
           data: (rides) {
             if (rides.isEmpty) {
-              return const Padding(
-                padding: EdgeInsets.symmetric(vertical: 24),
+              return Padding(
+                padding: const EdgeInsets.symmetric(vertical: 24),
                 child: Center(
                   child: Text('No rides yet.',
-                      style: TextStyle(color: Colors.white38, fontSize: 13)),
+                      style: TextStyle(
+                          color: context.tokens.textDisabled, fontSize: 13)),
                 ),
               );
             }
@@ -277,26 +297,31 @@ class _RecentActivitiesSection extends ConsumerWidget {
   }
 }
 
-class _RecentRideTile extends StatelessWidget {
+class _RecentRideTile extends ConsumerWidget {
   const _RecentRideTile({required this.ride, required this.ftp});
   final Ride ride;
   final Watts ftp;
 
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context, WidgetRef ref) {
+    final formatter = ref.watch(unitFormatterProvider);
     final avgW = ride.averagePower.value.round();
     final np = ride.normalizedPower.value.round();
     final tss = ride.tss(ftp).round();
     final dur = formatDuration(ride.activeDuration);
     final date = formatDate(ride.startTime);
+    final dist = ride.totalDistance.meters > 0
+        ? '${formatter.distance(ride.totalDistance)}  •  '
+        : '';
 
     final ifactor = ride.intensityFactor(ftp);
     final borderColor = _intensityColor(ifactor);
 
+    final tokens = context.tokens;
     return Padding(
       padding: const EdgeInsets.only(bottom: 6),
       child: Material(
-        color: Colors.white.withValues(alpha: 0.05),
+        color: tokens.surfaceTier2,
         borderRadius: BorderRadius.circular(12),
         child: InkWell(
           borderRadius: BorderRadius.circular(12),
@@ -316,13 +341,13 @@ class _RecentRideTile extends StatelessWidget {
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
                       Text(date,
-                          style: const TextStyle(
-                              color: Colors.white,
+                          style: TextStyle(
+                              color: tokens.textPrimary,
                               fontWeight: FontWeight.w600)),
                       const SizedBox(height: 4),
-                      Text('$dur  •  $avgW W  •  NP $np',
-                          style: const TextStyle(
-                              color: Colors.white54, fontSize: 12)),
+                      Text('$dur  •  $dist$avgW W  •  NP $np',
+                          style: TextStyle(
+                              color: tokens.textTertiary, fontSize: 12)),
                     ],
                   ),
                 ),
@@ -333,9 +358,9 @@ class _RecentRideTile extends StatelessWidget {
                             color: borderColor,
                             fontSize: 18,
                             fontWeight: FontWeight.w700)),
-                    const Text('TSS',
+                    Text('TSS',
                         style:
-                            TextStyle(color: Colors.white38, fontSize: 10)),
+                            TextStyle(color: tokens.textDisabled, fontSize: 10)),
                   ],
                 ),
               ],
@@ -383,9 +408,9 @@ class _TodayCard extends ConsumerWidget {
         return Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            const Text('TODAY',
+            Text('TODAY',
                 style: TextStyle(
-                    color: Colors.white54,
+                    color: context.tokens.textTertiary,
                     fontSize: 11,
                     fontWeight: FontWeight.w600,
                     letterSpacing: 1.2)),
@@ -410,6 +435,7 @@ class _TodayTile extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final isDone = scheduled.completedRideId != null;
+    final tokens = context.tokens;
     return Padding(
       padding: const EdgeInsets.only(bottom: 6),
       child: Material(
@@ -429,19 +455,19 @@ class _TodayTile extends StatelessWidget {
                     child: WorkoutMiniProfile(steps: workout!.steps),
                   )
                 else
-                  const Icon(Icons.fitness_center, color: Colors.white38),
+                  Icon(Icons.fitness_center, color: tokens.textDisabled),
                 const SizedBox(width: 12),
                 Expanded(
                   child: Text(
                     workout?.name ?? 'Scheduled workout',
-                    style: const TextStyle(
-                        color: Colors.white, fontWeight: FontWeight.w600),
+                    style: TextStyle(
+                        color: tokens.textPrimary, fontWeight: FontWeight.w600),
                   ),
                 ),
                 if (isDone)
                   const Icon(Icons.check_circle, color: Colors.green, size: 20)
                 else
-                  const Icon(Icons.chevron_right, color: Colors.white24),
+                  Icon(Icons.chevron_right, color: tokens.textDisabled),
               ],
             ),
           ),
@@ -479,7 +505,7 @@ class _FitnessSparkline extends ConsumerWidget {
           child: Container(
             padding: const EdgeInsets.all(16),
             decoration: BoxDecoration(
-              color: Colors.white.withValues(alpha: 0.05),
+              color: context.tokens.surfaceTier2,
               borderRadius: BorderRadius.circular(12),
             ),
             child: Row(
@@ -547,7 +573,7 @@ class _FitnessNumber extends StatelessWidget {
       children: [
         Text(value.round().toString(),
             style: TextStyle(color: color, fontSize: 20, fontWeight: FontWeight.w700)),
-        Text(label, style: const TextStyle(color: Colors.white54, fontSize: 10)),
+        Text(label, style: TextStyle(color: context.tokens.textTertiary, fontSize: 10)),
       ],
     );
   }

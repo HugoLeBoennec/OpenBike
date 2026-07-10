@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 
+import '../theme/app_theme.dart';
+
 /// Reusable number input dialog for editing profile values.
 ///
 /// Returns the new value as a [double], or `null` if cancelled.
@@ -87,9 +89,10 @@ class _EditValueDialogState extends State<_EditValueDialog> {
 
   @override
   Widget build(BuildContext context) {
+    final tokens = context.tokens;
     return AlertDialog(
-      backgroundColor: const Color(0xFF1A1A1A),
-      title: Text(widget.title, style: const TextStyle(color: Colors.white)),
+      backgroundColor: tokens.surfaceTier2,
+      title: Text(widget.title, style: TextStyle(color: tokens.textPrimary)),
       content: Column(
         mainAxisSize: MainAxisSize.min,
         children: [
@@ -104,14 +107,13 @@ class _EditValueDialogState extends State<_EditValueDialog> {
                 widget.allowDecimals ? RegExp(r'[\d.]') : RegExp(r'\d'),
               ),
             ],
-            style: const TextStyle(color: Colors.white, fontSize: 24),
+            style: TextStyle(color: tokens.textPrimary, fontSize: 24),
             decoration: InputDecoration(
               suffixText: widget.unit,
-              suffixStyle:
-                  const TextStyle(color: Colors.white38, fontSize: 16),
+              suffixStyle: TextStyle(color: tokens.textDisabled, fontSize: 16),
               errorText: _error,
-              enabledBorder: const UnderlineInputBorder(
-                borderSide: BorderSide(color: Colors.white24),
+              enabledBorder: UnderlineInputBorder(
+                borderSide: BorderSide(color: tokens.textDisabled),
               ),
               focusedBorder: const UnderlineInputBorder(
                 borderSide: BorderSide(color: Colors.blue),

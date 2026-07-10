@@ -2,9 +2,11 @@ import 'package:flutter/material.dart' hide Route;
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../core/application/services/route_simulator.dart';
+import '../../core/domain/entities/power_zone.dart';
 import '../../core/domain/entities/route.dart';
 import '../../core/domain/entities/route_point.dart';
 import '../state/providers.dart';
+import '../theme/app_theme.dart';
 import 'gpx_profile_widget.dart';
 import 'route_mini_map.dart';
 
@@ -18,7 +20,7 @@ class RouteProfilePane extends ConsumerWidget {
     final route = ref.watch(routeSimulatorProvider).currentRoute;
     if (route == null) {
       return Container(
-        color: const Color(0xFF0A0A0A),
+        color: context.tokens.rideSurfaceDeep,
         child: const Center(
           child: Text('No route loaded', style: TextStyle(color: Colors.grey)),
         ),
@@ -44,13 +46,13 @@ class _RouteProfileContent extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final grade = progress?.grade.percent ?? route.points.first.grade.percent;
-    final distRemaining = progress != null
-        ? progress!.distanceRemaining.km
-        : route.totalDistance.km;
+    final distanceRemaining =
+        progress != null ? progress!.distanceRemaining : route.totalDistance;
+    final formatter = ref.watch(unitFormatterProvider);
     final showMiniMap = ref.watch(showMiniMapProvider);
 
     return Container(
-      color: const Color(0xFF0A0A0A),
+      color: context.tokens.rideSurfaceDeep,
       padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 6),
       child: Column(
         children: [
@@ -64,7 +66,7 @@ class _RouteProfileContent extends ConsumerWidget {
               Row(
                 children: [
                   Text(
-                    '${distRemaining.toStringAsFixed(1)} km left',
+                    '${formatter.distance(distanceRemaining)} left',
                     style: const TextStyle(color: Colors.white54, fontSize: 13),
                   ),
                   const SizedBox(width: 4),
@@ -75,8 +77,7 @@ class _RouteProfileContent extends ConsumerWidget {
                       size: 18,
                     ),
                     tooltip: showMiniMap ? 'Show elevation profile' : 'Show map',
-                    padding: EdgeInsets.zero,
-                    constraints: const BoxConstraints(),
+                    constraints: const BoxConstraints(minWidth: 48, minHeight: 48),
                     onPressed: () => ref
                         .read(showMiniMapProvider.notifier)
                         .state = !showMiniMap,
@@ -167,15 +168,16 @@ class _UpcomingGradientStrip extends StatelessWidget {
     return points[lo].grade.percent;
   }
 
-  /// Same 7-step spectrum as [PowerZone.coggan7] for visual consistency
-  /// between the power zone bar and the upcoming-gradient strip.
+  /// Same [PowerZone.zoneColorPalette] spectrum as the power zone bar, for
+  /// visual consistency between power zones and the upcoming-gradient strip.
   Color _gradeColor(double percent) {
-    if (percent < 0) return const Color(0xFF9E9E9E); // descent
-    if (percent < 3) return const Color(0xFF2196F3);
-    if (percent < 6) return const Color(0xFF4CAF50);
-    if (percent < 9) return const Color(0xFFFFEB3B);
-    if (percent < 12) return const Color(0xFFFF9800);
-    if (percent < 15) return const Color(0xFFF44336);
-    return const Color(0xFF9C27B0);
+    final palette = PowerZone.zoneColorPalette;
+    if (percent < 0) return palette[0]; // descent
+    if (percent < 3) return palette[1];
+    if (percent < 6) return palette[2];
+    if (percent < 9) return palette[3];
+    if (percent < 12) return palette[4];
+    if (percent < 15) return palette[5];
+    return palette[6];
   }
 }

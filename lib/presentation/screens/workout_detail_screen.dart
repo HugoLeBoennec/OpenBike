@@ -12,6 +12,7 @@ import '../../core/domain/entities/workout_step.dart';
 import '../../infrastructure/files/zwo_parser.dart';
 import '../models/ride_extra.dart';
 import '../state/providers.dart';
+import '../theme/app_theme.dart';
 
 /// Detail view for a single workout — power profile chart, stats, step list.
 class WorkoutDetailScreen extends ConsumerWidget {
@@ -24,14 +25,12 @@ class WorkoutDetailScreen extends ConsumerWidget {
     final workouts = ref.watch(workoutListProvider);
     if (workoutIndex < 0 || workoutIndex >= workouts.length) {
       return Scaffold(
-        backgroundColor: Colors.black,
         appBar: AppBar(
           title: const Text('Workout'),
-          backgroundColor: Colors.black,
         ),
-        body: const Center(
+        body: Center(
           child: Text('Workout not found.',
-              style: TextStyle(color: Colors.white54)),
+              style: TextStyle(color: context.tokens.textTertiary)),
         ),
       );
     }
@@ -41,10 +40,8 @@ class WorkoutDetailScreen extends ConsumerWidget {
     final stepCount = workout.steps.length;
 
     return Scaffold(
-      backgroundColor: Colors.black,
       appBar: AppBar(
         title: Text(workout.name),
-        backgroundColor: Colors.black,
         actions: [
           IconButton(
             key: const Key('shareZwoButton'),
@@ -88,16 +85,16 @@ class WorkoutDetailScreen extends ConsumerWidget {
           if (workout.description != null && workout.description!.isNotEmpty) ...[
             Text(
               workout.description!,
-              style: const TextStyle(color: Colors.white70, fontSize: 13),
+              style: TextStyle(color: context.tokens.textSecondary, fontSize: 13),
             ),
             const SizedBox(height: 16),
           ],
 
           // Steps list
-          const Text(
+          Text(
             'STEPS',
             style: TextStyle(
-              color: Colors.white54,
+              color: context.tokens.textTertiary,
               fontSize: 11,
               fontWeight: FontWeight.w600,
               letterSpacing: 1.2,
@@ -110,10 +107,10 @@ class WorkoutDetailScreen extends ConsumerWidget {
           // Text events
           if (workout.textEvents.isNotEmpty) ...[
             const SizedBox(height: 24),
-            const Text(
+            Text(
               'TEXT EVENTS',
               style: TextStyle(
-                color: Colors.white54,
+                color: context.tokens.textTertiary,
                 fontSize: 11,
                 fontWeight: FontWeight.w600,
                 letterSpacing: 1.2,
@@ -125,7 +122,7 @@ class WorkoutDetailScreen extends ConsumerWidget {
                 padding: const EdgeInsets.only(bottom: 4),
                 child: Text(
                   '${_formatSeconds(event.offsetSeconds)} — ${event.message}',
-                  style: const TextStyle(color: Colors.white60, fontSize: 13),
+                  style: TextStyle(color: context.tokens.textSecondary, fontSize: 13),
                 ),
               ),
           ],
@@ -224,7 +221,7 @@ class _PowerProfileChart extends StatelessWidget {
               reservedSize: 36,
               getTitlesWidget: (value, _) => Text(
                 '${value.toInt()}%',
-                style: const TextStyle(color: Colors.white30, fontSize: 10),
+                style: TextStyle(color: context.tokens.textDisabled, fontSize: 10),
               ),
             ),
           ),
@@ -270,17 +267,18 @@ class _StatChip extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final tokens = context.tokens;
     return Column(
       children: [
         Text(value,
-            style: const TextStyle(
-                color: Colors.white,
+            style: TextStyle(
+                color: tokens.textPrimary,
                 fontSize: 20,
                 fontWeight: FontWeight.w700)),
         const SizedBox(height: 2),
         Text(label,
-            style: const TextStyle(
-                color: Colors.white54,
+            style: TextStyle(
+                color: tokens.textTertiary,
                 fontSize: 10,
                 fontWeight: FontWeight.w600,
                 letterSpacing: 1)),
@@ -300,11 +298,12 @@ class _StepRow extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final tokens = context.tokens;
     return Container(
       margin: const EdgeInsets.only(bottom: 4),
       padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
       decoration: BoxDecoration(
-        color: Colors.white.withValues(alpha: 0.05),
+        color: tokens.surfaceTier2,
         borderRadius: BorderRadius.circular(8),
       ),
       child: Row(
@@ -324,14 +323,13 @@ class _StepRow extends StatelessWidget {
               children: [
                 Text(
                   _stepLabel(step.type),
-                  style: const TextStyle(
-                      color: Colors.white, fontWeight: FontWeight.w600),
+                  style: TextStyle(
+                      color: tokens.textPrimary, fontWeight: FontWeight.w600),
                 ),
                 Text(
                   '${_formatSeconds(step.totalDurationSeconds)} • ${step.powerTargetPercent.toStringAsFixed(0)}% FTP'
                   '${step.repeat != null && step.repeat! > 1 ? ' × ${step.repeat}' : ''}',
-                  style:
-                      const TextStyle(color: Colors.white54, fontSize: 12),
+                  style: TextStyle(color: tokens.textTertiary, fontSize: 12),
                 ),
               ],
             ),
@@ -339,7 +337,7 @@ class _StepRow extends StatelessWidget {
           if (step.cadenceTarget != null)
             Text(
               '${step.cadenceTarget} rpm',
-              style: const TextStyle(color: Colors.white38, fontSize: 12),
+              style: TextStyle(color: tokens.textDisabled, fontSize: 12),
             ),
         ],
       ),

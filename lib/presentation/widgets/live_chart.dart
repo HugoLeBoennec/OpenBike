@@ -7,6 +7,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../core/domain/entities/power_zone.dart';
 import '../../core/domain/value_objects/value_objects.dart';
 import '../state/providers.dart';
+import '../theme/app_theme.dart';
 
 /// Real-time area chart showing power (zone-colored) with optional HR overlay.
 ///
@@ -35,7 +36,7 @@ class LiveChart extends ConsumerWidget {
 
     if (displayPower.isEmpty) {
       return Container(
-        color: const Color(0xFF0A0A0A),
+        color: context.tokens.rideSurfaceDeep,
         child: const Center(
           child: Text(
             'Start riding to see power data',
@@ -46,7 +47,7 @@ class LiveChart extends ConsumerWidget {
     }
 
     return Container(
-      color: const Color(0xFF0A0A0A),
+      color: context.tokens.rideSurfaceDeep,
       padding: const EdgeInsets.only(top: 8, right: 8, bottom: 4),
       child: LineChart(
         LineChartData(
@@ -60,7 +61,7 @@ class LiveChart extends ConsumerWidget {
             drawVerticalLine: false,
             horizontalInterval: ftp.value > 0 ? ftp.value / 2 : 50,
             getDrawingHorizontalLine: (_) => FlLine(
-              color: const Color(0xFF222222),
+              color: context.tokens.rideSurfaceLine,
               strokeWidth: 0.5,
             ),
           ),

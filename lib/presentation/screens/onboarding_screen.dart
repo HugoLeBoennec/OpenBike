@@ -2,13 +2,23 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
+import '../../core/domain/entities/paired_devices.dart';
+import '../../core/domain/entities/trainer_device.dart';
 import '../../core/domain/entities/user_profile.dart';
 import '../../core/domain/value_objects/value_objects.dart';
 import '../../infrastructure/ble/ble_transport.dart';
+import '../format/unit_formatter.dart';
 import '../state/providers.dart';
+import '../theme/app_theme.dart';
 import '../widgets/edit_value_dialog.dart';
 
-/// First-run onboarding — 5-page flow.
+/// First-run onboarding — 6-page flow: welcome, profile, units & body,
+/// sensor scan, connection test, ready.
+///
+/// Every page after Welcome exposes a "Skip setup" action that saves
+/// whatever defaults are set so far and lands on Home immediately, per P7's
+/// "skippable path" requirement — the user is never forced through the
+/// whole flow to reach the app.
 class OnboardingScreen extends ConsumerStatefulWidget {
   const OnboardingScreen({super.key});
 
@@ -17,12 +27,18 @@ class OnboardingScreen extends ConsumerStatefulWidget {
 }
 
 class _OnboardingScreenState extends ConsumerState<OnboardingScreen> {
+  static const _pageCount = 6;
+
   final _pageController = PageController();
   int _currentPage = 0;
 
-  // Profile values (defaults).
+  // Profile values (defaults matching the pre-onboarding fallback profile —
+  // see settings_screen.dart's _defaultProfile()).
   double _ftp = 200;
   double _weight = 75;
+  double _height = 178;
+  int _maxHr = 190;
+  UnitSystem _unitSystem = UnitSystem.metric;
 
   // Whether user connected a device during onboarding.
   bool _deviceConnected = false;
@@ -34,7 +50,7 @@ class _OnboardingScreenState extends ConsumerState<OnboardingScreen> {
   }
 
   void _nextPage() {
-    if (_currentPage < 4) {
+    if (_currentPage < _pageCount - 1) {
       _pageController.nextPage(
         duration: const Duration(milliseconds: 300),
         curve: Curves.easeInOut,
@@ -42,33 +58,64 @@ class _OnboardingScreenState extends ConsumerState<OnboardingScreen> {
     }
   }
 
-  void _finish() {
-    // Save profile.
-    final profile = UserProfile(
+  UserProfile _buildProfile() {
+    return UserProfile(
       ftp: Watts(_ftp),
       weight: _weight,
-      height: 178,
+      height: _height,
       restingHr: const HeartRate(60),
-      maxHr: const HeartRate(190),
+      maxHr: HeartRate(_maxHr),
       name: '',
     );
+  }
+
+  Future<void> _saveAndComplete() async {
+    final profile = _buildProfile();
     ref.read(userProfileProvider.notifier).state = profile;
     ref.read(storageProvider).saveProfile(profile);
 
-    // Mark onboarding complete.
-    ref.read(appPreferencesProvider).setOnboardingCompleted(true);
+    final unitValue = _unitSystem == UnitSystem.imperial ? 'imperial' : 'metric';
+    ref.read(unitSystemProvider.notifier).state = unitValue;
+    await ref.read(appPreferencesProvider).setUnitSystem(unitValue);
 
-    // Navigate to ride screen.
-    context.go('/ride');
+    await ref.read(appPreferencesProvider).setOnboardingCompleted(true);
+  }
+
+  /// "I'll set up later" — saves whatever defaults are set so far and lands
+  /// on Home immediately, from any page in the flow.
+  Future<void> _skipToHome() async {
+    await _saveAndComplete();
+    if (mounted) context.go('/');
+  }
+
+  Future<void> _finish() async {
+    await _saveAndComplete();
+    if (mounted) context.go('/');
   }
 
   @override
   Widget build(BuildContext context) {
+    final tokens = context.tokens;
     return Scaffold(
-      backgroundColor: Colors.black,
+      backgroundColor: tokens.surfaceTier0,
       body: SafeArea(
         child: Column(
           children: [
+            if (_currentPage > 0)
+              Align(
+                alignment: Alignment.topRight,
+                child: Padding(
+                  padding: const EdgeInsets.only(right: 8, top: 4),
+                  child: TextButton(
+                    key: const Key('onboardingSkipButton'),
+                    onPressed: _skipToHome,
+                    child: Text("I'll set up later",
+                        style: TextStyle(color: tokens.textTertiary)),
+                  ),
+                ),
+              )
+            else
+              const SizedBox(height: 48),
             Expanded(
               child: PageView(
                 controller: _pageController,
@@ -77,6 +124,7 @@ class _OnboardingScreenState extends ConsumerState<OnboardingScreen> {
                 children: [
                   _buildWelcomePage(),
                   _buildProfilePage(),
+                  _buildUnitsAndBodyPage(),
                   _buildScanPage(),
                   _buildConnectionTestPage(),
                   _buildReadyPage(),
@@ -85,7 +133,7 @@ class _OnboardingScreenState extends ConsumerState<OnboardingScreen> {
             ),
             Padding(
               padding: const EdgeInsets.only(bottom: 16),
-              child: _PageDots(count: 5, current: _currentPage),
+              child: _PageDots(count: _pageCount, current: _currentPage),
             ),
           ],
         ),
@@ -96,6 +144,7 @@ class _OnboardingScreenState extends ConsumerState<OnboardingScreen> {
   // ─── Page 1: Welcome ──────────────────────────────────────────────────
 
   Widget _buildWelcomePage() {
+    final tokens = context.tokens;
     return Padding(
       padding: const EdgeInsets.symmetric(horizontal: 32),
       child: Column(
@@ -107,18 +156,18 @@ class _OnboardingScreenState extends ConsumerState<OnboardingScreen> {
             color: Colors.deepOrange,
           ),
           const SizedBox(height: 32),
-          const Text(
+          Text(
             'OpenBike',
             style: TextStyle(
-              color: Colors.white,
+              color: tokens.textPrimary,
               fontSize: 36,
               fontWeight: FontWeight.bold,
             ),
           ),
           const SizedBox(height: 12),
-          const Text(
+          Text(
             'Open-source indoor cycling',
-            style: TextStyle(color: Colors.white54, fontSize: 16),
+            style: TextStyle(color: tokens.textTertiary, fontSize: 16),
           ),
           const SizedBox(height: 48),
           SizedBox(
@@ -133,6 +182,13 @@ class _OnboardingScreenState extends ConsumerState<OnboardingScreen> {
                   style: TextStyle(fontSize: 16)),
             ),
           ),
+          const SizedBox(height: 12),
+          TextButton(
+            key: const Key('welcomeSkipButton'),
+            onPressed: _skipToHome,
+            child: Text("I'll set up later",
+                style: TextStyle(color: tokens.textTertiary)),
+          ),
         ],
       ),
     );
@@ -141,29 +197,31 @@ class _OnboardingScreenState extends ConsumerState<OnboardingScreen> {
   // ─── Page 2: Profile Setup ────────────────────────────────────────────
 
   Widget _buildProfilePage() {
+    final tokens = context.tokens;
     return Padding(
       padding: const EdgeInsets.symmetric(horizontal: 32),
       child: Column(
         mainAxisAlignment: MainAxisAlignment.center,
         children: [
-          const Icon(Icons.person_outline, size: 64, color: Colors.white54),
+          Icon(Icons.person_outline, size: 64, color: tokens.textTertiary),
           const SizedBox(height: 16),
-          const Text(
+          Text(
             'Your Profile',
             style: TextStyle(
-              color: Colors.white,
+              color: tokens.textPrimary,
               fontSize: 24,
               fontWeight: FontWeight.bold,
             ),
           ),
           const SizedBox(height: 8),
-          const Text(
+          Text(
             'These values help calculate power zones\nand training metrics.',
             textAlign: TextAlign.center,
-            style: TextStyle(color: Colors.white54, fontSize: 14),
+            style: TextStyle(color: tokens.textTertiary, fontSize: 14),
           ),
           const SizedBox(height: 32),
           _ProfileField(
+            key: const Key('onboardingFtpField'),
             icon: Icons.bolt,
             label: 'FTP',
             value: '${_ftp.round()} W',
@@ -184,9 +242,10 @@ class _OnboardingScreenState extends ConsumerState<OnboardingScreen> {
           ),
           const SizedBox(height: 12),
           _ProfileField(
+            key: const Key('onboardingWeightField'),
             icon: Icons.monitor_weight_outlined,
             label: 'Weight',
-            value: '${_weight.toStringAsFixed(1)} kg',
+            value: UnitFormatter(_unitSystem).weightKg(_weight),
             description: 'Used for power-to-weight and simulation accuracy.',
             onTap: () async {
               final v = await showEditValueDialog(
@@ -217,9 +276,111 @@ class _OnboardingScreenState extends ConsumerState<OnboardingScreen> {
     );
   }
 
-  // ─── Page 3: Sensor Scan ──────────────────────────────────────────────
+  // ─── Page 3: Units & Body ─────────────────────────────────────────────
+
+  Widget _buildUnitsAndBodyPage() {
+    final tokens = context.tokens;
+    final formatter = UnitFormatter(_unitSystem);
+    return Padding(
+      padding: const EdgeInsets.symmetric(horizontal: 32),
+      child: Column(
+        mainAxisAlignment: MainAxisAlignment.center,
+        children: [
+          Icon(Icons.straighten, size: 64, color: tokens.textTertiary),
+          const SizedBox(height: 16),
+          Text(
+            'Units & Body',
+            style: TextStyle(
+              color: tokens.textPrimary,
+              fontSize: 24,
+              fontWeight: FontWeight.bold,
+            ),
+          ),
+          const SizedBox(height: 8),
+          Text(
+            'Optional — height and max heart rate refine your zones. '
+            'You can change these anytime in Settings.',
+            textAlign: TextAlign.center,
+            style: TextStyle(color: tokens.textTertiary, fontSize: 14),
+          ),
+          const SizedBox(height: 24),
+          SegmentedButton<UnitSystem>(
+            key: const Key('onboardingUnitSystemSelector'),
+            segments: const [
+              ButtonSegment(
+                value: UnitSystem.metric,
+                label: Text('Metric (km)'),
+              ),
+              ButtonSegment(
+                value: UnitSystem.imperial,
+                label: Text('Imperial (mi)'),
+              ),
+            ],
+            selected: {_unitSystem},
+            onSelectionChanged: (selection) =>
+                setState(() => _unitSystem = selection.first),
+          ),
+          const SizedBox(height: 16),
+          _ProfileField(
+            key: const Key('onboardingHeightField'),
+            icon: Icons.height,
+            label: 'Height',
+            value: formatter.heightCm(_height),
+            description: 'Optional — used for aerodynamic drag estimation.',
+            onTap: () async {
+              final v = await showEditValueDialog(
+                context: context,
+                title: 'Height',
+                currentValue: _height,
+                unit: 'cm',
+                min: 100,
+                max: 230,
+                allowDecimals: false,
+              );
+              if (v != null) setState(() => _height = v);
+            },
+          ),
+          const SizedBox(height: 12),
+          _ProfileField(
+            key: const Key('onboardingMaxHrField'),
+            icon: Icons.favorite,
+            label: 'Max Heart Rate',
+            value: '$_maxHr bpm',
+            description: 'Optional — used for heart-rate zone calculations.',
+            onTap: () async {
+              final v = await showEditValueDialog(
+                context: context,
+                title: 'Max Heart Rate',
+                currentValue: _maxHr.toDouble(),
+                unit: 'bpm',
+                min: 120,
+                max: 230,
+                allowDecimals: false,
+              );
+              if (v != null) setState(() => _maxHr = v.round());
+            },
+          ),
+          const SizedBox(height: 32),
+          SizedBox(
+            width: double.infinity,
+            child: FilledButton(
+              onPressed: _nextPage,
+              style: FilledButton.styleFrom(
+                backgroundColor: Colors.deepOrange,
+                padding: const EdgeInsets.symmetric(vertical: 16),
+              ),
+              child: const Text('Continue', style: TextStyle(fontSize: 16)),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  // ─── Page 4: Sensor Scan ──────────────────────────────────────────────
 
   Widget _buildScanPage() {
+    final tokens = context.tokens;
     final scanState = ref.watch(bleScanStateProvider);
     final scanResults = ref.watch(bleScanResultsProvider);
     final isScanning = scanState.valueOrNull == BleTransportState.scanning;
@@ -231,19 +392,19 @@ class _OnboardingScreenState extends ConsumerState<OnboardingScreen> {
         children: [
           const Icon(Icons.bluetooth_searching, size: 64, color: Colors.blue),
           const SizedBox(height: 16),
-          const Text(
+          Text(
             'Connect Your Trainer',
             style: TextStyle(
-              color: Colors.white,
+              color: tokens.textPrimary,
               fontSize: 24,
               fontWeight: FontWeight.bold,
             ),
           ),
           const SizedBox(height: 8),
-          const Text(
+          Text(
             'Turn on your smart trainer, then tap Scan\nto find it nearby.',
             textAlign: TextAlign.center,
-            style: TextStyle(color: Colors.white54, fontSize: 14),
+            style: TextStyle(color: tokens.textTertiary, fontSize: 14),
           ),
           const SizedBox(height: 24),
           SizedBox(
@@ -258,7 +419,7 @@ class _OnboardingScreenState extends ConsumerState<OnboardingScreen> {
               label: Text(isScanning ? 'Scanning…' : 'Scan for Devices'),
               style: OutlinedButton.styleFrom(
                 padding: const EdgeInsets.symmetric(vertical: 14),
-                side: const BorderSide(color: Colors.white24),
+                side: BorderSide(color: tokens.textDisabled),
               ),
             ),
           ),
@@ -268,10 +429,10 @@ class _OnboardingScreenState extends ConsumerState<OnboardingScreen> {
             child: scanResults.when(
               data: (devices) {
                 if (devices.isEmpty) {
-                  return const Center(
+                  return Center(
                     child: Text(
-                      'No devices found yet.',
-                      style: TextStyle(color: Colors.white38, fontSize: 13),
+                      isScanning ? 'Scanning…' : 'No devices found yet.',
+                      style: TextStyle(color: tokens.textDisabled, fontSize: 13),
                     ),
                   );
                 }
@@ -285,35 +446,29 @@ class _OnboardingScreenState extends ConsumerState<OnboardingScreen> {
                     return ListTile(
                       leading: const Icon(Icons.bluetooth,
                           color: Colors.blue, size: 20),
-                      title: Text(name,
-                          style: const TextStyle(color: Colors.white)),
+                      title:
+                          Text(name, style: TextStyle(color: tokens.textPrimary)),
                       dense: true,
-                      onTap: () async {
-                        await ref
-                            .read(bleTransportProvider)
-                            .connectToDevice(d.device.id);
-                        if (!mounted) return;
-                        ref.read(trainerDeviceProvider.notifier).state =
-                            d.device;
-                        // Persist device ID.
-                        final saved = ref.read(savedDeviceIdsProvider);
-                        if (!saved.contains(d.device.id)) {
-                          final updated = [...saved, d.device.id];
-                          ref.read(savedDeviceIdsProvider.notifier).state =
-                              updated;
-                          ref
-                              .read(appPreferencesProvider)
-                              .setSavedDeviceIds(updated);
-                        }
-                        setState(() => _deviceConnected = true);
-                        _nextPage();
-                      },
+                      onTap: () => _connectTrainer(d.device),
                     );
                   },
                 );
               },
-              loading: () => const SizedBox.shrink(),
-              error: (_, __) => const SizedBox.shrink(),
+              // The scan-results stream sits in "loading" until the first
+              // scan produces a result, not just while a scan is running
+              // (that's isScanning, shown separately on the Scan button) —
+              // an indeterminate spinner here would never settle, so this
+              // shares the empty-state text instead.
+              loading: () => Center(
+                child: Text(
+                  isScanning ? 'Scanning…' : 'No devices found yet.',
+                  style: TextStyle(color: tokens.textDisabled, fontSize: 13),
+                ),
+              ),
+              error: (e, _) => Center(
+                child: Text('Scan failed: $e',
+                    style: const TextStyle(color: Colors.red, fontSize: 12)),
+              ),
             ),
           ),
           const SizedBox(height: 16),
@@ -321,9 +476,10 @@ class _OnboardingScreenState extends ConsumerState<OnboardingScreen> {
             children: [
               Expanded(
                 child: TextButton(
+                  key: const Key('scanSkipButton'),
                   onPressed: _nextPage,
-                  child: const Text('Skip',
-                      style: TextStyle(color: Colors.white54)),
+                  child: Text('Skip',
+                      style: TextStyle(color: tokens.textTertiary)),
                 ),
               ),
             ],
@@ -333,31 +489,66 @@ class _OnboardingScreenState extends ConsumerState<OnboardingScreen> {
     );
   }
 
-  // ─── Page 4: Connection Test ──────────────────────────────────────────
+  /// Pairs [device] to the trainer role via [devicePairingServiceProvider] —
+  /// the same per-role pairing service the Devices screen uses (P2), so a
+  /// trainer connected during onboarding is a real pairing, not just a
+  /// local flag. Reuses the service rather than the Devices screen's full
+  /// multi-role slot UI, which doesn't fit this single-purpose step.
+  Future<void> _connectTrainer(TrainerDevice device) async {
+    try {
+      final service = ref.read(devicePairingServiceProvider);
+      final port = await service.assign(SensorRole.trainer, device);
+      if (!mounted) return;
+
+      ref.read(trainerDeviceProvider.notifier).state = device;
+      ref.read(activeTrainerPortProvider.notifier).state = port;
+
+      final updated = ref.read(pairedDevicesProvider).withRole(
+            SensorRole.trainer,
+            PairedDevice(
+              deviceId: device.id,
+              name: device.name,
+              protocol: device.protocol,
+            ),
+          );
+      ref.read(pairedDevicesProvider.notifier).state = updated;
+      await ref.read(appPreferencesProvider).setPairedDevices(updated);
+
+      setState(() => _deviceConnected = true);
+      _nextPage();
+    } catch (_) {
+      // Connection failures during onboarding are non-fatal — the user can
+      // always pair from the Devices tab later; the Continue button on the
+      // scan page and "I'll set up later" both remain available.
+    }
+  }
+
+  // ─── Page 5: Connection Test ──────────────────────────────────────────
 
   Widget _buildConnectionTestPage() {
+    final tokens = context.tokens;
     if (!_deviceConnected) {
       return Padding(
         padding: const EdgeInsets.symmetric(horizontal: 32),
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            const Icon(Icons.bluetooth_disabled,
-                size: 64, color: Colors.white38),
+            Icon(Icons.bluetooth_disabled,
+                size: 64, color: tokens.textDisabled),
             const SizedBox(height: 16),
-            const Text(
+            Text(
               'No Device Connected',
               style: TextStyle(
-                color: Colors.white,
+                color: tokens.textPrimary,
                 fontSize: 24,
                 fontWeight: FontWeight.bold,
               ),
             ),
             const SizedBox(height: 8),
-            const Text(
+            Text(
               'You can connect to a trainer later\nfrom the Devices tab.',
               textAlign: TextAlign.center,
-              style: TextStyle(color: Colors.white54, fontSize: 14),
+              style: TextStyle(color: tokens.textTertiary, fontSize: 14),
             ),
             const SizedBox(height: 32),
             SizedBox(
@@ -388,18 +579,18 @@ class _OnboardingScreenState extends ConsumerState<OnboardingScreen> {
         children: [
           const Icon(Icons.check_circle, size: 64, color: Colors.green),
           const SizedBox(height: 16),
-          const Text(
+          Text(
             'Connected!',
             style: TextStyle(
-              color: Colors.white,
+              color: tokens.textPrimary,
               fontSize: 24,
               fontWeight: FontWeight.bold,
             ),
           ),
           const SizedBox(height: 8),
-          const Text(
+          Text(
             'Live data from your trainer:',
-            style: TextStyle(color: Colors.white54, fontSize: 14),
+            style: TextStyle(color: tokens.textTertiary, fontSize: 14),
           ),
           const SizedBox(height: 24),
           _LiveDataRow(
@@ -437,9 +628,11 @@ class _OnboardingScreenState extends ConsumerState<OnboardingScreen> {
     );
   }
 
-  // ─── Page 5: Ready ────────────────────────────────────────────────────
+  // ─── Page 6: Ready ────────────────────────────────────────────────────
 
   Widget _buildReadyPage() {
+    final tokens = context.tokens;
+    final formatter = UnitFormatter(_unitSystem);
     return Padding(
       padding: const EdgeInsets.symmetric(horizontal: 32),
       child: Column(
@@ -447,18 +640,18 @@ class _OnboardingScreenState extends ConsumerState<OnboardingScreen> {
         children: [
           const Icon(Icons.rocket_launch, size: 80, color: Colors.deepOrange),
           const SizedBox(height: 24),
-          const Text(
+          Text(
             "You're All Set!",
             style: TextStyle(
-              color: Colors.white,
+              color: tokens.textPrimary,
               fontSize: 28,
               fontWeight: FontWeight.bold,
             ),
           ),
           const SizedBox(height: 16),
           Text(
-            'FTP: ${_ftp.round()} W  •  Weight: ${_weight.toStringAsFixed(1)} kg',
-            style: const TextStyle(color: Colors.white54, fontSize: 14),
+            'FTP: ${_ftp.round()} W  •  Weight: ${formatter.weightKg(_weight)}',
+            style: TextStyle(color: tokens.textTertiary, fontSize: 14),
           ),
           if (_deviceConnected)
             const Padding(
@@ -472,6 +665,7 @@ class _OnboardingScreenState extends ConsumerState<OnboardingScreen> {
           SizedBox(
             width: double.infinity,
             child: FilledButton(
+              key: const Key('onboardingFinishButton'),
               onPressed: _finish,
               style: FilledButton.styleFrom(
                 backgroundColor: Colors.deepOrange,
@@ -497,6 +691,7 @@ class _PageDots extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final tokens = context.tokens;
     return Row(
       mainAxisAlignment: MainAxisAlignment.center,
       children: List.generate(count, (i) {
@@ -507,8 +702,8 @@ class _PageDots extends StatelessWidget {
           decoration: BoxDecoration(
             shape: BoxShape.circle,
             color: i == current
-                ? Colors.white
-                : Colors.white.withValues(alpha: 0.3),
+                ? tokens.textPrimary
+                : tokens.textPrimary.withValues(alpha: 0.3),
           ),
         );
       }),
@@ -518,6 +713,7 @@ class _PageDots extends StatelessWidget {
 
 class _ProfileField extends StatelessWidget {
   const _ProfileField({
+    super.key,
     required this.icon,
     required this.label,
     required this.value,
@@ -533,12 +729,13 @@ class _ProfileField extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final tokens = context.tokens;
     return GestureDetector(
       onTap: onTap,
       child: Container(
         padding: const EdgeInsets.all(16),
         decoration: BoxDecoration(
-          color: Colors.white.withValues(alpha: 0.05),
+          color: tokens.surfaceTier2,
           borderRadius: BorderRadius.circular(12),
         ),
         child: Row(
@@ -550,19 +747,17 @@ class _ProfileField extends StatelessWidget {
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   Text(label,
-                      style: const TextStyle(
-                          color: Colors.white, fontWeight: FontWeight.w600)),
+                      style: TextStyle(
+                          color: tokens.textPrimary, fontWeight: FontWeight.w600)),
                   const SizedBox(height: 2),
                   Text(description,
-                      style: const TextStyle(
-                          color: Colors.white38, fontSize: 11)),
+                      style: TextStyle(color: tokens.textDisabled, fontSize: 11)),
                 ],
               ),
             ),
-            Text(value,
-                style: const TextStyle(color: Colors.white54, fontSize: 16)),
+            Text(value, style: TextStyle(color: tokens.textTertiary, fontSize: 16)),
             const SizedBox(width: 4),
-            const Icon(Icons.chevron_right, color: Colors.white24, size: 20),
+            Icon(Icons.chevron_right, color: tokens.textDisabled, size: 20),
           ],
         ),
       ),
@@ -585,18 +780,19 @@ class _LiveDataRow extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final tokens = context.tokens;
     return Padding(
       padding: const EdgeInsets.symmetric(vertical: 6),
       child: Row(
         children: [
           Icon(active ? Icons.check_circle : Icons.radio_button_unchecked,
-              color: active ? Colors.green : Colors.white24, size: 20),
+              color: active ? Colors.green : tokens.textDisabled, size: 20),
           const SizedBox(width: 12),
-          Icon(icon, color: Colors.white54, size: 20),
+          Icon(icon, color: tokens.textTertiary, size: 20),
           const SizedBox(width: 8),
-          Text(label, style: const TextStyle(color: Colors.white)),
+          Text(label, style: TextStyle(color: tokens.textPrimary)),
           const Spacer(),
-          Text(value, style: const TextStyle(color: Colors.white54)),
+          Text(value, style: TextStyle(color: tokens.textTertiary)),
         ],
       ),
     );

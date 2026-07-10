@@ -10,6 +10,7 @@ import '../../core/domain/value_objects/value_objects.dart';
 import '../../core/events/app_event.dart';
 import '../../infrastructure/simulator/simulator.dart';
 import '../state/providers.dart';
+import '../theme/app_theme.dart';
 
 /// Developer tools screen — simulator controls, manual overrides,
 /// event log, and quick actions for testing.
@@ -59,10 +60,8 @@ class _DevToolsScreenState extends ConsumerState<DevToolsScreen> {
     final activeTrainer = simPlugin?.activeTrainer;
 
     return Scaffold(
-      backgroundColor: Colors.black,
       appBar: AppBar(
         title: const Text('Dev Tools'),
-        backgroundColor: Colors.black,
       ),
       body: ListView(
         padding: const EdgeInsets.only(bottom: 32),
@@ -81,11 +80,11 @@ class _DevToolsScreenState extends ConsumerState<DevToolsScreen> {
           // ---- Manual Overrides ----
           _SectionHeader('MANUAL OVERRIDES'),
           if (activeTrainer == null)
-            const Padding(
-              padding: EdgeInsets.all(16),
+            Padding(
+              padding: const EdgeInsets.all(16),
               child: Text(
                 'Connect the simulator first.',
-                style: TextStyle(color: Colors.white38, fontSize: 13),
+                style: TextStyle(color: context.tokens.textDisabled, fontSize: 13),
               ),
             )
           else ...[
@@ -143,8 +142,8 @@ class _DevToolsScreenState extends ConsumerState<DevToolsScreen> {
                   });
                 },
                 style: OutlinedButton.styleFrom(
-                  foregroundColor: Colors.white54,
-                  side: const BorderSide(color: Colors.white24),
+                  foregroundColor: context.tokens.textTertiary,
+                  side: BorderSide(color: context.tokens.textDisabled),
                 ),
                 child: const Text('Clear All Overrides'),
               ),
@@ -173,11 +172,11 @@ class _DevToolsScreenState extends ConsumerState<DevToolsScreen> {
           // ---- Event Log ----
           _SectionHeader('EVENT LOG (${_events.length})'),
           if (_events.isEmpty)
-            const Padding(
-              padding: EdgeInsets.all(16),
+            Padding(
+              padding: const EdgeInsets.all(16),
               child: Text(
                 'No events yet.',
-                style: TextStyle(color: Colors.white38, fontSize: 13),
+                style: TextStyle(color: context.tokens.textDisabled, fontSize: 13),
               ),
             )
           else
@@ -294,8 +293,8 @@ class _SectionHeader extends StatelessWidget {
       padding: const EdgeInsets.fromLTRB(16, 20, 16, 4),
       child: Text(
         title,
-        style: const TextStyle(
-          color: Colors.white54,
+        style: TextStyle(
+          color: context.tokens.textTertiary,
           fontSize: 11,
           fontWeight: FontWeight.w600,
           letterSpacing: 1.2,
@@ -325,29 +324,30 @@ class _SimulatorControls extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     if (plugin == null) {
-      return const Padding(
-        padding: EdgeInsets.all(16),
+      return Padding(
+        padding: const EdgeInsets.all(16),
         child: Text(
           'Simulator plugin not registered.\nMake sure DEV_MODE=true.',
-          style: TextStyle(color: Colors.white38, fontSize: 13),
+          style: TextStyle(color: context.tokens.textDisabled, fontSize: 13),
         ),
       );
     }
 
+    final tokens = context.tokens;
     return Padding(
       padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
       child: Row(
         children: [
           Icon(
             isConnected ? Icons.link : Icons.link_off,
-            color: isConnected ? Colors.green : Colors.white38,
+            color: isConnected ? Colors.green : tokens.textDisabled,
             size: 20,
           ),
           const SizedBox(width: 12),
           Text(
             isConnected ? 'Virtual Trainer Connected' : 'Not Connected',
             style: TextStyle(
-              color: isConnected ? Colors.white : Colors.white54,
+              color: isConnected ? tokens.textPrimary : tokens.textTertiary,
               fontSize: 14,
             ),
           ),
@@ -412,7 +412,7 @@ class _OverrideSlider extends StatelessWidget {
             child: Text(
               '$label: ${value.round()} $unit',
               style: TextStyle(
-                color: active ? Colors.white : Colors.white38,
+                color: active ? context.tokens.textPrimary : context.tokens.textDisabled,
                 fontSize: 12,
               ),
             ),
@@ -450,14 +450,15 @@ class _ActionTile extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final tokens = context.tokens;
     return ListTile(
-      leading: Icon(icon, color: Colors.white54, size: 22),
-      title: Text(title, style: const TextStyle(color: Colors.white)),
+      leading: Icon(icon, color: tokens.textTertiary, size: 22),
+      title: Text(title, style: TextStyle(color: tokens.textPrimary)),
       subtitle: Text(
         subtitle,
-        style: const TextStyle(color: Colors.white38, fontSize: 12),
+        style: TextStyle(color: tokens.textDisabled, fontSize: 12),
       ),
-      trailing: const Icon(Icons.play_arrow, color: Colors.white24),
+      trailing: Icon(Icons.play_arrow, color: tokens.textDisabled),
       onTap: onTap,
     );
   }
@@ -494,8 +495,8 @@ class _EventTile extends StatelessWidget {
         children: [
           Text(
             time,
-            style: const TextStyle(
-              color: Colors.white24,
+            style: TextStyle(
+              color: context.tokens.textDisabled,
               fontSize: 11,
               fontFamily: 'monospace',
             ),
@@ -511,7 +512,7 @@ class _EventTile extends StatelessWidget {
           Expanded(
             child: Text(
               label,
-              style: const TextStyle(color: Colors.white54, fontSize: 11),
+              style: TextStyle(color: context.tokens.textTertiary, fontSize: 11),
               maxLines: 1,
               overflow: TextOverflow.ellipsis,
             ),

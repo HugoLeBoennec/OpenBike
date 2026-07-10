@@ -98,7 +98,7 @@ class AppPreferences {
       _prefs.setString(_kUnitSystem, value);
 
   // -------------------------------------------------------------------------
-  // Theme mode (dark / system)
+  // Theme mode (dark / light / system)
   // -------------------------------------------------------------------------
 
   String get themeMode => _prefs.getString(_kThemeMode) ?? 'dark';

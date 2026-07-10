@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../models/data_field_type.dart';
+import '../theme/app_theme.dart';
 
 /// Single data field cell for the ride screen grid.
 ///
@@ -16,52 +17,67 @@ class DataFieldCell extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final value = fieldType.resolveValue(ref);
     final zoneColor = fieldType.resolveZoneColor(ref);
+    final unit = fieldType.unitFor(ref);
+    final tokens = context.tokens;
 
-    return Container(
-      decoration: BoxDecoration(
-        color: zoneColor != null
-            ? zoneColor.withValues(alpha: 0.15)
-            : const Color(0xFF1A1A1A),
-        border: Border.all(color: const Color(0xFF333333), width: 0.5),
-      ),
-      child: Column(
-        mainAxisAlignment: MainAxisAlignment.center,
-        children: [
-          Text(
-            fieldType.label,
-            style: const TextStyle(
-              fontSize: 11,
-              color: Colors.grey,
-              letterSpacing: 0.5,
-            ),
-          ),
-          const SizedBox(height: 2),
-          FittedBox(
-            fit: BoxFit.scaleDown,
-            child: Row(
-              mainAxisAlignment: MainAxisAlignment.center,
-              crossAxisAlignment: CrossAxisAlignment.baseline,
-              textBaseline: TextBaseline.alphabetic,
-              children: [
-                Text(
-                  value,
-                  style: TextStyle(
-                    fontSize: 32,
-                    fontWeight: FontWeight.bold,
-                    color: zoneColor ?? Colors.white,
+    return Semantics(
+      label: '${fieldType.label}: $value $unit',
+      container: true,
+      excludeSemantics: true,
+      child: Container(
+        decoration: BoxDecoration(
+          color: zoneColor != null
+              ? zoneColor.withValues(alpha: 0.15)
+              : tokens.rideSurface,
+          border: Border.all(color: tokens.surfaceTier3Line, width: 0.5),
+        ),
+        child: Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 2),
+          child: Column(
+            mainAxisAlignment: MainAxisAlignment.center,
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Text(
+                fieldType.label,
+                style: tokens.dataFieldLabelStyle,
+                maxLines: 1,
+                overflow: TextOverflow.ellipsis,
+              ),
+              const SizedBox(height: 2),
+              // Flexible bounds the FittedBox to the space left over after
+              // the label, so BoxFit.scaleDown actually has a height to
+              // shrink into instead of overflowing the cell at larger text
+              // scales (see P7 1.3x text-scale audit).
+              Flexible(
+                child: FittedBox(
+                  fit: BoxFit.scaleDown,
+                  child: Row(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    crossAxisAlignment: CrossAxisAlignment.baseline,
+                    textBaseline: TextBaseline.alphabetic,
+                    children: [
+                      Text(
+                        value,
+                        style: tokens.dataFieldValueStyle.copyWith(
+                          fontSize: 32,
+                          color: zoneColor ?? tokens.rideOnSurface,
+                        ),
+                      ),
+                      if (unit.isNotEmpty) ...[
+                        const SizedBox(width: 3),
+                        Text(
+                          unit,
+                          style: tokens.dataFieldLabelStyle
+                              .copyWith(fontSize: 11, letterSpacing: 0),
+                        ),
+                      ],
+                    ],
                   ),
                 ),
-                if (fieldType.unit.isNotEmpty) ...[
-                  const SizedBox(width: 3),
-                  Text(
-                    fieldType.unit,
-                    style: const TextStyle(fontSize: 11, color: Colors.grey),
-                  ),
-                ],
-              ],
-            ),
+              ),
+            ],
           ),
-        ],
+        ),
       ),
     );
   }

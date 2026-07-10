@@ -6,6 +6,7 @@ import '../../core/domain/entities/entities.dart';
 import '../../core/domain/value_objects/value_objects.dart';
 import '../../infrastructure/persistence/export_queue_service.dart';
 import '../state/providers.dart';
+import '../theme/app_theme.dart';
 
 // ---------------------------------------------------------------------------
 // New personal records banner
@@ -44,7 +45,7 @@ class NewPersonalRecordsBanner extends StatelessWidget {
                         fontSize: 15)),
                 Text(
                   'Best-ever $labels power',
-                  style: const TextStyle(color: Colors.white70, fontSize: 12),
+                  style: TextStyle(color: context.tokens.textSecondary, fontSize: 12),
                 ),
               ],
             ),
@@ -59,16 +60,17 @@ class NewPersonalRecordsBanner extends StatelessWidget {
 // Header card
 // ---------------------------------------------------------------------------
 
-class HeaderCard extends StatelessWidget {
+class HeaderCard extends ConsumerWidget {
   const HeaderCard({super.key, required this.ride});
   final Ride ride;
 
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context, WidgetRef ref) {
+    final formatter = ref.watch(unitFormatterProvider);
     return Container(
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
-        color: Colors.white.withValues(alpha: 0.05),
+        color: context.tokens.surfaceTier2,
         borderRadius: BorderRadius.circular(12),
       ),
       child: Row(
@@ -84,7 +86,7 @@ class HeaderCard extends StatelessWidget {
           ),
           HeaderStat(
             label: 'DISTANCE',
-            value: '${ride.totalDistance.km.toStringAsFixed(1)} km',
+            value: formatter.distance(ride.totalDistance),
           ),
         ],
       ),
@@ -99,15 +101,16 @@ class HeaderStat extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final tokens = context.tokens;
     return Column(
       children: [
         Text(value,
-            style: const TextStyle(
-                color: Colors.white, fontSize: 16, fontWeight: FontWeight.w700)),
+            style: TextStyle(
+                color: tokens.textPrimary, fontSize: 16, fontWeight: FontWeight.w700)),
         const SizedBox(height: 2),
         Text(label,
-            style: const TextStyle(
-                color: Colors.white38, fontSize: 10, letterSpacing: 1)),
+            style: TextStyle(
+                color: tokens.textDisabled, fontSize: 10, letterSpacing: 1)),
       ],
     );
   }
@@ -156,6 +159,7 @@ class MetricCell extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final tokens = context.tokens;
     return Column(
       mainAxisAlignment: MainAxisAlignment.center,
       children: [
@@ -165,19 +169,19 @@ class MetricCell extends StatelessWidget {
           textBaseline: TextBaseline.alphabetic,
           children: [
             Text(value,
-                style: const TextStyle(
-                    color: Colors.white,
+                style: TextStyle(
+                    color: tokens.textPrimary,
                     fontSize: 22,
                     fontWeight: FontWeight.w700)),
             if (unit != null)
               Text(' $unit',
-                  style: const TextStyle(color: Colors.white38, fontSize: 12)),
+                  style: TextStyle(color: tokens.textDisabled, fontSize: 12)),
           ],
         ),
         const SizedBox(height: 2),
         Text(label,
-            style: const TextStyle(
-                color: Colors.white38, fontSize: 9, letterSpacing: 0.8)),
+            style: TextStyle(
+                color: tokens.textDisabled, fontSize: 9, letterSpacing: 0.8)),
       ],
     );
   }
@@ -221,7 +225,7 @@ class RidePowerChart extends StatelessWidget {
           drawVerticalLine: false,
           horizontalInterval: ftp.value > 0 ? ftp.value : 100,
           getDrawingHorizontalLine: (value) => FlLine(
-            color: Colors.white.withValues(alpha: 0.1),
+            color: context.tokens.surfaceTier3Line,
             strokeWidth: 0.5,
           ),
         ),
@@ -335,7 +339,7 @@ class ZoneBarWidget extends StatelessWidget {
                   Container(
                     height: 18,
                     decoration: BoxDecoration(
-                      color: Colors.white.withValues(alpha: 0.05),
+                      color: context.tokens.surfaceTier2,
                       borderRadius: BorderRadius.circular(3),
                     ),
                   ),
@@ -356,7 +360,7 @@ class ZoneBarWidget extends StatelessWidget {
             width: 44,
             child: Text(
               timeStr,
-              style: const TextStyle(color: Colors.white54, fontSize: 11),
+              style: TextStyle(color: context.tokens.textTertiary, fontSize: 11),
               textAlign: TextAlign.right,
             ),
           ),
@@ -376,20 +380,26 @@ class LapsTable extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final headerStyle = TextStyle(
+      color: context.tokens.textDisabled,
+      fontSize: 10,
+      fontWeight: FontWeight.w600,
+      letterSpacing: 0.8,
+    );
     return Column(
       children: [
-        const Padding(
-          padding: EdgeInsets.symmetric(vertical: 4),
+        Padding(
+          padding: const EdgeInsets.symmetric(vertical: 4),
           child: Row(
             children: [
-              SizedBox(width: 40, child: Text('LAP', style: _headerStyle)),
-              Expanded(child: Text('DURATION', style: _headerStyle)),
+              SizedBox(width: 40, child: Text('LAP', style: headerStyle)),
+              Expanded(child: Text('DURATION', style: headerStyle)),
               SizedBox(
                   width: 60,
-                  child: Text('AVG W', style: _headerStyle, textAlign: TextAlign.right)),
+                  child: Text('AVG W', style: headerStyle, textAlign: TextAlign.right)),
               SizedBox(
                   width: 60,
-                  child: Text('AVG HR', style: _headerStyle, textAlign: TextAlign.right)),
+                  child: Text('AVG HR', style: headerStyle, textAlign: TextAlign.right)),
             ],
           ),
         ),
@@ -398,13 +408,6 @@ class LapsTable extends StatelessWidget {
       ],
     );
   }
-
-  static const _headerStyle = TextStyle(
-    color: Colors.white38,
-    fontSize: 10,
-    fontWeight: FontWeight.w600,
-    letterSpacing: 0.8,
-  );
 }
 
 class LapRow extends StatelessWidget {
@@ -435,6 +438,7 @@ class LapRow extends StatelessWidget {
                 .fold<int>(0, (a, b) => a + b) /
             lapReadings.where((r) => r.heartRate != null).length.clamp(1, 99999);
 
+    final tokens = context.tokens;
     return Padding(
       padding: const EdgeInsets.symmetric(vertical: 3),
       child: Row(
@@ -442,22 +446,22 @@ class LapRow extends StatelessWidget {
           SizedBox(
             width: 40,
             child: Text('${index + 1}',
-                style: const TextStyle(color: Colors.white, fontSize: 13)),
+                style: TextStyle(color: tokens.textPrimary, fontSize: 13)),
           ),
           Expanded(
             child: Text(formatDuration(lap.duration),
-                style: const TextStyle(color: Colors.white70, fontSize: 13)),
+                style: TextStyle(color: tokens.textSecondary, fontSize: 13)),
           ),
           SizedBox(
             width: 60,
             child: Text('${avgPower.round()}',
-                style: const TextStyle(color: Colors.white70, fontSize: 13),
+                style: TextStyle(color: tokens.textSecondary, fontSize: 13),
                 textAlign: TextAlign.right),
           ),
           SizedBox(
             width: 60,
             child: Text('${avgHr.round()}',
-                style: const TextStyle(color: Colors.white70, fontSize: 13),
+                style: TextStyle(color: tokens.textSecondary, fontSize: 13),
                 textAlign: TextAlign.right),
           ),
         ],
@@ -480,9 +484,9 @@ class ExportSection extends ConsumerWidget {
     final queueAsync = ref.watch(exportQueueProvider);
 
     if (plugins.isEmpty) {
-      return const Text(
+      return Text(
         'No export plugins configured.',
-        style: TextStyle(color: Colors.white38, fontSize: 13),
+        style: TextStyle(color: context.tokens.textDisabled, fontSize: 13),
       );
     }
 
@@ -543,13 +547,13 @@ class ExportButton extends ConsumerWidget {
                 ? Colors.green
                 : isTerminallyFailed
                     ? Colors.redAccent
-                    : Colors.white70,
+                    : context.tokens.textSecondary,
             side: BorderSide(
               color: isSuccess
                   ? Colors.green
                   : isTerminallyFailed
                       ? Colors.redAccent.withValues(alpha: 0.5)
-                      : Colors.white.withValues(alpha: 0.2),
+                      : context.tokens.textDisabled,
             ),
           ),
           onPressed: isSuccess || isBusy || isRetrying
@@ -575,7 +579,9 @@ class ExportButton extends ConsumerWidget {
             child: Text(
               _statusLabel(item),
               style: TextStyle(
-                color: isTerminallyFailed ? Colors.redAccent : Colors.white38,
+                color: isTerminallyFailed
+                    ? Colors.redAccent
+                    : context.tokens.textDisabled,
                 fontSize: 11,
               ),
             ),
@@ -610,8 +616,8 @@ class SectionLabel extends StatelessWidget {
   Widget build(BuildContext context) {
     return Text(
       text,
-      style: const TextStyle(
-        color: Colors.white54,
+      style: TextStyle(
+        color: context.tokens.textTertiary,
         fontSize: 11,
         fontWeight: FontWeight.w600,
         letterSpacing: 1.2,
