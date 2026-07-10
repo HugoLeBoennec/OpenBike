@@ -23,6 +23,10 @@ class AppPreferences {
   static const _kAutoPauseEnabled = 'auto_pause_enabled';
   static const _kHasBackfilledPersonalRecords = 'has_backfilled_personal_records';
   static const _kAutoUploadTargets = 'auto_upload_targets';
+  static const _kWindowX = 'window_x';
+  static const _kWindowY = 'window_y';
+  static const _kWindowWidth = 'window_width';
+  static const _kWindowHeight = 'window_height';
 
   // -------------------------------------------------------------------------
   // Onboarding
@@ -145,5 +149,35 @@ class AppPreferences {
       targets.remove(pluginId);
     }
     return _prefs.setStringList(_kAutoUploadTargets, targets.toList());
+  }
+
+  // -------------------------------------------------------------------------
+  // Desktop window bounds (macOS / Windows / Linux only)
+  // -------------------------------------------------------------------------
+
+  /// Last known desktop window position/size, restored on launch so the app
+  /// reopens where the user left it. `null` until the window is first
+  /// resized/moved (or on non-desktop platforms, which never write it).
+  ({double x, double y, double width, double height})? get windowBounds {
+    final width = _prefs.getDouble(_kWindowWidth);
+    final height = _prefs.getDouble(_kWindowHeight);
+    final x = _prefs.getDouble(_kWindowX);
+    final y = _prefs.getDouble(_kWindowY);
+    if (width == null || height == null || x == null || y == null) {
+      return null;
+    }
+    return (x: x, y: y, width: width, height: height);
+  }
+
+  Future<void> setWindowBounds({
+    required double x,
+    required double y,
+    required double width,
+    required double height,
+  }) async {
+    await _prefs.setDouble(_kWindowX, x);
+    await _prefs.setDouble(_kWindowY, y);
+    await _prefs.setDouble(_kWindowWidth, width);
+    await _prefs.setDouble(_kWindowHeight, height);
   }
 }

@@ -4,6 +4,7 @@ import 'package:drift/native.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
+import 'package:logging/logging.dart';
 import 'package:path/path.dart' as p;
 import 'package:path_provider/path_provider.dart';
 import 'package:shared_preferences/shared_preferences.dart';
@@ -12,9 +13,13 @@ import 'core/application/services/bundled_workouts.dart';
 import 'core/application/services/personal_records_backfill.dart';
 import 'core/application/services/physics_engine.dart';
 import 'core/events/event_bus.dart';
+import 'infrastructure/ant/ant_device_plugin.dart';
+import 'infrastructure/ant/ant_usb_transport.dart';
+import 'infrastructure/ant/libusb_backend.dart';
 import 'infrastructure/ble/ble_transport.dart';
 import 'infrastructure/ble/ftms/ftms_device_plugin.dart';
 import 'infrastructure/ble/sensors/sensor_device_plugin.dart';
+import 'infrastructure/desktop/desktop_window_service.dart';
 import 'infrastructure/files/erg_parser.dart';
 import 'infrastructure/files/zwo_parser.dart';
 import 'infrastructure/persistence/app_database.dart';
@@ -29,6 +34,8 @@ import 'presentation/router.dart';
 import 'presentation/state/providers.dart';
 import 'presentation/theme/app_theme.dart';
 import 'presentation/widgets/strava_deep_link_listener.dart';
+
+final _log = Logger('main');
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -54,6 +61,9 @@ void main() async {
   // ---- Preferences ----
   final prefs = await SharedPreferences.getInstance();
   final appPrefs = AppPreferences(prefs);
+
+  // ---- Desktop window (macOS/Windows/Linux only — no-op elsewhere) ----
+  await initializeDesktopWindow(appPrefs);
 
   // ---- Load persisted user profile ----
   final storage = DriftStorage(db);
@@ -116,17 +126,22 @@ void _registerPlugins(
     eventBus: eventBus,
   ));
 
-  // ANT+ FE-C — desktop only (requires USB dongle).
-  // To enable: provide a UsbBackend implementation (e.g. dart:ffi + libusb)
-  // and uncomment the block below.
-  //
-  // if (Platform.isLinux || Platform.isMacOS || Platform.isWindows) {
-  //   final usbBackend = LibusbBackend(); // TODO: implement UsbBackend
-  //   registry.registerDevice(AntDevicePlugin(
-  //     transport: AntUsbTransport(backend: usbBackend),
-  //     eventBus: eventBus,
-  //   ));
-  // }
+  // ANT+ FE-C — desktop only (requires a USB dongle + the bundled libusb
+  // binary; see docs/release/antplus-usb.md). Failing to load libusb (e.g.
+  // the binary isn't bundled for this build) must not crash startup, so
+  // registration is attempted and skipped on error rather than gated on a
+  // platform check that can't detect a missing/bad binary.
+  if (Platform.isLinux || Platform.isMacOS || Platform.isWindows) {
+    try {
+      final usbBackend = LibusbBackend();
+      registry.registerDevice(AntDevicePlugin(
+        transport: AntUsbTransport(backend: usbBackend),
+        eventBus: eventBus,
+      ));
+    } catch (e) {
+      _log.warning('ANT+ USB backend unavailable, skipping registration: $e');
+    }
+  }
 
   // Simulator — dev mode only (--dart-define=DEV_MODE=true).
   const devMode = bool.fromEnvironment('DEV_MODE');

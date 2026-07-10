@@ -74,6 +74,16 @@ dependencies:
   # Android foreground service for background recording
   flutter_foreground_task: ^9.2.2
 
+  # Desktop window management (macOS/Windows/Linux) — min size, remembered
+  # size/position, title, fullscreen toggle. See P8-desktop.md.
+  window_manager: ^0.4.3
+
+  # dart:ffi convenience helpers (Utf8/calloc) for LibusbBackend — see
+  # lib/infrastructure/ant/libusb_backend.dart and P8-desktop.md §5. Already
+  # resolved transitively via flutter_secure_storage_windows; pinned
+  # directly since we call into it too.
+  ffi: ^2.1.0
+
 
 dev_dependencies:
   flutter_test:
@@ -92,7 +102,22 @@ dev_dependencies:
   flutter_launcher_icons: ^0.14.3
   flutter_native_splash: ^2.4.4
 
+  # Windows MSIX packaging (release CI job — see P8-desktop.md)
+  msix: ^3.16.9
+
 flutter:
   uses-material-design: true
   assets:
     - assets/icon/
+
+# Windows MSIX packaging config (`dart run msix:create` — see
+# docs/roadmap/P8-desktop.md §3). No certificate_path/certificate_password
+# set here: the msix tool self-signs with a generated test certificate,
+# which is fine for CI artifacts and sideloading; a real code-signing
+# certificate is a P9 store-signing decision.
+msix_config:
+  display_name: OpenBike
+  publisher_display_name: OpenBike
+  identity_name: com.openbike.openBike
+  logo_path: assets/icon/app_icon.png
+  capabilities: internetClient, bluetooth
