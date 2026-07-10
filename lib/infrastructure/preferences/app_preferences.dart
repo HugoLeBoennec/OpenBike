@@ -22,6 +22,7 @@ class AppPreferences {
   static const _kThemeMode = 'theme_mode';
   static const _kAutoPauseEnabled = 'auto_pause_enabled';
   static const _kHasBackfilledPersonalRecords = 'has_backfilled_personal_records';
+  static const _kAutoUploadTargets = 'auto_upload_targets';
 
   // -------------------------------------------------------------------------
   // Onboarding
@@ -123,4 +124,26 @@ class AppPreferences {
 
   Future<void> setHasBackfilledPersonalRecords(bool value) =>
       _prefs.setBool(_kHasBackfilledPersonalRecords, value);
+
+  // -------------------------------------------------------------------------
+  // Auto-upload (per export plugin manifest id — default off)
+  // -------------------------------------------------------------------------
+
+  /// Export plugin manifest ids the user has enabled auto-upload for: on
+  /// ride save these are enqueued automatically via [ExportQueueService].
+  Set<String> get autoUploadTargets =>
+      (_prefs.getStringList(_kAutoUploadTargets) ?? const []).toSet();
+
+  bool isAutoUploadEnabled(String pluginId) =>
+      autoUploadTargets.contains(pluginId);
+
+  Future<void> setAutoUploadEnabled(String pluginId, bool enabled) {
+    final targets = autoUploadTargets;
+    if (enabled) {
+      targets.add(pluginId);
+    } else {
+      targets.remove(pluginId);
+    }
+    return _prefs.setStringList(_kAutoUploadTargets, targets.toList());
+  }
 }
