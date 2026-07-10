@@ -37,9 +37,9 @@ Future<void> connectExportPlugin(ExportPlugin plugin) async {
 final connectionsRefreshProvider = StateProvider<int>((ref) => 0);
 
 /// Settings → Connections: one row per registered [ExportPlugin], driven
-/// entirely by [exportPluginsProvider] so private-package plugins (Records,
-/// OpenCoach) get a working row automatically once registered — no
-/// per-service code needed here.
+/// entirely by [exportPluginsProvider] so private-package plugins (see
+/// `docs/release/private-plugins.md`) get a working row automatically once
+/// registered — no per-service code needed here.
 class ConnectionsSection extends ConsumerWidget {
   const ConnectionsSection({super.key});
 

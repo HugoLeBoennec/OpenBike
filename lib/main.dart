@@ -24,6 +24,7 @@ import 'infrastructure/simulator/simulator.dart';
 import 'plugins/exports/garmin_export_plugin.dart';
 import 'plugins/exports/strava_export_plugin.dart';
 import 'plugins/plugin_registry.dart';
+import 'plugins/private_plugins.dart';
 import 'presentation/router.dart';
 import 'presentation/state/providers.dart';
 import 'presentation/widgets/strava_deep_link_listener.dart';
@@ -156,6 +157,11 @@ void _registerPlugins(
 
   registry.registerFormat(ZwoParser());
   registry.registerFormat(ErgMrcParser());
+
+  // ---- Private-package plugins (open-core seam) ----
+  // No-op unless a release build has swapped in the real registration file.
+  // See docs/release/private-plugins.md.
+  registerPrivatePlugins(registry);
 }
 
 class OpenBikeApp extends StatelessWidget {
