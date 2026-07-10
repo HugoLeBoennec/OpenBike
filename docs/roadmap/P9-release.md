@@ -1,7 +1,7 @@
 ---
 phase: P9
 title: Release — stores, crash reporting, licensing, launch
-status: NOT_STARTED
+status: IN_PROGRESS
 depends_on: [P1, P2, P3, P4, P5, P6, P7, P8]
 validation:
   - flutter analyze
