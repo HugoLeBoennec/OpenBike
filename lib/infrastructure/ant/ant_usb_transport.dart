@@ -15,6 +15,24 @@ enum AntTransportState { disconnected, connecting, connected, error }
 // USB backend abstraction
 // ---------------------------------------------------------------------------
 
+/// The actual channel assignment reported by the dongle in response to
+/// [AntUsbTransport.requestChannelId] — the real device number/type/
+/// transmission type, as opposed to the wildcard (0) values used while
+/// scanning for any broadcasting device.
+class AntChannelId {
+  const AntChannelId({
+    required this.channelNumber,
+    required this.deviceNumber,
+    required this.deviceType,
+    required this.transmissionType,
+  });
+
+  final int channelNumber;
+  final int deviceNumber;
+  final int deviceType;
+  final int transmissionType;
+}
+
 /// Represents a discovered USB device.
 class UsbDeviceInfo {
   const UsbDeviceInfo({
@@ -266,6 +284,27 @@ class AntUsbTransport {
       data: [channelNumber],
     ));
     await _waitForResponse(AntConstants.msgChannelResponse);
+  }
+
+  /// Asks the dongle to report the actual channel ID — device number, type,
+  /// and transmission type — currently assigned to [channelNumber].
+  ///
+  /// A channel opened with wildcard `deviceNumber: 0` only learns the real
+  /// device number once it syncs with a broadcasting device; this is how a
+  /// wildcard scan (or connect) discovers which physical trainer it locked
+  /// onto instead of reporting the wildcard value back.
+  Future<AntChannelId> requestChannelId(int channelNumber) async {
+    await send(AntMessage(
+      messageId: AntConstants.msgRequestMessage,
+      data: [channelNumber, AntConstants.msgSetChannelId],
+    ));
+    final response = await _waitForResponse(AntConstants.msgSetChannelId);
+    return AntChannelId(
+      channelNumber: response.data[0],
+      deviceNumber: response.data[1] | (response.data[2] << 8),
+      deviceType: response.data[3],
+      transmissionType: response.data[4],
+    );
   }
 
   /// Sends an acknowledged data message on the given channel.
