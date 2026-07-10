@@ -297,18 +297,22 @@ class _RecentActivitiesSection extends ConsumerWidget {
   }
 }
 
-class _RecentRideTile extends StatelessWidget {
+class _RecentRideTile extends ConsumerWidget {
   const _RecentRideTile({required this.ride, required this.ftp});
   final Ride ride;
   final Watts ftp;
 
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context, WidgetRef ref) {
+    final formatter = ref.watch(unitFormatterProvider);
     final avgW = ride.averagePower.value.round();
     final np = ride.normalizedPower.value.round();
     final tss = ride.tss(ftp).round();
     final dur = formatDuration(ride.activeDuration);
     final date = formatDate(ride.startTime);
+    final dist = ride.totalDistance.meters > 0
+        ? '${formatter.distance(ride.totalDistance)}  •  '
+        : '';
 
     final ifactor = ride.intensityFactor(ftp);
     final borderColor = _intensityColor(ifactor);
@@ -341,7 +345,7 @@ class _RecentRideTile extends StatelessWidget {
                               color: tokens.textPrimary,
                               fontWeight: FontWeight.w600)),
                       const SizedBox(height: 4),
-                      Text('$dur  •  $avgW W  •  NP $np',
+                      Text('$dur  •  $dist$avgW W  •  NP $np',
                           style: TextStyle(
                               color: tokens.textTertiary, fontSize: 12)),
                     ],

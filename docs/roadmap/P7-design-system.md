@@ -57,10 +57,10 @@ pass.
       **Accept:** widget tests asserting Semantics nodes exist; text-scale golden test.
 
 ### 4. Onboarding upgrade
-- [ ] Add a units-choice step (metric/imperial) and height/max-HR optional fields to
+- [x] Add a units-choice step (metric/imperial) and height/max-HR optional fields to
       `onboarding_screen.dart`; reuse the per-role pairing UI from P2 for the sensor
       step if P2 is done (soft dependency — degrade to current flat scan otherwise).
-- [ ] Skippable path: "I'll set up later" from any step lands on Home with sensible
+- [x] Skippable path: "I'll set up later" from any step lands on Home with sensible
       defaults (FTP 200 default exists).
       **Accept:** widget test completing onboarding with imperial units shows mi on Home.
 
