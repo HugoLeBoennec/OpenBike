@@ -1,5 +1,9 @@
 <manifest xmlns:android="http://schemas.android.com/apk/res/android"
     package="com.openbike.open_bike">
+    <!-- Storage access for file picker on Android < 13; SAF handles Android 13+ -->
+    <uses-permission
+        android:name="android.permission.READ_EXTERNAL_STORAGE"
+        android:maxSdkVersion="32" />
    <application
         android:label="open_bike"
         android:name="${applicationName}"

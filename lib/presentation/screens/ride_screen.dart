@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:wakelock_plus/wakelock_plus.dart';
 
+import '../../core/application/services/services.dart';
 import '../../core/domain/entities/trainer_device.dart';
 import '../../core/domain/value_objects/value_objects.dart';
 import '../models/data_field_type.dart';
@@ -34,9 +35,14 @@ class _RideScreenState extends ConsumerState<RideScreen> {
     WakelockPlus.enable();
 
     // If a workout was passed, set it as the current workout.
+    // Otherwise reset the engine so stale completed/ready state is cleared.
     if (widget.extra?.workout != null) {
       Future.microtask(() {
         ref.read(currentWorkoutProvider.notifier).state = widget.extra!.workout;
+      });
+    } else {
+      Future.microtask(() {
+        ref.read(workoutEngineProvider).reset();
       });
     }
 
@@ -50,6 +56,10 @@ class _RideScreenState extends ConsumerState<RideScreen> {
 
   @override
   void dispose() {
+    // Reset the workout engine (no-op if already idle) and clear the selection
+    // so stale state doesn't bleed into the next ride session.
+    ref.read(workoutEngineProvider).reset();
+    ref.read(currentWorkoutProvider.notifier).state = null;
     WakelockPlus.disable();
     super.dispose();
   }
@@ -61,6 +71,8 @@ class _RideScreenState extends ConsumerState<RideScreen> {
     // Activate history updaters so ring buffers receive live data
     ref.watch(powerHistoryUpdaterProvider);
     ref.watch(hrHistoryUpdaterProvider);
+    // Activate the workout engine watcher (starts engine when workout is set)
+    ref.watch(workoutEngineWatcherProvider);
 
     return PopScope(
       canPop: false,
@@ -70,24 +82,33 @@ class _RideScreenState extends ConsumerState<RideScreen> {
       child: Scaffold(
         backgroundColor: Colors.black,
         body: SafeArea(
-          child: LayoutBuilder(
-            builder: (context, constraints) {
-              final isDesktop = constraints.maxWidth >= 1200;
-              final isLandscape = constraints.maxWidth >= 600;
-              Future.microtask(() {
-                ref.read(rideScreenConfigProvider.notifier).adaptToLayout(
-                      isDesktop: isDesktop,
-                      isLandscape: isLandscape,
-                    );
-              });
-              if (isDesktop) {
-                return _buildDesktopLayout(context, ref, constraints);
-              } else if (isLandscape) {
-                return _buildLandscapeLayout(context, ref, constraints);
-              } else {
-                return _buildPortraitLayout(context, ref, constraints);
-              }
-            },
+          child: Column(
+            children: [
+              const _WorkoutDebugBanner(),
+              Expanded(
+                child: LayoutBuilder(
+                  builder: (context, constraints) {
+                    final isDesktop = constraints.maxWidth >= 1200;
+                    final isLandscape = constraints.maxWidth >= 600;
+                    Future.microtask(() {
+                      ref
+                          .read(rideScreenConfigProvider.notifier)
+                          .adaptToLayout(
+                            isDesktop: isDesktop,
+                            isLandscape: isLandscape,
+                          );
+                    });
+                    if (isDesktop) {
+                      return _buildDesktopLayout(context, ref, constraints);
+                    } else if (isLandscape) {
+                      return _buildLandscapeLayout(context, ref, constraints);
+                    } else {
+                      return _buildPortraitLayout(context, ref, constraints);
+                    }
+                  },
+                ),
+              ),
+            ],
           ),
         ),
       ),
@@ -136,6 +157,7 @@ class _RideScreenState extends ConsumerState<RideScreen> {
         if (mode == ControlMode.erg) const _ErgControls(),
         if (mode == ControlMode.resistance) const _ResistanceControls(),
         const _TrainerStatusBanner(),
+        const _WorkoutStartButton(),
         if (mode == ControlMode.simulation) const _GradientDifficultySlider(),
         Expanded(
           flex: 3,
@@ -176,6 +198,7 @@ class _RideScreenState extends ConsumerState<RideScreen> {
               if (mode == ControlMode.erg) const _ErgControls(),
               if (mode == ControlMode.resistance) const _ResistanceControls(),
               const _TrainerStatusBanner(),
+              const _WorkoutStartButton(),
               if (mode == ControlMode.simulation)
                 const _GradientDifficultySlider(),
               Expanded(
@@ -233,6 +256,7 @@ class _RideScreenState extends ConsumerState<RideScreen> {
               if (mode == ControlMode.erg) const _ErgControls(),
               if (mode == ControlMode.resistance) const _ResistanceControls(),
               const _TrainerStatusBanner(),
+              const _WorkoutStartButton(),
               if (mode == ControlMode.simulation)
                 const _GradientDifficultySlider(),
               Expanded(
@@ -522,4 +546,75 @@ class _PageDots extends StatelessWidget {
       }),
     );
   }
+}
+
+// ─── Workout start button ──────────────────────────────────────────────────
+
+/// Shown only when the workout engine is in the [WorkoutEngineState.ready]
+/// state (i.e. a workout has been loaded but the user hasn't tapped START yet).
+class _WorkoutStartButton extends ConsumerWidget {
+  const _WorkoutStartButton();
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final engineState = ref.watch(workoutEngineStateProvider);
+    final isReady = engineState.whenData((s) => s == WorkoutEngineState.ready);
+    if (isReady.valueOrNull != true) return const SizedBox.shrink();
+
+    return Padding(
+      padding: const EdgeInsets.symmetric(vertical: 8, horizontal: 24),
+      child: SizedBox(
+        width: double.infinity,
+        child: ElevatedButton.icon(
+          icon: const Icon(Icons.play_arrow),
+          label: const Text('START WORKOUT'),
+          style: ElevatedButton.styleFrom(
+            backgroundColor: Colors.deepOrange,
+            foregroundColor: Colors.white,
+            padding: const EdgeInsets.symmetric(vertical: 12),
+          ),
+          onPressed: () => ref.read(workoutEngineProvider).start(),
+        ),
+      ),
+    );
+  }
+}
+
+// ─── Workout debug banner (remove once flow is confirmed working) ───────────
+
+/// Thin yellow bar showing live workout engine state + target power.
+/// Visible only when a workout is active; hidden when engine is idle.
+class _WorkoutDebugBanner extends ConsumerWidget {
+  const _WorkoutDebugBanner();
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final progress = ref.watch(workoutProgressProvider);
+    final engineState = ref.watch(workoutEngineStateProvider);
+
+    final stateLabel = engineState.when(
+      data: (s) => s.name,
+      loading: () => 'idle',
+      error: (_, __) => 'error',
+    );
+
+    return progress.when(
+      data: (p) => _banner(
+        '${p.targetPower.value.round()}W | ${p.currentStep.type.name} | $stateLabel',
+      ),
+      loading: () => _banner('engine: $stateLabel'),
+      error: (e, _) => _banner('error: $e'),
+    );
+  }
+
+  Widget _banner(String text) => Container(
+        height: 18,
+        width: double.infinity,
+        color: Colors.yellow.withValues(alpha: 0.15),
+        alignment: Alignment.center,
+        child: Text(
+          text,
+          style: const TextStyle(color: Colors.yellow, fontSize: 10),
+        ),
+      );
 }

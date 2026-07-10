@@ -1231,6 +1231,7 @@ mixin _$WorkoutEvent {
     required TResult Function() completed,
     required TResult Function() paused,
     required TResult Function() resumed,
+    required TResult Function() reset,
   }) =>
       throw _privateConstructorUsedError;
   @optionalTypeArgs
@@ -1240,6 +1241,7 @@ mixin _$WorkoutEvent {
     TResult? Function()? completed,
     TResult? Function()? paused,
     TResult? Function()? resumed,
+    TResult? Function()? reset,
   }) =>
       throw _privateConstructorUsedError;
   @optionalTypeArgs
@@ -1249,6 +1251,7 @@ mixin _$WorkoutEvent {
     TResult Function()? completed,
     TResult Function()? paused,
     TResult Function()? resumed,
+    TResult Function()? reset,
     required TResult orElse(),
   }) =>
       throw _privateConstructorUsedError;
@@ -1259,6 +1262,7 @@ mixin _$WorkoutEvent {
     required TResult Function(WorkoutCompleted value) completed,
     required TResult Function(WorkoutPaused value) paused,
     required TResult Function(WorkoutResumed value) resumed,
+    required TResult Function(WorkoutReset value) reset,
   }) =>
       throw _privateConstructorUsedError;
   @optionalTypeArgs
@@ -1268,6 +1272,7 @@ mixin _$WorkoutEvent {
     TResult? Function(WorkoutCompleted value)? completed,
     TResult? Function(WorkoutPaused value)? paused,
     TResult? Function(WorkoutResumed value)? resumed,
+    TResult? Function(WorkoutReset value)? reset,
   }) =>
       throw _privateConstructorUsedError;
   @optionalTypeArgs
@@ -1277,6 +1282,7 @@ mixin _$WorkoutEvent {
     TResult Function(WorkoutCompleted value)? completed,
     TResult Function(WorkoutPaused value)? paused,
     TResult Function(WorkoutResumed value)? resumed,
+    TResult Function(WorkoutReset value)? reset,
     required TResult orElse(),
   }) =>
       throw _privateConstructorUsedError;
@@ -1379,6 +1385,7 @@ class _$WorkoutStarted implements WorkoutStarted {
     required TResult Function() completed,
     required TResult Function() paused,
     required TResult Function() resumed,
+    required TResult Function() reset,
   }) {
     return started(workout);
   }
@@ -1391,6 +1398,7 @@ class _$WorkoutStarted implements WorkoutStarted {
     TResult? Function()? completed,
     TResult? Function()? paused,
     TResult? Function()? resumed,
+    TResult? Function()? reset,
   }) {
     return started?.call(workout);
   }
@@ -1403,6 +1411,7 @@ class _$WorkoutStarted implements WorkoutStarted {
     TResult Function()? completed,
     TResult Function()? paused,
     TResult Function()? resumed,
+    TResult Function()? reset,
     required TResult orElse(),
   }) {
     if (started != null) {
@@ -1419,6 +1428,7 @@ class _$WorkoutStarted implements WorkoutStarted {
     required TResult Function(WorkoutCompleted value) completed,
     required TResult Function(WorkoutPaused value) paused,
     required TResult Function(WorkoutResumed value) resumed,
+    required TResult Function(WorkoutReset value) reset,
   }) {
     return started(this);
   }
@@ -1431,6 +1441,7 @@ class _$WorkoutStarted implements WorkoutStarted {
     TResult? Function(WorkoutCompleted value)? completed,
     TResult? Function(WorkoutPaused value)? paused,
     TResult? Function(WorkoutResumed value)? resumed,
+    TResult? Function(WorkoutReset value)? reset,
   }) {
     return started?.call(this);
   }
@@ -1443,6 +1454,7 @@ class _$WorkoutStarted implements WorkoutStarted {
     TResult Function(WorkoutCompleted value)? completed,
     TResult Function(WorkoutPaused value)? paused,
     TResult Function(WorkoutResumed value)? resumed,
+    TResult Function(WorkoutReset value)? reset,
     required TResult orElse(),
   }) {
     if (started != null) {
@@ -1549,6 +1561,7 @@ class _$WorkoutStepChanged implements WorkoutStepChanged {
     required TResult Function() completed,
     required TResult Function() paused,
     required TResult Function() resumed,
+    required TResult Function() reset,
   }) {
     return stepChanged(step, index);
   }
@@ -1561,6 +1574,7 @@ class _$WorkoutStepChanged implements WorkoutStepChanged {
     TResult? Function()? completed,
     TResult? Function()? paused,
     TResult? Function()? resumed,
+    TResult? Function()? reset,
   }) {
     return stepChanged?.call(step, index);
   }
@@ -1573,6 +1587,7 @@ class _$WorkoutStepChanged implements WorkoutStepChanged {
     TResult Function()? completed,
     TResult Function()? paused,
     TResult Function()? resumed,
+    TResult Function()? reset,
     required TResult orElse(),
   }) {
     if (stepChanged != null) {
@@ -1589,6 +1604,7 @@ class _$WorkoutStepChanged implements WorkoutStepChanged {
     required TResult Function(WorkoutCompleted value) completed,
     required TResult Function(WorkoutPaused value) paused,
     required TResult Function(WorkoutResumed value) resumed,
+    required TResult Function(WorkoutReset value) reset,
   }) {
     return stepChanged(this);
   }
@@ -1601,6 +1617,7 @@ class _$WorkoutStepChanged implements WorkoutStepChanged {
     TResult? Function(WorkoutCompleted value)? completed,
     TResult? Function(WorkoutPaused value)? paused,
     TResult? Function(WorkoutResumed value)? resumed,
+    TResult? Function(WorkoutReset value)? reset,
   }) {
     return stepChanged?.call(this);
   }
@@ -1613,6 +1630,7 @@ class _$WorkoutStepChanged implements WorkoutStepChanged {
     TResult Function(WorkoutCompleted value)? completed,
     TResult Function(WorkoutPaused value)? paused,
     TResult Function(WorkoutResumed value)? resumed,
+    TResult Function(WorkoutReset value)? reset,
     required TResult orElse(),
   }) {
     if (stepChanged != null) {
@@ -1676,6 +1694,7 @@ class _$WorkoutCompleted implements WorkoutCompleted {
     required TResult Function() completed,
     required TResult Function() paused,
     required TResult Function() resumed,
+    required TResult Function() reset,
   }) {
     return completed();
   }
@@ -1688,6 +1707,7 @@ class _$WorkoutCompleted implements WorkoutCompleted {
     TResult? Function()? completed,
     TResult? Function()? paused,
     TResult? Function()? resumed,
+    TResult? Function()? reset,
   }) {
     return completed?.call();
   }
@@ -1700,6 +1720,7 @@ class _$WorkoutCompleted implements WorkoutCompleted {
     TResult Function()? completed,
     TResult Function()? paused,
     TResult Function()? resumed,
+    TResult Function()? reset,
     required TResult orElse(),
   }) {
     if (completed != null) {
@@ -1716,6 +1737,7 @@ class _$WorkoutCompleted implements WorkoutCompleted {
     required TResult Function(WorkoutCompleted value) completed,
     required TResult Function(WorkoutPaused value) paused,
     required TResult Function(WorkoutResumed value) resumed,
+    required TResult Function(WorkoutReset value) reset,
   }) {
     return completed(this);
   }
@@ -1728,6 +1750,7 @@ class _$WorkoutCompleted implements WorkoutCompleted {
     TResult? Function(WorkoutCompleted value)? completed,
     TResult? Function(WorkoutPaused value)? paused,
     TResult? Function(WorkoutResumed value)? resumed,
+    TResult? Function(WorkoutReset value)? reset,
   }) {
     return completed?.call(this);
   }
@@ -1740,6 +1763,7 @@ class _$WorkoutCompleted implements WorkoutCompleted {
     TResult Function(WorkoutCompleted value)? completed,
     TResult Function(WorkoutPaused value)? paused,
     TResult Function(WorkoutResumed value)? resumed,
+    TResult Function(WorkoutReset value)? reset,
     required TResult orElse(),
   }) {
     if (completed != null) {
@@ -1796,6 +1820,7 @@ class _$WorkoutPaused implements WorkoutPaused {
     required TResult Function() completed,
     required TResult Function() paused,
     required TResult Function() resumed,
+    required TResult Function() reset,
   }) {
     return paused();
   }
@@ -1808,6 +1833,7 @@ class _$WorkoutPaused implements WorkoutPaused {
     TResult? Function()? completed,
     TResult? Function()? paused,
     TResult? Function()? resumed,
+    TResult? Function()? reset,
   }) {
     return paused?.call();
   }
@@ -1820,6 +1846,7 @@ class _$WorkoutPaused implements WorkoutPaused {
     TResult Function()? completed,
     TResult Function()? paused,
     TResult Function()? resumed,
+    TResult Function()? reset,
     required TResult orElse(),
   }) {
     if (paused != null) {
@@ -1836,6 +1863,7 @@ class _$WorkoutPaused implements WorkoutPaused {
     required TResult Function(WorkoutCompleted value) completed,
     required TResult Function(WorkoutPaused value) paused,
     required TResult Function(WorkoutResumed value) resumed,
+    required TResult Function(WorkoutReset value) reset,
   }) {
     return paused(this);
   }
@@ -1848,6 +1876,7 @@ class _$WorkoutPaused implements WorkoutPaused {
     TResult? Function(WorkoutCompleted value)? completed,
     TResult? Function(WorkoutPaused value)? paused,
     TResult? Function(WorkoutResumed value)? resumed,
+    TResult? Function(WorkoutReset value)? reset,
   }) {
     return paused?.call(this);
   }
@@ -1860,6 +1889,7 @@ class _$WorkoutPaused implements WorkoutPaused {
     TResult Function(WorkoutCompleted value)? completed,
     TResult Function(WorkoutPaused value)? paused,
     TResult Function(WorkoutResumed value)? resumed,
+    TResult Function(WorkoutReset value)? reset,
     required TResult orElse(),
   }) {
     if (paused != null) {
@@ -1916,6 +1946,7 @@ class _$WorkoutResumed implements WorkoutResumed {
     required TResult Function() completed,
     required TResult Function() paused,
     required TResult Function() resumed,
+    required TResult Function() reset,
   }) {
     return resumed();
   }
@@ -1928,6 +1959,7 @@ class _$WorkoutResumed implements WorkoutResumed {
     TResult? Function()? completed,
     TResult? Function()? paused,
     TResult? Function()? resumed,
+    TResult? Function()? reset,
   }) {
     return resumed?.call();
   }
@@ -1940,6 +1972,7 @@ class _$WorkoutResumed implements WorkoutResumed {
     TResult Function()? completed,
     TResult Function()? paused,
     TResult Function()? resumed,
+    TResult Function()? reset,
     required TResult orElse(),
   }) {
     if (resumed != null) {
@@ -1956,6 +1989,7 @@ class _$WorkoutResumed implements WorkoutResumed {
     required TResult Function(WorkoutCompleted value) completed,
     required TResult Function(WorkoutPaused value) paused,
     required TResult Function(WorkoutResumed value) resumed,
+    required TResult Function(WorkoutReset value) reset,
   }) {
     return resumed(this);
   }
@@ -1968,6 +2002,7 @@ class _$WorkoutResumed implements WorkoutResumed {
     TResult? Function(WorkoutCompleted value)? completed,
     TResult? Function(WorkoutPaused value)? paused,
     TResult? Function(WorkoutResumed value)? resumed,
+    TResult? Function(WorkoutReset value)? reset,
   }) {
     return resumed?.call(this);
   }
@@ -1980,6 +2015,7 @@ class _$WorkoutResumed implements WorkoutResumed {
     TResult Function(WorkoutCompleted value)? completed,
     TResult Function(WorkoutPaused value)? paused,
     TResult Function(WorkoutResumed value)? resumed,
+    TResult Function(WorkoutReset value)? reset,
     required TResult orElse(),
   }) {
     if (resumed != null) {
@@ -1991,6 +2027,132 @@ class _$WorkoutResumed implements WorkoutResumed {
 
 abstract class WorkoutResumed implements WorkoutEvent {
   const factory WorkoutResumed() = _$WorkoutResumed;
+}
+
+/// @nodoc
+abstract class _$$WorkoutResetCopyWith<$Res> {
+  factory _$$WorkoutResetCopyWith(
+          _$WorkoutReset value, $Res Function(_$WorkoutReset) then) =
+      __$$WorkoutResetCopyWithImpl<$Res>;
+}
+
+/// @nodoc
+class __$$WorkoutResetCopyWithImpl<$Res>
+    extends _$WorkoutEventCopyWithImpl<$Res, _$WorkoutReset>
+    implements _$$WorkoutResetCopyWith<$Res> {
+  __$$WorkoutResetCopyWithImpl(
+      _$WorkoutReset _value, $Res Function(_$WorkoutReset) _then)
+      : super(_value, _then);
+}
+
+/// @nodoc
+
+class _$WorkoutReset implements WorkoutReset {
+  const _$WorkoutReset();
+
+  @override
+  String toString() {
+    return 'WorkoutEvent.reset()';
+  }
+
+  @override
+  bool operator ==(dynamic other) {
+    return identical(this, other) ||
+        (other.runtimeType == runtimeType && other is _$WorkoutReset);
+  }
+
+  @override
+  int get hashCode => runtimeType.hashCode;
+
+  @override
+  @optionalTypeArgs
+  TResult when<TResult extends Object?>({
+    required TResult Function(Workout workout) started,
+    required TResult Function(WorkoutStep step, int index) stepChanged,
+    required TResult Function() completed,
+    required TResult Function() paused,
+    required TResult Function() resumed,
+    required TResult Function() reset,
+  }) {
+    return reset();
+  }
+
+  @override
+  @optionalTypeArgs
+  TResult? whenOrNull<TResult extends Object?>({
+    TResult? Function(Workout workout)? started,
+    TResult? Function(WorkoutStep step, int index)? stepChanged,
+    TResult? Function()? completed,
+    TResult? Function()? paused,
+    TResult? Function()? resumed,
+    TResult? Function()? reset,
+  }) {
+    return reset?.call();
+  }
+
+  @override
+  @optionalTypeArgs
+  TResult maybeWhen<TResult extends Object?>({
+    TResult Function(Workout workout)? started,
+    TResult Function(WorkoutStep step, int index)? stepChanged,
+    TResult Function()? completed,
+    TResult Function()? paused,
+    TResult Function()? resumed,
+    TResult Function()? reset,
+    required TResult orElse(),
+  }) {
+    if (reset != null) {
+      return reset();
+    }
+    return orElse();
+  }
+
+  @override
+  @optionalTypeArgs
+  TResult map<TResult extends Object?>({
+    required TResult Function(WorkoutStarted value) started,
+    required TResult Function(WorkoutStepChanged value) stepChanged,
+    required TResult Function(WorkoutCompleted value) completed,
+    required TResult Function(WorkoutPaused value) paused,
+    required TResult Function(WorkoutResumed value) resumed,
+    required TResult Function(WorkoutReset value) reset,
+  }) {
+    return reset(this);
+  }
+
+  @override
+  @optionalTypeArgs
+  TResult? mapOrNull<TResult extends Object?>({
+    TResult? Function(WorkoutStarted value)? started,
+    TResult? Function(WorkoutStepChanged value)? stepChanged,
+    TResult? Function(WorkoutCompleted value)? completed,
+    TResult? Function(WorkoutPaused value)? paused,
+    TResult? Function(WorkoutResumed value)? resumed,
+    TResult? Function(WorkoutReset value)? reset,
+  }) {
+    return reset?.call(this);
+  }
+
+  @override
+  @optionalTypeArgs
+  TResult maybeMap<TResult extends Object?>({
+    TResult Function(WorkoutStarted value)? started,
+    TResult Function(WorkoutStepChanged value)? stepChanged,
+    TResult Function(WorkoutCompleted value)? completed,
+    TResult Function(WorkoutPaused value)? paused,
+    TResult Function(WorkoutResumed value)? resumed,
+    TResult Function(WorkoutReset value)? reset,
+    required TResult orElse(),
+  }) {
+    if (reset != null) {
+      return reset(this);
+    }
+    return orElse();
+  }
+}
+
+abstract class WorkoutReset implements WorkoutEvent {
+  const factory WorkoutReset() = _$WorkoutReset;
 }
 
 /// @nodoc

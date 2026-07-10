@@ -49,6 +49,10 @@ class WorkoutEvent with _$WorkoutEvent {
   const factory WorkoutEvent.completed() = WorkoutCompleted;
   const factory WorkoutEvent.paused() = WorkoutPaused;
   const factory WorkoutEvent.resumed() = WorkoutResumed;
+
+  /// Fired by [WorkoutEngine.reset] — clears all workout state and returns
+  /// the engine to idle.  Listeners should treat this as a full session end.
+  const factory WorkoutEvent.reset() = WorkoutReset;
 }
 
 // ---------------------------------------------------------------------------

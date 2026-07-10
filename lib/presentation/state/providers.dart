@@ -605,7 +605,122 @@ class _ErgWattsNotifier extends StateNotifier<int> {
   static const _max = 2000;
 
   void adjust(int delta) => state = (state + delta).clamp(_min, _max);
+
+  /// Sets the target directly — used by the workout engine watcher to sync
+  /// the display with the current step's computed power target.
+  void set(int w) => state = w.clamp(_min, _max);
 }
 
 final ergTargetWattsProvider =
     StateNotifierProvider<_ErgWattsNotifier, int>((ref) => _ErgWattsNotifier());
+
+// ---------------------------------------------------------------------------
+// No-op TrainerPort — keeps WorkoutEngine alive when no hardware is connected
+// ---------------------------------------------------------------------------
+
+/// Implements [TrainerPort] with all no-ops.  Used as the WorkoutEngine's port
+/// when no real trainer is connected so the engine can still tick, compute
+/// targets, and emit [WorkoutProgress] without crashing.
+class _NoOpTrainerPort implements TrainerPort {
+  const _NoOpTrainerPort();
+
+  @override
+  Stream<SensorReading> get dataStream => const Stream.empty();
+
+  @override
+  Future<void> setTargetPower(Watts watts) async {
+    _workoutEngineLog.warning(
+        '[WorkoutEngine] setTargetPower(${watts.value}W) — no trainer connected');
+  }
+
+  @override
+  Future<void> setSimulationParams(
+      double ws, Grade g, double crr, double cda) async {}
+
+  @override
+  Future<void> setResistance(double p) async {}
+
+  @override
+  Future<void> disconnect() async {}
+}
+
+// ---------------------------------------------------------------------------
+// Workout engine providers
+// ---------------------------------------------------------------------------
+
+final _workoutEngineLog = Logger('WorkoutEngineProvider');
+
+/// Singleton [WorkoutEngine].  The port is snapshotted at creation time;
+/// if no trainer is connected a [_NoOpTrainerPort] is used so the engine
+/// ticks and emits progress without hardware.
+final workoutEngineProvider = Provider<WorkoutEngine>((ref) {
+  final port =
+      ref.read(activeTrainerPortProvider) ?? const _NoOpTrainerPort();
+  final engine = WorkoutEngine(
+    trainerPort: port,
+    eventBus: ref.watch(eventBusProvider),
+  );
+  ref.onDispose(engine.dispose);
+  return engine;
+});
+
+/// State stream from the [WorkoutEngine] (idle → running → paused → completed).
+final workoutEngineStateProvider =
+    StreamProvider<WorkoutEngineState>((ref) {
+  return ref.watch(workoutEngineProvider).stateStream;
+});
+
+/// 1 Hz progress snapshots from the [WorkoutEngine].
+final workoutProgressProvider =
+    StreamProvider<WorkoutProgress>((ref) {
+  return ref.watch(workoutEngineProvider).progressStream;
+});
+
+/// Watcher that:
+///   1. Starts the engine when [currentWorkoutProvider] becomes non-null.
+///   2. Stops the engine when it is cleared.
+///   3. Syncs [ergTargetWattsProvider] with the computed step target each tick.
+///
+/// Watch this provider in [RideScreen.build] to activate it.
+final workoutEngineWatcherProvider = Provider<void>((ref) {
+  final engine = ref.watch(workoutEngineProvider);
+
+  // React to workout selection / deselection.
+  ref.listen<Workout?>(currentWorkoutProvider, (_, workout) {
+    if (workout != null) {
+      if (engine.state == WorkoutEngineState.idle ||
+          engine.state == WorkoutEngineState.completed) {
+        final ftp = ref.read(ftpProvider);
+        _workoutEngineLog
+            .info('[WorkoutEngine] loaded: ${workout.name}, FTP=${ftp.value}W');
+        engine.load(workout, ftp);
+      }
+    } else {
+      if (engine.state != WorkoutEngineState.idle) {
+        _workoutEngineLog.info('[WorkoutEngine] stopped (workout cleared)');
+        engine.stop();
+      }
+    }
+  });
+
+  // If the workout was already set before this provider was first watched
+  // (can happen on hot-restart or re-entry), load immediately.
+  final initial = ref.read(currentWorkoutProvider);
+  if (initial != null &&
+      (engine.state == WorkoutEngineState.idle ||
+          engine.state == WorkoutEngineState.completed)) {
+    final ftp = ref.read(ftpProvider);
+    _workoutEngineLog.info(
+        '[WorkoutEngine] loaded (immediate): ${initial.name}, FTP=${ftp.value}W');
+    Future.microtask(() => engine.load(initial, ftp));
+  }
+
+  // Forward each tick's target power into the ERG display provider.
+  final sub = engine.progressStream.listen((progress) {
+    final watts = progress.targetPower.value.round();
+    _workoutEngineLog.fine(
+        '[WorkoutEngine] tick: ${watts}W step: ${progress.currentStep.type.name}');
+    ref.read(ergTargetWattsProvider.notifier).set(watts);
+  });
+  ref.onDispose(sub.cancel);
+});

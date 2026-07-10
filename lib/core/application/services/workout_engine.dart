@@ -15,7 +15,7 @@ final _log = Logger('WorkoutEngine');
 // State
 // ---------------------------------------------------------------------------
 
-enum WorkoutEngineState { idle, running, paused, completed }
+enum WorkoutEngineState { idle, ready, running, paused, completed }
 
 // ---------------------------------------------------------------------------
 // Progress snapshot (emitted at 1 Hz)
@@ -144,13 +144,17 @@ class WorkoutEngine {
   bool _intervalIsOnPhase = true;
 
   // ---------------------------------------------------------------------------
-  // start
+  // load — stores workout without starting the ticker
   // ---------------------------------------------------------------------------
 
-  void start(Workout workout, Watts ftp) {
+  /// Loads [workout] and [ftp] into the engine and transitions to [ready].
+  ///
+  /// The ticker is NOT started. Call [start] (with no args) once the user
+  /// explicitly requests to begin.
+  void load(Workout workout, Watts ftp) {
     if (_state == WorkoutEngineState.running ||
         _state == WorkoutEngineState.paused) {
-      throw StateError('Cannot start: engine is $_state');
+      throw StateError('Cannot load: engine is $_state');
     }
 
     _currentWorkout = workout;
@@ -158,13 +162,50 @@ class WorkoutEngine {
     _currentStepIndex = 0;
     _totalElapsed = 0;
 
+    _setState(WorkoutEngineState.ready);
+    _log.info('Workout loaded: ${workout.name} (${workout.steps.length} steps, FTP=${ftp.value})');
+  }
+
+  // ---------------------------------------------------------------------------
+  // start
+  // ---------------------------------------------------------------------------
+
+  /// Starts the workout ticker.
+  ///
+  /// **With args** (legacy / direct path): stores [workout] and [ftp] then
+  /// starts immediately from any non-running/non-paused state.
+  ///
+  /// **Without args**: requires the engine to be in [WorkoutEngineState.ready]
+  /// (i.e. [load] must have been called first).
+  void start([Workout? workout, Watts? ftp]) {
+    if (workout != null) {
+      // Legacy path — called with explicit workout and FTP.
+      if (_state == WorkoutEngineState.running ||
+          _state == WorkoutEngineState.paused) {
+        throw StateError('Cannot start: engine is $_state');
+      }
+      _currentWorkout = workout;
+      _ftp = ftp ?? Watts.zero;
+      _currentStepIndex = 0;
+      _totalElapsed = 0;
+    } else {
+      // No-arg path — must be in ready state with a loaded workout.
+      if (_state != WorkoutEngineState.ready) {
+        throw StateError(
+            'Cannot start: call load() first (engine is $_state)');
+      }
+      if (_currentWorkout == null) {
+        throw StateError('Cannot start: no workout loaded');
+      }
+    }
+
     _setState(WorkoutEngineState.running);
-    _eventBus.fire(WorkoutEvent.started(workout));
-    _log.info('Workout started: ${workout.name} (${workout.steps.length} steps, FTP=${ftp.value})');
+    _eventBus.fire(WorkoutEvent.started(_currentWorkout!));
+    _log.info(
+        'Workout started: ${_currentWorkout!.name} (${_currentWorkout!.steps.length} steps, FTP=${_ftp.value})');
 
     _beginStep(0);
-
-    _ticker = Timer.periodic(const Duration(seconds: 1), (_) => _onTick());
+    _startTicker();
   }
 
   // ---------------------------------------------------------------------------
@@ -175,6 +216,8 @@ class WorkoutEngine {
     if (_state != WorkoutEngineState.running) {
       throw StateError('Cannot pause: engine is $_state');
     }
+    _ticker?.cancel();
+    _ticker = null;
     _setState(WorkoutEngineState.paused);
     _eventBus.fire(const WorkoutEvent.paused());
     _log.info('Workout paused');
@@ -186,7 +229,25 @@ class WorkoutEngine {
     }
     _setState(WorkoutEngineState.running);
     _eventBus.fire(const WorkoutEvent.resumed());
+    _startTicker();
     _log.info('Workout resumed');
+  }
+
+  // ---------------------------------------------------------------------------
+  // reset — returns engine to idle, fires WorkoutEvent.reset
+  // ---------------------------------------------------------------------------
+
+  void reset() {
+    if (_state == WorkoutEngineState.idle) return;
+    _ticker?.cancel();
+    _ticker = null;
+    _currentWorkout = null;
+    _ftp = Watts.zero;
+    _currentStepIndex = 0;
+    _totalElapsed = 0;
+    _setState(WorkoutEngineState.idle);
+    _eventBus.fire(const WorkoutEvent.reset());
+    _log.info('Workout reset');
   }
 
   // ---------------------------------------------------------------------------
@@ -231,6 +292,15 @@ class WorkoutEngine {
     _ticker?.cancel();
     _stateController.close();
     _progressController.close();
+  }
+
+  // ---------------------------------------------------------------------------
+  // Ticker
+  // ---------------------------------------------------------------------------
+
+  void _startTicker() {
+    _ticker?.cancel();
+    _ticker = Timer.periodic(const Duration(seconds: 1), (_) => _onTick());
   }
 
   // ---------------------------------------------------------------------------
