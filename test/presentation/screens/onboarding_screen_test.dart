@@ -101,11 +101,18 @@ void main() {
     await tester.tap(find.byKey(const Key('onboardingFinishButton')));
     await tester.pumpAndSettle();
 
+    // One-time crash reporting consent prompt — decline it.
+    expect(find.text('Help improve OpenBike'), findsOneWidget);
+    await tester.tap(find.text('No thanks'));
+    await tester.pumpAndSettle();
+
     // Landed on Home, with the imperial unit system reflected in the
     // recent-ride distance.
     expect(find.text('OpenBike'), findsOneWidget);
     expect(find.textContaining('mi'), findsWidgets);
     expect(find.textContaining(' km'), findsNothing);
+    expect(appPrefs.hasAskedCrashReportingConsent, isTrue);
+    expect(appPrefs.crashReportingEnabled, isFalse);
   });
 
   testWidgets("'I'll set up later' from the welcome page lands on Home",
@@ -116,7 +123,28 @@ void main() {
     await tester.tap(find.byKey(const Key('welcomeSkipButton')));
     await tester.pumpAndSettle();
 
+    // One-time crash reporting consent prompt — accept it.
+    expect(find.text('Help improve OpenBike'), findsOneWidget);
+    await tester.tap(find.text('Send crash reports'));
+    await tester.pumpAndSettle();
+
     expect(find.text('OpenBike'), findsOneWidget);
     expect(appPrefs.hasCompletedOnboarding, isTrue);
+    expect(appPrefs.hasAskedCrashReportingConsent, isTrue);
+    expect(appPrefs.crashReportingEnabled, isTrue);
+  });
+
+  testWidgets('consent prompt is not shown again on a later onboarding run',
+      (tester) async {
+    await appPrefs.setHasAskedCrashReportingConsent(true);
+
+    await tester.pumpWidget(_wrap(storage, appPrefs));
+    await tester.pumpAndSettle();
+
+    await tester.tap(find.byKey(const Key('welcomeSkipButton')));
+    await tester.pumpAndSettle();
+
+    expect(find.text('Help improve OpenBike'), findsNothing);
+    expect(find.text('OpenBike'), findsOneWidget);
   });
 }

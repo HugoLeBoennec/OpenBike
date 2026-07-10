@@ -149,5 +149,5 @@ An agent picking up a phase MUST:
 | [P6](P6-integrations.md) | Integrations — Strava UI, GPX export, Records, OpenCoach | DONE |
 | [P7](P7-design-system.md) | Design system — themes, polish, accessibility | DONE |
 | [P8](P8-desktop.md) | Desktop — macOS + Windows packaging, ANT+ stretch | DONE |
-| [P9](P9-release.md) | Release — stores, crash reporting, LICENSE | NOT_STARTED |
+| [P9](P9-release.md) | Release — stores, crash reporting, LICENSE | DONE |
 | [P10](P10-monetization-optional.md) | Monetization scaffolding (optional) | BLOCKED |

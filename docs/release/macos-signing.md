@@ -49,7 +49,7 @@ as repository secrets (Settings → Secrets and variables → Actions), same
 pattern as `STRAVA_CLIENT_ID`/`STRAVA_CLIENT_SECRET` (see
 `docs/release/secrets.md`).
 
-## What the release job does (tag-triggered, `build-macos-release` in CI)
+## What the release job does (tag-triggered, `macos` job in `.github/workflows/release.yml`)
 
 1. `flutter build macos --release` — produces `build/macos/Build/Products/Release/open_bike.app`.
 2. If `MACOS_CERTIFICATE_P12` is set: import the cert into a temporary
@@ -61,8 +61,9 @@ pattern as `STRAVA_CLIENT_ID`/`STRAVA_CLIENT_SECRET` (see
 4. If signed: `xcrun notarytool submit OpenBike.dmg --apple-id
    "$APPLE_ID" --password "$APPLE_APP_SPECIFIC_PASSWORD" --team-id
    "$APPLE_TEAM_ID" --wait`, then `xcrun stapler staple OpenBike.dmg`.
-5. Upload `OpenBike.dmg` as a workflow artifact (release-asset upload to a
-   GitHub Release is P9's job).
+5. Upload `OpenBike.dmg` as a workflow artifact, which the workflow's
+   `publish-release` job then attaches to the tag's GitHub Release
+   alongside the other platforms — see `docs/release/checklist.md`.
 
 Local manual signing follows the same three `codesign`/`create-dmg`/
 `notarytool` steps — run them directly against a local `flutter build macos

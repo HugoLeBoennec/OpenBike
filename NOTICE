@@ -1,0 +1,19 @@
+OpenBike
+Copyright 2026 Hugo Le Boennec and OpenBike contributors
+
+This product includes software developed as part of the OpenBike project
+(licensed under the Apache License, Version 2.0 — see LICENSE).
+
+Third-party dependencies retain their own licenses. In-app attribution for
+every compiled-in Dart/Flutter package is available at
+Settings → About → Open-source licenses (backed by Flutter's
+`LicenseRegistry`/`showLicensePage`, which surfaces each pub.dev package's
+bundled `LICENSE` file automatically).
+
+Optional runtime dependency (not bundled — see docs/release/antplus-usb.md):
+this app can dynamically load a system-installed libusb 1.0 shared library
+on desktop platforms to talk to ANT+ USB dongles. libusb is licensed under
+the GNU Lesser General Public License v2.1. OpenBike does not vendor,
+statically link, or redistribute the libusb binary; where a build does
+bundle one for packaging convenience, that binary's LGPL-2.1 license text
+must ship alongside it per docs/release/antplus-usb.md.

@@ -31,8 +31,19 @@ storeFile=/absolute/path/to/openbike-release.jks
 
 ## CI / release builds
 
-For CI-driven release builds, write `android/key.properties` and the keystore
-file from CI secrets before running `flutter build appbundle --release` (or
-`apk --release`), mirroring the pattern already used for `--dart-define` OAuth
-credentials in `main.dart`. Never commit the keystore or `key.properties` to
-the repository.
+The `android` job in `.github/workflows/release.yml` writes
+`android/key.properties` and the keystore file from GitHub Actions secrets
+before running `flutter build appbundle --release`, mirroring the pattern
+already used for `--dart-define` OAuth credentials in `main.dart`. Configure
+these repository secrets to produce a signed AAB:
+
+| Secret | Value |
+|---|---|
+| `ANDROID_KEYSTORE_BASE64` | Base64 of the `.jks` (`base64 -i openbike-release.jks`) |
+| `ANDROID_KEYSTORE_PASSWORD` | The keystore's `storePassword` |
+| `ANDROID_KEY_PASSWORD` | The key's `keyPassword` |
+| `ANDROID_KEY_ALIAS` | The `-alias` used when generating the keystore (`openbike` above) |
+
+When `ANDROID_KEYSTORE_BASE64` is unset, the job still succeeds and produces
+a debug-signed AAB — never commit the keystore or `key.properties` to the
+repository.
