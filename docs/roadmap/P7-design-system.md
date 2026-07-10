@@ -73,8 +73,19 @@ flutter analyze && flutter test
 `workout_editor_screen.dart`). `flutter test`: all green except 3 pre-existing failures
 confirmed unrelated to this phase (`device_scan_screen_test.dart` ×2,
 `workout_editor_screen_test.dart` ×1 — a pre-existing `ListTile`/`DecoratedBox` ink-splash
-assertion, reproduced on `main` before this branch's changes). CI green. Attach
-before/after screenshots (all main screens, both themes) to the PR.
+assertion, reproduced on `main` before this branch's changes). Attach before/after
+screenshots (all main screens, both themes) to the PR.
+
+**GitHub Actions CI is red, but not from this phase's code**: every `CI` run on this repo
+— on `main` and every branch — has failed instantly (~2 s, both the `Analyze` and `Unit &
+widget tests` jobs, all `Build *` jobs skipped) since the P3 merge
+(`450489c399b1`, 2026-07-10T06:07Z) onward, including P4/P5/P6's already-merged runs and
+every commit on this P7 branch, with `runner_id: 0` and no retrievable job logs — the
+signature of a runner-provisioning/billing failure, not a code or test failure (this
+session's local `flutter analyze`/`flutter test` runs, on the actual pinned toolchain
+version modulo a newer local Flutter, are clean). Fixing that is outside this phase's
+scope (repo/Actions configuration, not app code) — flagging it for the repo owner rather
+than blocking on it.
 
 ### Pending manual QA
 - Screenshots: this session ran headless (no emulator/simulator/display attached) — the
