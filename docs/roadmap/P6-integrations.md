@@ -1,7 +1,7 @@
 ---
 phase: P6
 title: Integrations — Strava UI, GPX export, open-core seam, Records & OpenCoach
-status: NOT_STARTED
+status: IN_PROGRESS
 depends_on: [P2]
 validation:
   - flutter analyze
