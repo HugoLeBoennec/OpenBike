@@ -9,3 +9,4 @@ export 'ride_summary_screen.dart';
 export 'settings_screen.dart';
 export 'workout_builder_screen.dart';
 export 'workout_detail_screen.dart';
+export 'workout_editor_screen.dart';

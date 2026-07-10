@@ -495,4 +495,70 @@ void main() {
 
     await trainer.disconnect();
   });
+
+  // =========================================================================
+  // 10. P4 — Create a workout in the editor, start it, HUD shows step 1
+  // =========================================================================
+
+  testWidgets(
+      'Workout editor: create a workout in the editor, start it, HUD shows step 1',
+      (tester) async {
+    await tester.pumpWidget(buildTestApp());
+    await tester.pumpAndSettle();
+
+    final container = ProviderScope.containerOf(
+      tester.element(find.byType(MaterialApp)),
+    );
+    final goRouter = GoRouter.of(tester.element(find.byType(MaterialApp)));
+
+    // --- Build a single 30s @ 100% steady-state workout via the editor UI ---
+    goRouter.push('/workouts/new');
+    await tester.pumpAndSettle();
+
+    await tester.enterText(
+        find.byKey(const Key('workoutNameField')), 'Editor Steady Test');
+
+    await tester.tap(find.byKey(const Key('addStepButton')));
+    await tester.pumpAndSettle();
+
+    await tester.enterText(find.byKey(const Key('stepDurationField')), '30');
+    await tester.enterText(find.byKey(const Key('stepPowerField')), '100');
+    await tester.pumpAndSettle();
+
+    await tester.tap(find.byKey(const Key('stepSaveButton')));
+    await tester.pumpAndSettle();
+
+    await tester.tap(find.byKey(const Key('workoutSaveButton')));
+    await tester.pumpAndSettle();
+
+    final workouts = container.read(workoutListProvider);
+    final workout = workouts.firstWhere((w) => w.name == 'Editor Steady Test');
+    expect(workout.steps, hasLength(1));
+    expect(workout.steps.first.type, StepType.steadyState);
+    expect(workout.steps.first.durationSeconds, 30);
+    expect(workout.steps.first.powerTargetPercent, 100);
+
+    // Also persisted to storage, not just held in memory.
+    final storage = container.read(storageProvider);
+    final storedWorkouts = await storage.getWorkouts();
+    expect(storedWorkouts.map((w) => w.id), contains(workout.id));
+
+    // --- Connect the simulator and start a ride with the new workout ---
+    final plugin = container.read(simulatorPluginProvider)!;
+    final devices = await plugin.scan(const Duration(seconds: 1));
+    final trainer = await plugin.connect(devices.first);
+    container.read(activeTrainerPortProvider.notifier).state = trainer;
+
+    goRouter.go('/ride', extra: RideExtra(workout: workout));
+    await tester.pumpAndSettle();
+
+    // The HUD only renders once WorkoutEngine emits its first progress tick.
+    await tester.pump(const Duration(seconds: 1));
+    await Future<void>.delayed(const Duration(seconds: 1));
+    await tester.pump();
+
+    expect(find.text('STEADY STATE'), findsOneWidget);
+
+    await trainer.disconnect();
+  });
 }

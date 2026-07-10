@@ -4,6 +4,7 @@ import 'package:file_picker/file_picker.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
+import 'package:uuid/uuid.dart';
 
 import '../../core/domain/entities/workout.dart';
 import '../state/providers.dart';
@@ -53,9 +54,42 @@ class WorkoutBuilderScreen extends ConsumerWidget {
               },
             ),
       floatingActionButton: FloatingActionButton(
+        key: const Key('workoutFab'),
         backgroundColor: Colors.blue,
-        onPressed: () => _importWorkout(context, ref),
-        child: const Icon(Icons.file_open, color: Colors.white),
+        onPressed: () => _showAddMenu(context, ref),
+        child: const Icon(Icons.add, color: Colors.white),
+      ),
+    );
+  }
+
+  void _showAddMenu(BuildContext context, WidgetRef ref) {
+    showModalBottomSheet<void>(
+      context: context,
+      backgroundColor: const Color(0xFF1A1A1A),
+      builder: (ctx) => SafeArea(
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            ListTile(
+              key: const Key('newWorkoutTile'),
+              leading: const Icon(Icons.add, color: Colors.white),
+              title: const Text('New workout', style: TextStyle(color: Colors.white)),
+              onTap: () {
+                Navigator.pop(ctx);
+                context.push('/workouts/new');
+              },
+            ),
+            ListTile(
+              leading: const Icon(Icons.file_open, color: Colors.white),
+              title: const Text('Import file (.zwo / .erg / .mrc)',
+                  style: TextStyle(color: Colors.white)),
+              onTap: () {
+                Navigator.pop(ctx);
+                _importWorkout(context, ref);
+              },
+            ),
+          ],
+        ),
       ),
     );
   }
@@ -87,7 +121,13 @@ class WorkoutBuilderScreen extends ConsumerWidget {
     }
 
     try {
-      final workout = await formatPlugin.parse(content);
+      final parsed = await formatPlugin.parse(content);
+      // Imported workouts arrive with an empty id — assign one and persist
+      // so they're saved to the library (and can be reopened in the editor)
+      // rather than living only in memory for this session.
+      final workout = parsed.id.isEmpty ? parsed.copyWith(id: const Uuid().v4()) : parsed;
+      await ref.read(storageProvider).saveWorkout(workout);
+
       final current = ref.read(workoutListProvider);
       ref.read(workoutListProvider.notifier).state = [...current, workout];
     } catch (e) {

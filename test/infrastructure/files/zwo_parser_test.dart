@@ -1,4 +1,5 @@
 import 'package:flutter_test/flutter_test.dart';
+import 'package:open_bike/core/application/services/workout_builder.dart';
 import 'package:open_bike/core/domain/entities/workout.dart';
 import 'package:open_bike/core/domain/entities/workout_step.dart';
 import 'package:open_bike/infrastructure/files/zwo_parser.dart';
@@ -288,6 +289,41 @@ void main() {
           closeTo(origInt.powerTargetPercent, 1));
       expect(repInt.powerLowPercent,
           closeTo(origInt.powerLowPercent!, 1));
+    });
+
+    test('editor-created workout (WorkoutBuilder, not imported) round-trips',
+        () async {
+      final original = WorkoutBuilder('2x5 Intervals', description: 'Built in the editor')
+          .warmup(duration: 300, fromPercent: 40, toPercent: 70, cadence: 85)
+          .intervals(
+            repeat: 2,
+            onDuration: 300,
+            offDuration: 60,
+            onPercent: 105,
+            offPercent: 50,
+          )
+          .cooldown(duration: 180, fromPercent: 65, toPercent: 30)
+          .build();
+
+      final xml = await parser.serialize(original);
+      final reparsed = await parser.parse(xml);
+
+      expect(reparsed.name, original.name);
+      expect(reparsed.description, original.description);
+      expect(reparsed.steps, hasLength(original.steps.length));
+      expect(reparsed.totalDuration, original.totalDuration);
+
+      for (var i = 0; i < original.steps.length; i++) {
+        expect(reparsed.steps[i].type, original.steps[i].type);
+        expect(reparsed.steps[i].durationSeconds, original.steps[i].durationSeconds);
+      }
+
+      final reInterval = reparsed.steps[1];
+      final origInterval = original.steps[1];
+      expect(reInterval.repeat, origInterval.repeat);
+      expect(reInterval.offDurationSeconds, origInterval.offDurationSeconds);
+      expect(reInterval.powerTargetPercent, closeTo(origInterval.powerTargetPercent, 1));
+      expect(reInterval.powerLowPercent, closeTo(origInterval.powerLowPercent!, 1));
     });
   });
 
