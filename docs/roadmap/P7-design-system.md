@@ -1,7 +1,7 @@
 ---
 phase: P7
 title: Design system — themes, visual polish, accessibility
-status: NOT_STARTED
+status: IN_PROGRESS
 depends_on: [P1]
 validation:
   - flutter analyze
