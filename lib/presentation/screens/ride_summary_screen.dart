@@ -2,7 +2,11 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
+import '../../core/domain/entities/power_zone.dart';
+import '../../core/domain/entities/ride.dart';
+import '../../core/domain/value_objects/value_objects.dart';
 import '../state/providers.dart';
+import '../widgets/ftp_test_prompt.dart';
 import '../widgets/ride_summary_widgets.dart';
 
 /// Post-ride summary screen shown after stopping a ride.
@@ -28,7 +32,24 @@ class RideSummaryScreen extends ConsumerWidget {
           backgroundColor: Colors.black,
           automaticallyImplyLeading: false,
         ),
-        body: rideAsync.when(
+        body: Stack(
+          children: [
+            _buildBody(rideAsync, ftp, zones, context, ref),
+            FtpTestPrompt(rideId: rideId),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildBody(
+    AsyncValue<Ride?> rideAsync,
+    Watts ftp,
+    List<PowerZone> zones,
+    BuildContext context,
+    WidgetRef ref,
+  ) {
+    return rideAsync.when(
           loading: () => const Center(
               child: CircularProgressIndicator(color: Colors.white30)),
           error: (e, _) => Center(
@@ -113,9 +134,7 @@ class RideSummaryScreen extends ConsumerWidget {
               ],
             );
           },
-        ),
-      ),
-    );
+        );
   }
 
   Future<void> _confirmDelete(BuildContext context, WidgetRef ref) async {

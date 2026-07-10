@@ -8,6 +8,7 @@ import 'package:path/path.dart' as p;
 import 'package:path_provider/path_provider.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
+import 'core/application/services/bundled_workouts.dart';
 import 'core/application/services/physics_engine.dart';
 import 'core/events/event_bus.dart';
 import 'infrastructure/ble/ble_transport.dart';
@@ -47,6 +48,10 @@ void main() async {
   final storage = DriftStorage(db);
   final savedProfile = await storage.getProfile();
 
+  // ---- Seed the starter workout library (idempotent) and load workouts ----
+  await BundledWorkouts.seedIfNeeded(storage);
+  final savedWorkouts = await storage.getWorkouts();
+
   runApp(
     ProviderScope(
       overrides: [
@@ -62,6 +67,8 @@ void main() async {
         // Seed profile from DB so zones/FTP are available immediately.
         if (savedProfile != null)
           userProfileProvider.overrideWith((ref) => savedProfile),
+        // Seed the workout library from DB (bundled + any user-created).
+        workoutListProvider.overrideWith((ref) => savedWorkouts),
       ],
       child: OpenBikeApp(
         router: createAppRouter(

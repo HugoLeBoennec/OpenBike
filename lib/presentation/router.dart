@@ -58,6 +58,17 @@ GoRouter createAppRouter({required bool hasCompletedOnboarding}) {
             builder: (_, __) => const WorkoutBuilderScreen(),
           ),
           GoRoute(
+            path: '/workouts/new',
+            builder: (_, __) => const WorkoutEditorScreen(),
+          ),
+          GoRoute(
+            path: '/workouts/edit/:id',
+            builder: (_, state) {
+              final id = state.pathParameters['id'];
+              return WorkoutEditorScreen(workoutId: id);
+            },
+          ),
+          GoRoute(
             path: '/workouts/:id',
             builder: (_, state) {
               final id =

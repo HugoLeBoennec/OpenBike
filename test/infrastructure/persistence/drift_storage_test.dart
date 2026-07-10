@@ -223,6 +223,84 @@ void main() {
   });
 
   // ===========================================================================
+  // Workouts
+  // ===========================================================================
+
+  group('DriftStorage — workouts', () {
+    Workout testWorkout({String id = 'w-1'}) => Workout(
+          id: id,
+          name: 'Sweet Spot 3x12',
+          description: 'Three 12-minute blocks',
+          source: 'builder',
+          steps: const [
+            WorkoutStep(
+              type: StepType.warmup,
+              durationSeconds: 600,
+              powerTargetPercent: 0,
+              powerLowPercent: 40,
+              powerHighPercent: 75,
+            ),
+            WorkoutStep(
+              type: StepType.interval,
+              durationSeconds: 720,
+              offDurationSeconds: 300,
+              powerTargetPercent: 90,
+              powerLowPercent: 55,
+              repeat: 3,
+              cadenceTarget: 90,
+              cadenceResting: 85,
+            ),
+          ],
+          textEvents: const [
+            TextEvent(offsetSeconds: 10, message: 'Go!', durationSeconds: 5),
+          ],
+        );
+
+    test('saveWorkout then getWorkouts round-trips steps and text events',
+        () async {
+      final workout = testWorkout();
+      await storage.saveWorkout(workout);
+
+      final loaded = await storage.getWorkouts();
+      expect(loaded, hasLength(1));
+      final w = loaded.single;
+      expect(w.id, workout.id);
+      expect(w.name, workout.name);
+      expect(w.description, workout.description);
+      expect(w.steps, hasLength(2));
+      expect(w.steps[0].type, StepType.warmup);
+      expect(w.steps[0].powerLowPercent, 40);
+      expect(w.steps[0].powerHighPercent, 75);
+      expect(w.steps[1].type, StepType.interval);
+      expect(w.steps[1].repeat, 3);
+      expect(w.steps[1].offDurationSeconds, 300);
+      expect(w.steps[1].cadenceResting, 85);
+      expect(w.textEvents, hasLength(1));
+      expect(w.textEvents.single.message, 'Go!');
+    });
+
+    test('saveWorkout upserts on conflicting id', () async {
+      final workout = testWorkout();
+      await storage.saveWorkout(workout);
+      await storage.saveWorkout(workout.copyWith(name: 'Renamed'));
+
+      final loaded = await storage.getWorkouts();
+      expect(loaded, hasLength(1));
+      expect(loaded.single.name, 'Renamed');
+    });
+
+    test('deleteWorkout removes only the targeted workout', () async {
+      await storage.saveWorkout(testWorkout(id: 'w-1'));
+      await storage.saveWorkout(testWorkout(id: 'w-2'));
+
+      await storage.deleteWorkout('w-1');
+
+      final loaded = await storage.getWorkouts();
+      expect(loaded.map((w) => w.id), ['w-2']);
+    });
+  });
+
+  // ===========================================================================
   // deleteRide cascade
   // ===========================================================================
 

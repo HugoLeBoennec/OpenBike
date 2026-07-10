@@ -2,6 +2,7 @@ import '../entities/lap.dart';
 import '../entities/ride.dart';
 import '../entities/sensor_reading.dart';
 import '../entities/user_profile.dart';
+import '../entities/workout.dart';
 
 abstract class StoragePort {
   // --- Rides ---
@@ -10,6 +11,12 @@ abstract class StoragePort {
   Future<List<Ride>> getRides();
   Future<Ride?> getRide(String id);
   Future<void> deleteRide(String id);
+
+  // --- Workouts ---
+
+  Future<void> saveWorkout(Workout workout);
+  Future<List<Workout>> getWorkouts();
+  Future<void> deleteWorkout(String id);
 
   // --- Sensor readings ---
 

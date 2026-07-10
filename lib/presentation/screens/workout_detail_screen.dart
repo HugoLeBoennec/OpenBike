@@ -1,10 +1,15 @@
+import 'dart:io' show File;
+
 import 'package:fl_chart/fl_chart.dart';
+import 'package:file_picker/file_picker.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
+import '../../core/application/services/tss_estimator.dart';
 import '../../core/domain/entities/workout.dart';
 import '../../core/domain/entities/workout_step.dart';
+import '../../infrastructure/files/zwo_parser.dart';
 import '../models/ride_extra.dart';
 import '../state/providers.dart';
 
@@ -40,6 +45,20 @@ class WorkoutDetailScreen extends ConsumerWidget {
       appBar: AppBar(
         title: Text(workout.name),
         backgroundColor: Colors.black,
+        actions: [
+          IconButton(
+            key: const Key('shareZwoButton'),
+            icon: const Icon(Icons.ios_share),
+            tooltip: 'Share as .zwo',
+            onPressed: () => _shareAsZwo(context, workout),
+          ),
+          IconButton(
+            key: const Key('editWorkoutButton'),
+            icon: const Icon(Icons.edit_outlined),
+            tooltip: 'Edit',
+            onPressed: () => context.push('/workouts/edit/${workout.id}'),
+          ),
+        ],
       ),
       body: ListView(
         padding: const EdgeInsets.all(16),
@@ -59,7 +78,7 @@ class WorkoutDetailScreen extends ConsumerWidget {
               _StatChip(label: 'STEPS', value: '$stepCount'),
               _StatChip(
                 label: 'EST. TSS',
-                value: _estimateTss(workout).toStringAsFixed(0),
+                value: estimateWorkoutTss(workout.steps).toStringAsFixed(0),
               ),
             ],
           ),
@@ -136,16 +155,29 @@ class WorkoutDetailScreen extends ConsumerWidget {
     );
   }
 
-  double _estimateTss(Workout workout) {
-    // Rough TSS estimate: sum of (duration_h × IF²) × 100
-    // IF ≈ powerTargetPercent / 100
-    double tss = 0;
-    for (final step in workout.steps) {
-      final hours = step.totalDurationSeconds / 3600.0;
-      final ifactor = step.powerTargetPercent / 100.0;
-      tss += hours * ifactor * ifactor * 100;
+  Future<void> _shareAsZwo(BuildContext context, Workout workout) async {
+    try {
+      final xml = await ZwoParser().serialize(workout);
+      final path = await FilePicker.platform.saveFile(
+        dialogTitle: 'Save workout',
+        fileName: '${workout.name}.zwo',
+        type: FileType.custom,
+        allowedExtensions: ['zwo'],
+      );
+      if (path == null) return;
+      await File(path).writeAsString(xml);
+      if (context.mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('Saved .zwo file')),
+        );
+      }
+    } catch (e) {
+      if (context.mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Failed to save: $e')),
+        );
+      }
     }
-    return tss;
   }
 }
 

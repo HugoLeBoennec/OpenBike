@@ -546,6 +546,15 @@ final workoutProgressProvider = StreamProvider<WorkoutProgress>((ref) {
   return ref.watch(workoutEngineProvider).progressStream;
 });
 
+/// Which bundled FTP test protocol (if any) is driving the ride currently
+/// starting. Set by [RideScreen] when the started workout's id matches one
+/// of [BundledWorkouts.rampTestId] / [BundledWorkouts.twentyMinTestId];
+/// consumed once by `FtpTestPrompt` on the ride-summary screen, which
+/// clears it back to null after showing the update-profile prompt.
+enum FtpTestType { ramp, twentyMinute }
+
+final activeFtpTestProvider = StateProvider<FtpTestType?>((ref) => null);
+
 // ---------------------------------------------------------------------------
 // User profile & zones
 // ---------------------------------------------------------------------------

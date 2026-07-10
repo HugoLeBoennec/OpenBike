@@ -4,9 +4,11 @@ import '../../core/domain/entities/lap.dart';
 import '../../core/domain/entities/ride.dart';
 import '../../core/domain/entities/sensor_reading.dart';
 import '../../core/domain/entities/user_profile.dart';
+import '../../core/domain/entities/workout.dart';
 import '../../core/domain/ports/storage_port.dart';
 import '../../core/domain/value_objects/value_objects.dart';
 import 'app_database.dart';
+import 'workout_json.dart';
 
 /// [StoragePort] implementation backed by Drift (SQLite).
 class DriftStorage implements StoragePort {
@@ -213,6 +215,44 @@ class DriftStorage implements StoragePort {
               duration: Duration(milliseconds: r.durationMs),
             ))
         .toList();
+  }
+
+  // -------------------------------------------------------------------------
+  // Workouts
+  // -------------------------------------------------------------------------
+
+  @override
+  Future<void> saveWorkout(Workout workout) async {
+    await _db.into(_db.workouts).insertOnConflictUpdate(
+          WorkoutsCompanion.insert(
+            id: workout.id,
+            name: workout.name,
+            description: Value(workout.description),
+            stepsJson: WorkoutJson.encode(workout.steps, workout.textEvents),
+          ),
+        );
+  }
+
+  @override
+  Future<List<Workout>> getWorkouts() async {
+    final rows = await _db.select(_db.workouts).get();
+    return rows.map(_workoutFromRow).toList();
+  }
+
+  @override
+  Future<void> deleteWorkout(String id) async {
+    await (_db.delete(_db.workouts)..where((t) => t.id.equals(id))).go();
+  }
+
+  Workout _workoutFromRow(WorkoutRow row) {
+    final (steps, textEvents) = WorkoutJson.decode(row.stepsJson);
+    return Workout(
+      id: row.id,
+      name: row.name,
+      description: row.description,
+      steps: steps,
+      textEvents: textEvents,
+    );
   }
 
   // -------------------------------------------------------------------------
