@@ -1,7 +1,7 @@
 ---
 phase: P5
 title: Training features — calendar, PMC, personal records
-status: NOT_STARTED
+status: DONE
 depends_on: [P4]
 validation:
   - flutter analyze
@@ -21,40 +21,40 @@ on top.
 ## Tasks
 
 ### 1. Training calendar
-- [ ] New Drift table `ScheduledWorkouts` (id, workoutId FK, date, completedRideId?,
+- [x] New Drift table `ScheduledWorkouts` (id, workoutId FK, date, completedRideId?,
       notes) + incremental migration (schema v+1; pattern established in P0). Extend
       `StoragePort`/`DriftStorage` with CRUD + regenerate.
-- [ ] `CalendarScreen` (new tab or Home entry): month grid + day list; tap a day →
+- [x] `CalendarScreen` (new tab or Home entry): month grid + day list; tap a day →
       schedule a workout from the library; scheduled item → "Start now" (routes to
       `/ride` with the workout) and auto-links the completed ride
       (`completedRideId`) when a ride started from a scheduled item finishes.
-- [ ] Home screen: "Today" card showing today's scheduled workout.
+- [x] Home screen: "Today" card showing today's scheduled workout.
       **Accept:** storage tests for CRUD + ride-linking; widget test scheduling and
       completing a workout marks the calendar entry done.
 
 ### 2. Performance Management Chart (PMC)
-- [ ] `FitnessCalculator` service in `lib/core/application/services/`:
+- [x] `FitnessCalculator` service in `lib/core/application/services/`:
       daily TSS aggregation → CTL (42-day exponentially weighted avg), ATL (7-day),
       TSB = CTL − ATL. Pure Dart, seeded from ride history
       (`StoragePort.getAllRides` summaries — cached tss already on the row).
-- [ ] `TrendsScreen` with fl_chart: CTL/ATL lines + TSB area over selectable ranges
+- [x] `TrendsScreen` with fl_chart: CTL/ATL lines + TSB area over selectable ranges
       (1/3/6/12 months); weekly TSS bar chart; totals row (time, distance, TSS this
       week/month).
-- [ ] Home screen: compact fitness sparkline + current CTL/TSB numbers.
+- [x] Home screen: compact fitness sparkline + current CTL/TSB numbers.
       **Accept:** unit tests for CTL/ATL/TSB math against hand-computed sequences
       (including gap days = 0 TSS); widget test renders chart from synthetic history.
 
 ### 3. Personal records
-- [ ] On ride save (hook into `RecordingEngine.stop` flow), compute best 5 s / 1 min /
+- [x] On ride save (hook into `RecordingEngine.stop` flow), compute best 5 s / 1 min /
       5 min / 20 min mean-max power from readings; store in a new `PersonalRecords`
       table (duration, watts, rideId, date) keeping all-time + last-90-day bests.
-- [ ] Ride summary: "New PR!" badges when beaten. History/Trends: PR panel.
-- [ ] Backfill: one-time job computing PRs from existing rides (idempotent).
+- [x] Ride summary: "New PR!" badges when beaten. History/Trends: PR panel.
+- [x] Backfill: one-time job computing PRs from existing rides (idempotent).
       **Accept:** unit test for mean-max power extraction (rolling window) and PR
       update logic; backfill test.
 
 ### 4. Data hygiene for longitudinal metrics
-- [ ] FTP history: store FTP changes with effective dates (new small table or profile
+- [x] FTP history: store FTP changes with effective dates (new small table or profile
       history) so TSS of old rides stays computed against the FTP of that day
       (`ftpAtTime` already exists on rides — use it consistently in the PMC).
       **Accept:** PMC test where FTP changes mid-history produces stable past values.

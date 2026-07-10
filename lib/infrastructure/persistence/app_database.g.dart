@@ -3974,6 +3974,1046 @@ class ExportQueueCompanion extends UpdateCompanion<ExportQueueRow> {
   }
 }
 
+class $ScheduledWorkoutsTable extends ScheduledWorkouts
+    with TableInfo<$ScheduledWorkoutsTable, ScheduledWorkoutRow> {
+  @override
+  final GeneratedDatabase attachedDatabase;
+  final String? _alias;
+  $ScheduledWorkoutsTable(this.attachedDatabase, [this._alias]);
+  static const VerificationMeta _idMeta = const VerificationMeta('id');
+  @override
+  late final GeneratedColumn<String> id = GeneratedColumn<String>(
+    'id',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _workoutIdMeta = const VerificationMeta(
+    'workoutId',
+  );
+  @override
+  late final GeneratedColumn<String> workoutId = GeneratedColumn<String>(
+    'workout_id',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+    defaultConstraints: GeneratedColumn.constraintIsAlways(
+      'REFERENCES workouts (id)',
+    ),
+  );
+  static const VerificationMeta _dateMeta = const VerificationMeta('date');
+  @override
+  late final GeneratedColumn<int> date = GeneratedColumn<int>(
+    'date',
+    aliasedName,
+    false,
+    type: DriftSqlType.int,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _completedRideIdMeta = const VerificationMeta(
+    'completedRideId',
+  );
+  @override
+  late final GeneratedColumn<String> completedRideId = GeneratedColumn<String>(
+    'completed_ride_id',
+    aliasedName,
+    true,
+    type: DriftSqlType.string,
+    requiredDuringInsert: false,
+    defaultConstraints: GeneratedColumn.constraintIsAlways(
+      'REFERENCES rides (id)',
+    ),
+  );
+  static const VerificationMeta _notesMeta = const VerificationMeta('notes');
+  @override
+  late final GeneratedColumn<String> notes = GeneratedColumn<String>(
+    'notes',
+    aliasedName,
+    true,
+    type: DriftSqlType.string,
+    requiredDuringInsert: false,
+  );
+  static const VerificationMeta _createdAtMeta = const VerificationMeta(
+    'createdAt',
+  );
+  @override
+  late final GeneratedColumn<int> createdAt = GeneratedColumn<int>(
+    'created_at',
+    aliasedName,
+    false,
+    type: DriftSqlType.int,
+    requiredDuringInsert: true,
+  );
+  @override
+  List<GeneratedColumn> get $columns => [
+    id,
+    workoutId,
+    date,
+    completedRideId,
+    notes,
+    createdAt,
+  ];
+  @override
+  String get aliasedName => _alias ?? actualTableName;
+  @override
+  String get actualTableName => $name;
+  static const String $name = 'scheduled_workouts';
+  @override
+  VerificationContext validateIntegrity(
+    Insertable<ScheduledWorkoutRow> instance, {
+    bool isInserting = false,
+  }) {
+    final context = VerificationContext();
+    final data = instance.toColumns(true);
+    if (data.containsKey('id')) {
+      context.handle(_idMeta, id.isAcceptableOrUnknown(data['id']!, _idMeta));
+    } else if (isInserting) {
+      context.missing(_idMeta);
+    }
+    if (data.containsKey('workout_id')) {
+      context.handle(
+        _workoutIdMeta,
+        workoutId.isAcceptableOrUnknown(data['workout_id']!, _workoutIdMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_workoutIdMeta);
+    }
+    if (data.containsKey('date')) {
+      context.handle(
+        _dateMeta,
+        date.isAcceptableOrUnknown(data['date']!, _dateMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_dateMeta);
+    }
+    if (data.containsKey('completed_ride_id')) {
+      context.handle(
+        _completedRideIdMeta,
+        completedRideId.isAcceptableOrUnknown(
+          data['completed_ride_id']!,
+          _completedRideIdMeta,
+        ),
+      );
+    }
+    if (data.containsKey('notes')) {
+      context.handle(
+        _notesMeta,
+        notes.isAcceptableOrUnknown(data['notes']!, _notesMeta),
+      );
+    }
+    if (data.containsKey('created_at')) {
+      context.handle(
+        _createdAtMeta,
+        createdAt.isAcceptableOrUnknown(data['created_at']!, _createdAtMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_createdAtMeta);
+    }
+    return context;
+  }
+
+  @override
+  Set<GeneratedColumn> get $primaryKey => {id};
+  @override
+  ScheduledWorkoutRow map(Map<String, dynamic> data, {String? tablePrefix}) {
+    final effectivePrefix = tablePrefix != null ? '$tablePrefix.' : '';
+    return ScheduledWorkoutRow(
+      id: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}id'],
+      )!,
+      workoutId: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}workout_id'],
+      )!,
+      date: attachedDatabase.typeMapping.read(
+        DriftSqlType.int,
+        data['${effectivePrefix}date'],
+      )!,
+      completedRideId: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}completed_ride_id'],
+      ),
+      notes: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}notes'],
+      ),
+      createdAt: attachedDatabase.typeMapping.read(
+        DriftSqlType.int,
+        data['${effectivePrefix}created_at'],
+      )!,
+    );
+  }
+
+  @override
+  $ScheduledWorkoutsTable createAlias(String alias) {
+    return $ScheduledWorkoutsTable(attachedDatabase, alias);
+  }
+}
+
+class ScheduledWorkoutRow extends DataClass
+    implements Insertable<ScheduledWorkoutRow> {
+  final String id;
+  final String workoutId;
+  final int date;
+  final String? completedRideId;
+  final String? notes;
+  final int createdAt;
+  const ScheduledWorkoutRow({
+    required this.id,
+    required this.workoutId,
+    required this.date,
+    this.completedRideId,
+    this.notes,
+    required this.createdAt,
+  });
+  @override
+  Map<String, Expression> toColumns(bool nullToAbsent) {
+    final map = <String, Expression>{};
+    map['id'] = Variable<String>(id);
+    map['workout_id'] = Variable<String>(workoutId);
+    map['date'] = Variable<int>(date);
+    if (!nullToAbsent || completedRideId != null) {
+      map['completed_ride_id'] = Variable<String>(completedRideId);
+    }
+    if (!nullToAbsent || notes != null) {
+      map['notes'] = Variable<String>(notes);
+    }
+    map['created_at'] = Variable<int>(createdAt);
+    return map;
+  }
+
+  ScheduledWorkoutsCompanion toCompanion(bool nullToAbsent) {
+    return ScheduledWorkoutsCompanion(
+      id: Value(id),
+      workoutId: Value(workoutId),
+      date: Value(date),
+      completedRideId: completedRideId == null && nullToAbsent
+          ? const Value.absent()
+          : Value(completedRideId),
+      notes: notes == null && nullToAbsent
+          ? const Value.absent()
+          : Value(notes),
+      createdAt: Value(createdAt),
+    );
+  }
+
+  factory ScheduledWorkoutRow.fromJson(
+    Map<String, dynamic> json, {
+    ValueSerializer? serializer,
+  }) {
+    serializer ??= driftRuntimeOptions.defaultSerializer;
+    return ScheduledWorkoutRow(
+      id: serializer.fromJson<String>(json['id']),
+      workoutId: serializer.fromJson<String>(json['workoutId']),
+      date: serializer.fromJson<int>(json['date']),
+      completedRideId: serializer.fromJson<String?>(json['completedRideId']),
+      notes: serializer.fromJson<String?>(json['notes']),
+      createdAt: serializer.fromJson<int>(json['createdAt']),
+    );
+  }
+  @override
+  Map<String, dynamic> toJson({ValueSerializer? serializer}) {
+    serializer ??= driftRuntimeOptions.defaultSerializer;
+    return <String, dynamic>{
+      'id': serializer.toJson<String>(id),
+      'workoutId': serializer.toJson<String>(workoutId),
+      'date': serializer.toJson<int>(date),
+      'completedRideId': serializer.toJson<String?>(completedRideId),
+      'notes': serializer.toJson<String?>(notes),
+      'createdAt': serializer.toJson<int>(createdAt),
+    };
+  }
+
+  ScheduledWorkoutRow copyWith({
+    String? id,
+    String? workoutId,
+    int? date,
+    Value<String?> completedRideId = const Value.absent(),
+    Value<String?> notes = const Value.absent(),
+    int? createdAt,
+  }) => ScheduledWorkoutRow(
+    id: id ?? this.id,
+    workoutId: workoutId ?? this.workoutId,
+    date: date ?? this.date,
+    completedRideId: completedRideId.present
+        ? completedRideId.value
+        : this.completedRideId,
+    notes: notes.present ? notes.value : this.notes,
+    createdAt: createdAt ?? this.createdAt,
+  );
+  ScheduledWorkoutRow copyWithCompanion(ScheduledWorkoutsCompanion data) {
+    return ScheduledWorkoutRow(
+      id: data.id.present ? data.id.value : this.id,
+      workoutId: data.workoutId.present ? data.workoutId.value : this.workoutId,
+      date: data.date.present ? data.date.value : this.date,
+      completedRideId: data.completedRideId.present
+          ? data.completedRideId.value
+          : this.completedRideId,
+      notes: data.notes.present ? data.notes.value : this.notes,
+      createdAt: data.createdAt.present ? data.createdAt.value : this.createdAt,
+    );
+  }
+
+  @override
+  String toString() {
+    return (StringBuffer('ScheduledWorkoutRow(')
+          ..write('id: $id, ')
+          ..write('workoutId: $workoutId, ')
+          ..write('date: $date, ')
+          ..write('completedRideId: $completedRideId, ')
+          ..write('notes: $notes, ')
+          ..write('createdAt: $createdAt')
+          ..write(')'))
+        .toString();
+  }
+
+  @override
+  int get hashCode =>
+      Object.hash(id, workoutId, date, completedRideId, notes, createdAt);
+  @override
+  bool operator ==(Object other) =>
+      identical(this, other) ||
+      (other is ScheduledWorkoutRow &&
+          other.id == this.id &&
+          other.workoutId == this.workoutId &&
+          other.date == this.date &&
+          other.completedRideId == this.completedRideId &&
+          other.notes == this.notes &&
+          other.createdAt == this.createdAt);
+}
+
+class ScheduledWorkoutsCompanion extends UpdateCompanion<ScheduledWorkoutRow> {
+  final Value<String> id;
+  final Value<String> workoutId;
+  final Value<int> date;
+  final Value<String?> completedRideId;
+  final Value<String?> notes;
+  final Value<int> createdAt;
+  final Value<int> rowid;
+  const ScheduledWorkoutsCompanion({
+    this.id = const Value.absent(),
+    this.workoutId = const Value.absent(),
+    this.date = const Value.absent(),
+    this.completedRideId = const Value.absent(),
+    this.notes = const Value.absent(),
+    this.createdAt = const Value.absent(),
+    this.rowid = const Value.absent(),
+  });
+  ScheduledWorkoutsCompanion.insert({
+    required String id,
+    required String workoutId,
+    required int date,
+    this.completedRideId = const Value.absent(),
+    this.notes = const Value.absent(),
+    required int createdAt,
+    this.rowid = const Value.absent(),
+  }) : id = Value(id),
+       workoutId = Value(workoutId),
+       date = Value(date),
+       createdAt = Value(createdAt);
+  static Insertable<ScheduledWorkoutRow> custom({
+    Expression<String>? id,
+    Expression<String>? workoutId,
+    Expression<int>? date,
+    Expression<String>? completedRideId,
+    Expression<String>? notes,
+    Expression<int>? createdAt,
+    Expression<int>? rowid,
+  }) {
+    return RawValuesInsertable({
+      if (id != null) 'id': id,
+      if (workoutId != null) 'workout_id': workoutId,
+      if (date != null) 'date': date,
+      if (completedRideId != null) 'completed_ride_id': completedRideId,
+      if (notes != null) 'notes': notes,
+      if (createdAt != null) 'created_at': createdAt,
+      if (rowid != null) 'rowid': rowid,
+    });
+  }
+
+  ScheduledWorkoutsCompanion copyWith({
+    Value<String>? id,
+    Value<String>? workoutId,
+    Value<int>? date,
+    Value<String?>? completedRideId,
+    Value<String?>? notes,
+    Value<int>? createdAt,
+    Value<int>? rowid,
+  }) {
+    return ScheduledWorkoutsCompanion(
+      id: id ?? this.id,
+      workoutId: workoutId ?? this.workoutId,
+      date: date ?? this.date,
+      completedRideId: completedRideId ?? this.completedRideId,
+      notes: notes ?? this.notes,
+      createdAt: createdAt ?? this.createdAt,
+      rowid: rowid ?? this.rowid,
+    );
+  }
+
+  @override
+  Map<String, Expression> toColumns(bool nullToAbsent) {
+    final map = <String, Expression>{};
+    if (id.present) {
+      map['id'] = Variable<String>(id.value);
+    }
+    if (workoutId.present) {
+      map['workout_id'] = Variable<String>(workoutId.value);
+    }
+    if (date.present) {
+      map['date'] = Variable<int>(date.value);
+    }
+    if (completedRideId.present) {
+      map['completed_ride_id'] = Variable<String>(completedRideId.value);
+    }
+    if (notes.present) {
+      map['notes'] = Variable<String>(notes.value);
+    }
+    if (createdAt.present) {
+      map['created_at'] = Variable<int>(createdAt.value);
+    }
+    if (rowid.present) {
+      map['rowid'] = Variable<int>(rowid.value);
+    }
+    return map;
+  }
+
+  @override
+  String toString() {
+    return (StringBuffer('ScheduledWorkoutsCompanion(')
+          ..write('id: $id, ')
+          ..write('workoutId: $workoutId, ')
+          ..write('date: $date, ')
+          ..write('completedRideId: $completedRideId, ')
+          ..write('notes: $notes, ')
+          ..write('createdAt: $createdAt, ')
+          ..write('rowid: $rowid')
+          ..write(')'))
+        .toString();
+  }
+}
+
+class $PersonalRecordsTable extends PersonalRecords
+    with TableInfo<$PersonalRecordsTable, PersonalRecordRow> {
+  @override
+  final GeneratedDatabase attachedDatabase;
+  final String? _alias;
+  $PersonalRecordsTable(this.attachedDatabase, [this._alias]);
+  static const VerificationMeta _idMeta = const VerificationMeta('id');
+  @override
+  late final GeneratedColumn<int> id = GeneratedColumn<int>(
+    'id',
+    aliasedName,
+    false,
+    hasAutoIncrement: true,
+    type: DriftSqlType.int,
+    requiredDuringInsert: false,
+    defaultConstraints: GeneratedColumn.constraintIsAlways(
+      'PRIMARY KEY AUTOINCREMENT',
+    ),
+  );
+  static const VerificationMeta _rideIdMeta = const VerificationMeta('rideId');
+  @override
+  late final GeneratedColumn<String> rideId = GeneratedColumn<String>(
+    'ride_id',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+    defaultConstraints: GeneratedColumn.constraintIsAlways(
+      'REFERENCES rides (id)',
+    ),
+  );
+  static const VerificationMeta _durationSecondsMeta = const VerificationMeta(
+    'durationSeconds',
+  );
+  @override
+  late final GeneratedColumn<int> durationSeconds = GeneratedColumn<int>(
+    'duration_seconds',
+    aliasedName,
+    false,
+    type: DriftSqlType.int,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _wattsMeta = const VerificationMeta('watts');
+  @override
+  late final GeneratedColumn<double> watts = GeneratedColumn<double>(
+    'watts',
+    aliasedName,
+    false,
+    type: DriftSqlType.double,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _achievedAtMeta = const VerificationMeta(
+    'achievedAt',
+  );
+  @override
+  late final GeneratedColumn<int> achievedAt = GeneratedColumn<int>(
+    'achieved_at',
+    aliasedName,
+    false,
+    type: DriftSqlType.int,
+    requiredDuringInsert: true,
+  );
+  @override
+  List<GeneratedColumn> get $columns => [
+    id,
+    rideId,
+    durationSeconds,
+    watts,
+    achievedAt,
+  ];
+  @override
+  String get aliasedName => _alias ?? actualTableName;
+  @override
+  String get actualTableName => $name;
+  static const String $name = 'personal_records';
+  @override
+  VerificationContext validateIntegrity(
+    Insertable<PersonalRecordRow> instance, {
+    bool isInserting = false,
+  }) {
+    final context = VerificationContext();
+    final data = instance.toColumns(true);
+    if (data.containsKey('id')) {
+      context.handle(_idMeta, id.isAcceptableOrUnknown(data['id']!, _idMeta));
+    }
+    if (data.containsKey('ride_id')) {
+      context.handle(
+        _rideIdMeta,
+        rideId.isAcceptableOrUnknown(data['ride_id']!, _rideIdMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_rideIdMeta);
+    }
+    if (data.containsKey('duration_seconds')) {
+      context.handle(
+        _durationSecondsMeta,
+        durationSeconds.isAcceptableOrUnknown(
+          data['duration_seconds']!,
+          _durationSecondsMeta,
+        ),
+      );
+    } else if (isInserting) {
+      context.missing(_durationSecondsMeta);
+    }
+    if (data.containsKey('watts')) {
+      context.handle(
+        _wattsMeta,
+        watts.isAcceptableOrUnknown(data['watts']!, _wattsMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_wattsMeta);
+    }
+    if (data.containsKey('achieved_at')) {
+      context.handle(
+        _achievedAtMeta,
+        achievedAt.isAcceptableOrUnknown(data['achieved_at']!, _achievedAtMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_achievedAtMeta);
+    }
+    return context;
+  }
+
+  @override
+  Set<GeneratedColumn> get $primaryKey => {id};
+  @override
+  List<Set<GeneratedColumn>> get uniqueKeys => [
+    {rideId, durationSeconds},
+  ];
+  @override
+  PersonalRecordRow map(Map<String, dynamic> data, {String? tablePrefix}) {
+    final effectivePrefix = tablePrefix != null ? '$tablePrefix.' : '';
+    return PersonalRecordRow(
+      id: attachedDatabase.typeMapping.read(
+        DriftSqlType.int,
+        data['${effectivePrefix}id'],
+      )!,
+      rideId: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}ride_id'],
+      )!,
+      durationSeconds: attachedDatabase.typeMapping.read(
+        DriftSqlType.int,
+        data['${effectivePrefix}duration_seconds'],
+      )!,
+      watts: attachedDatabase.typeMapping.read(
+        DriftSqlType.double,
+        data['${effectivePrefix}watts'],
+      )!,
+      achievedAt: attachedDatabase.typeMapping.read(
+        DriftSqlType.int,
+        data['${effectivePrefix}achieved_at'],
+      )!,
+    );
+  }
+
+  @override
+  $PersonalRecordsTable createAlias(String alias) {
+    return $PersonalRecordsTable(attachedDatabase, alias);
+  }
+}
+
+class PersonalRecordRow extends DataClass
+    implements Insertable<PersonalRecordRow> {
+  final int id;
+  final String rideId;
+  final int durationSeconds;
+  final double watts;
+  final int achievedAt;
+  const PersonalRecordRow({
+    required this.id,
+    required this.rideId,
+    required this.durationSeconds,
+    required this.watts,
+    required this.achievedAt,
+  });
+  @override
+  Map<String, Expression> toColumns(bool nullToAbsent) {
+    final map = <String, Expression>{};
+    map['id'] = Variable<int>(id);
+    map['ride_id'] = Variable<String>(rideId);
+    map['duration_seconds'] = Variable<int>(durationSeconds);
+    map['watts'] = Variable<double>(watts);
+    map['achieved_at'] = Variable<int>(achievedAt);
+    return map;
+  }
+
+  PersonalRecordsCompanion toCompanion(bool nullToAbsent) {
+    return PersonalRecordsCompanion(
+      id: Value(id),
+      rideId: Value(rideId),
+      durationSeconds: Value(durationSeconds),
+      watts: Value(watts),
+      achievedAt: Value(achievedAt),
+    );
+  }
+
+  factory PersonalRecordRow.fromJson(
+    Map<String, dynamic> json, {
+    ValueSerializer? serializer,
+  }) {
+    serializer ??= driftRuntimeOptions.defaultSerializer;
+    return PersonalRecordRow(
+      id: serializer.fromJson<int>(json['id']),
+      rideId: serializer.fromJson<String>(json['rideId']),
+      durationSeconds: serializer.fromJson<int>(json['durationSeconds']),
+      watts: serializer.fromJson<double>(json['watts']),
+      achievedAt: serializer.fromJson<int>(json['achievedAt']),
+    );
+  }
+  @override
+  Map<String, dynamic> toJson({ValueSerializer? serializer}) {
+    serializer ??= driftRuntimeOptions.defaultSerializer;
+    return <String, dynamic>{
+      'id': serializer.toJson<int>(id),
+      'rideId': serializer.toJson<String>(rideId),
+      'durationSeconds': serializer.toJson<int>(durationSeconds),
+      'watts': serializer.toJson<double>(watts),
+      'achievedAt': serializer.toJson<int>(achievedAt),
+    };
+  }
+
+  PersonalRecordRow copyWith({
+    int? id,
+    String? rideId,
+    int? durationSeconds,
+    double? watts,
+    int? achievedAt,
+  }) => PersonalRecordRow(
+    id: id ?? this.id,
+    rideId: rideId ?? this.rideId,
+    durationSeconds: durationSeconds ?? this.durationSeconds,
+    watts: watts ?? this.watts,
+    achievedAt: achievedAt ?? this.achievedAt,
+  );
+  PersonalRecordRow copyWithCompanion(PersonalRecordsCompanion data) {
+    return PersonalRecordRow(
+      id: data.id.present ? data.id.value : this.id,
+      rideId: data.rideId.present ? data.rideId.value : this.rideId,
+      durationSeconds: data.durationSeconds.present
+          ? data.durationSeconds.value
+          : this.durationSeconds,
+      watts: data.watts.present ? data.watts.value : this.watts,
+      achievedAt: data.achievedAt.present
+          ? data.achievedAt.value
+          : this.achievedAt,
+    );
+  }
+
+  @override
+  String toString() {
+    return (StringBuffer('PersonalRecordRow(')
+          ..write('id: $id, ')
+          ..write('rideId: $rideId, ')
+          ..write('durationSeconds: $durationSeconds, ')
+          ..write('watts: $watts, ')
+          ..write('achievedAt: $achievedAt')
+          ..write(')'))
+        .toString();
+  }
+
+  @override
+  int get hashCode =>
+      Object.hash(id, rideId, durationSeconds, watts, achievedAt);
+  @override
+  bool operator ==(Object other) =>
+      identical(this, other) ||
+      (other is PersonalRecordRow &&
+          other.id == this.id &&
+          other.rideId == this.rideId &&
+          other.durationSeconds == this.durationSeconds &&
+          other.watts == this.watts &&
+          other.achievedAt == this.achievedAt);
+}
+
+class PersonalRecordsCompanion extends UpdateCompanion<PersonalRecordRow> {
+  final Value<int> id;
+  final Value<String> rideId;
+  final Value<int> durationSeconds;
+  final Value<double> watts;
+  final Value<int> achievedAt;
+  const PersonalRecordsCompanion({
+    this.id = const Value.absent(),
+    this.rideId = const Value.absent(),
+    this.durationSeconds = const Value.absent(),
+    this.watts = const Value.absent(),
+    this.achievedAt = const Value.absent(),
+  });
+  PersonalRecordsCompanion.insert({
+    this.id = const Value.absent(),
+    required String rideId,
+    required int durationSeconds,
+    required double watts,
+    required int achievedAt,
+  }) : rideId = Value(rideId),
+       durationSeconds = Value(durationSeconds),
+       watts = Value(watts),
+       achievedAt = Value(achievedAt);
+  static Insertable<PersonalRecordRow> custom({
+    Expression<int>? id,
+    Expression<String>? rideId,
+    Expression<int>? durationSeconds,
+    Expression<double>? watts,
+    Expression<int>? achievedAt,
+  }) {
+    return RawValuesInsertable({
+      if (id != null) 'id': id,
+      if (rideId != null) 'ride_id': rideId,
+      if (durationSeconds != null) 'duration_seconds': durationSeconds,
+      if (watts != null) 'watts': watts,
+      if (achievedAt != null) 'achieved_at': achievedAt,
+    });
+  }
+
+  PersonalRecordsCompanion copyWith({
+    Value<int>? id,
+    Value<String>? rideId,
+    Value<int>? durationSeconds,
+    Value<double>? watts,
+    Value<int>? achievedAt,
+  }) {
+    return PersonalRecordsCompanion(
+      id: id ?? this.id,
+      rideId: rideId ?? this.rideId,
+      durationSeconds: durationSeconds ?? this.durationSeconds,
+      watts: watts ?? this.watts,
+      achievedAt: achievedAt ?? this.achievedAt,
+    );
+  }
+
+  @override
+  Map<String, Expression> toColumns(bool nullToAbsent) {
+    final map = <String, Expression>{};
+    if (id.present) {
+      map['id'] = Variable<int>(id.value);
+    }
+    if (rideId.present) {
+      map['ride_id'] = Variable<String>(rideId.value);
+    }
+    if (durationSeconds.present) {
+      map['duration_seconds'] = Variable<int>(durationSeconds.value);
+    }
+    if (watts.present) {
+      map['watts'] = Variable<double>(watts.value);
+    }
+    if (achievedAt.present) {
+      map['achieved_at'] = Variable<int>(achievedAt.value);
+    }
+    return map;
+  }
+
+  @override
+  String toString() {
+    return (StringBuffer('PersonalRecordsCompanion(')
+          ..write('id: $id, ')
+          ..write('rideId: $rideId, ')
+          ..write('durationSeconds: $durationSeconds, ')
+          ..write('watts: $watts, ')
+          ..write('achievedAt: $achievedAt')
+          ..write(')'))
+        .toString();
+  }
+}
+
+class $FtpHistoryTable extends FtpHistory
+    with TableInfo<$FtpHistoryTable, FtpHistoryRow> {
+  @override
+  final GeneratedDatabase attachedDatabase;
+  final String? _alias;
+  $FtpHistoryTable(this.attachedDatabase, [this._alias]);
+  static const VerificationMeta _idMeta = const VerificationMeta('id');
+  @override
+  late final GeneratedColumn<int> id = GeneratedColumn<int>(
+    'id',
+    aliasedName,
+    false,
+    hasAutoIncrement: true,
+    type: DriftSqlType.int,
+    requiredDuringInsert: false,
+    defaultConstraints: GeneratedColumn.constraintIsAlways(
+      'PRIMARY KEY AUTOINCREMENT',
+    ),
+  );
+  static const VerificationMeta _effectiveDateMeta = const VerificationMeta(
+    'effectiveDate',
+  );
+  @override
+  late final GeneratedColumn<int> effectiveDate = GeneratedColumn<int>(
+    'effective_date',
+    aliasedName,
+    false,
+    type: DriftSqlType.int,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _ftpMeta = const VerificationMeta('ftp');
+  @override
+  late final GeneratedColumn<double> ftp = GeneratedColumn<double>(
+    'ftp',
+    aliasedName,
+    false,
+    type: DriftSqlType.double,
+    requiredDuringInsert: true,
+  );
+  @override
+  List<GeneratedColumn> get $columns => [id, effectiveDate, ftp];
+  @override
+  String get aliasedName => _alias ?? actualTableName;
+  @override
+  String get actualTableName => $name;
+  static const String $name = 'ftp_history';
+  @override
+  VerificationContext validateIntegrity(
+    Insertable<FtpHistoryRow> instance, {
+    bool isInserting = false,
+  }) {
+    final context = VerificationContext();
+    final data = instance.toColumns(true);
+    if (data.containsKey('id')) {
+      context.handle(_idMeta, id.isAcceptableOrUnknown(data['id']!, _idMeta));
+    }
+    if (data.containsKey('effective_date')) {
+      context.handle(
+        _effectiveDateMeta,
+        effectiveDate.isAcceptableOrUnknown(
+          data['effective_date']!,
+          _effectiveDateMeta,
+        ),
+      );
+    } else if (isInserting) {
+      context.missing(_effectiveDateMeta);
+    }
+    if (data.containsKey('ftp')) {
+      context.handle(
+        _ftpMeta,
+        ftp.isAcceptableOrUnknown(data['ftp']!, _ftpMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_ftpMeta);
+    }
+    return context;
+  }
+
+  @override
+  Set<GeneratedColumn> get $primaryKey => {id};
+  @override
+  FtpHistoryRow map(Map<String, dynamic> data, {String? tablePrefix}) {
+    final effectivePrefix = tablePrefix != null ? '$tablePrefix.' : '';
+    return FtpHistoryRow(
+      id: attachedDatabase.typeMapping.read(
+        DriftSqlType.int,
+        data['${effectivePrefix}id'],
+      )!,
+      effectiveDate: attachedDatabase.typeMapping.read(
+        DriftSqlType.int,
+        data['${effectivePrefix}effective_date'],
+      )!,
+      ftp: attachedDatabase.typeMapping.read(
+        DriftSqlType.double,
+        data['${effectivePrefix}ftp'],
+      )!,
+    );
+  }
+
+  @override
+  $FtpHistoryTable createAlias(String alias) {
+    return $FtpHistoryTable(attachedDatabase, alias);
+  }
+}
+
+class FtpHistoryRow extends DataClass implements Insertable<FtpHistoryRow> {
+  final int id;
+  final int effectiveDate;
+  final double ftp;
+  const FtpHistoryRow({
+    required this.id,
+    required this.effectiveDate,
+    required this.ftp,
+  });
+  @override
+  Map<String, Expression> toColumns(bool nullToAbsent) {
+    final map = <String, Expression>{};
+    map['id'] = Variable<int>(id);
+    map['effective_date'] = Variable<int>(effectiveDate);
+    map['ftp'] = Variable<double>(ftp);
+    return map;
+  }
+
+  FtpHistoryCompanion toCompanion(bool nullToAbsent) {
+    return FtpHistoryCompanion(
+      id: Value(id),
+      effectiveDate: Value(effectiveDate),
+      ftp: Value(ftp),
+    );
+  }
+
+  factory FtpHistoryRow.fromJson(
+    Map<String, dynamic> json, {
+    ValueSerializer? serializer,
+  }) {
+    serializer ??= driftRuntimeOptions.defaultSerializer;
+    return FtpHistoryRow(
+      id: serializer.fromJson<int>(json['id']),
+      effectiveDate: serializer.fromJson<int>(json['effectiveDate']),
+      ftp: serializer.fromJson<double>(json['ftp']),
+    );
+  }
+  @override
+  Map<String, dynamic> toJson({ValueSerializer? serializer}) {
+    serializer ??= driftRuntimeOptions.defaultSerializer;
+    return <String, dynamic>{
+      'id': serializer.toJson<int>(id),
+      'effectiveDate': serializer.toJson<int>(effectiveDate),
+      'ftp': serializer.toJson<double>(ftp),
+    };
+  }
+
+  FtpHistoryRow copyWith({int? id, int? effectiveDate, double? ftp}) =>
+      FtpHistoryRow(
+        id: id ?? this.id,
+        effectiveDate: effectiveDate ?? this.effectiveDate,
+        ftp: ftp ?? this.ftp,
+      );
+  FtpHistoryRow copyWithCompanion(FtpHistoryCompanion data) {
+    return FtpHistoryRow(
+      id: data.id.present ? data.id.value : this.id,
+      effectiveDate: data.effectiveDate.present
+          ? data.effectiveDate.value
+          : this.effectiveDate,
+      ftp: data.ftp.present ? data.ftp.value : this.ftp,
+    );
+  }
+
+  @override
+  String toString() {
+    return (StringBuffer('FtpHistoryRow(')
+          ..write('id: $id, ')
+          ..write('effectiveDate: $effectiveDate, ')
+          ..write('ftp: $ftp')
+          ..write(')'))
+        .toString();
+  }
+
+  @override
+  int get hashCode => Object.hash(id, effectiveDate, ftp);
+  @override
+  bool operator ==(Object other) =>
+      identical(this, other) ||
+      (other is FtpHistoryRow &&
+          other.id == this.id &&
+          other.effectiveDate == this.effectiveDate &&
+          other.ftp == this.ftp);
+}
+
+class FtpHistoryCompanion extends UpdateCompanion<FtpHistoryRow> {
+  final Value<int> id;
+  final Value<int> effectiveDate;
+  final Value<double> ftp;
+  const FtpHistoryCompanion({
+    this.id = const Value.absent(),
+    this.effectiveDate = const Value.absent(),
+    this.ftp = const Value.absent(),
+  });
+  FtpHistoryCompanion.insert({
+    this.id = const Value.absent(),
+    required int effectiveDate,
+    required double ftp,
+  }) : effectiveDate = Value(effectiveDate),
+       ftp = Value(ftp);
+  static Insertable<FtpHistoryRow> custom({
+    Expression<int>? id,
+    Expression<int>? effectiveDate,
+    Expression<double>? ftp,
+  }) {
+    return RawValuesInsertable({
+      if (id != null) 'id': id,
+      if (effectiveDate != null) 'effective_date': effectiveDate,
+      if (ftp != null) 'ftp': ftp,
+    });
+  }
+
+  FtpHistoryCompanion copyWith({
+    Value<int>? id,
+    Value<int>? effectiveDate,
+    Value<double>? ftp,
+  }) {
+    return FtpHistoryCompanion(
+      id: id ?? this.id,
+      effectiveDate: effectiveDate ?? this.effectiveDate,
+      ftp: ftp ?? this.ftp,
+    );
+  }
+
+  @override
+  Map<String, Expression> toColumns(bool nullToAbsent) {
+    final map = <String, Expression>{};
+    if (id.present) {
+      map['id'] = Variable<int>(id.value);
+    }
+    if (effectiveDate.present) {
+      map['effective_date'] = Variable<int>(effectiveDate.value);
+    }
+    if (ftp.present) {
+      map['ftp'] = Variable<double>(ftp.value);
+    }
+    return map;
+  }
+
+  @override
+  String toString() {
+    return (StringBuffer('FtpHistoryCompanion(')
+          ..write('id: $id, ')
+          ..write('effectiveDate: $effectiveDate, ')
+          ..write('ftp: $ftp')
+          ..write(')'))
+        .toString();
+  }
+}
+
 abstract class _$AppDatabase extends GeneratedDatabase {
   _$AppDatabase(QueryExecutor e) : super(e);
   $AppDatabaseManager get managers => $AppDatabaseManager(this);
@@ -3984,6 +5024,12 @@ abstract class _$AppDatabase extends GeneratedDatabase {
   late final $WorkoutStepsTable workoutSteps = $WorkoutStepsTable(this);
   late final $UserProfilesTable userProfiles = $UserProfilesTable(this);
   late final $ExportQueueTable exportQueue = $ExportQueueTable(this);
+  late final $ScheduledWorkoutsTable scheduledWorkouts =
+      $ScheduledWorkoutsTable(this);
+  late final $PersonalRecordsTable personalRecords = $PersonalRecordsTable(
+    this,
+  );
+  late final $FtpHistoryTable ftpHistory = $FtpHistoryTable(this);
   @override
   Iterable<TableInfo<Table, Object?>> get allTables =>
       allSchemaEntities.whereType<TableInfo<Table, Object?>>();
@@ -3996,6 +5042,9 @@ abstract class _$AppDatabase extends GeneratedDatabase {
     workoutSteps,
     userProfiles,
     exportQueue,
+    scheduledWorkouts,
+    personalRecords,
+    ftpHistory,
   ];
 }
 
@@ -4100,6 +5149,53 @@ final class $$RidesTableReferences
     ).filter((f) => f.rideId.id.sqlEquals($_itemColumn<String>('id')!));
 
     final cache = $_typedResult.readTableOrNull(_exportQueueRefsTable($_db));
+    return ProcessedTableManager(
+      manager.$state.copyWith(prefetchedData: cache),
+    );
+  }
+
+  static MultiTypedResultKey<$ScheduledWorkoutsTable, List<ScheduledWorkoutRow>>
+  _scheduledWorkoutsRefsTable(_$AppDatabase db) =>
+      MultiTypedResultKey.fromTable(
+        db.scheduledWorkouts,
+        aliasName: $_aliasNameGenerator(
+          db.rides.id,
+          db.scheduledWorkouts.completedRideId,
+        ),
+      );
+
+  $$ScheduledWorkoutsTableProcessedTableManager get scheduledWorkoutsRefs {
+    final manager =
+        $$ScheduledWorkoutsTableTableManager(
+          $_db,
+          $_db.scheduledWorkouts,
+        ).filter(
+          (f) => f.completedRideId.id.sqlEquals($_itemColumn<String>('id')!),
+        );
+
+    final cache = $_typedResult.readTableOrNull(
+      _scheduledWorkoutsRefsTable($_db),
+    );
+    return ProcessedTableManager(
+      manager.$state.copyWith(prefetchedData: cache),
+    );
+  }
+
+  static MultiTypedResultKey<$PersonalRecordsTable, List<PersonalRecordRow>>
+  _personalRecordsRefsTable(_$AppDatabase db) => MultiTypedResultKey.fromTable(
+    db.personalRecords,
+    aliasName: $_aliasNameGenerator(db.rides.id, db.personalRecords.rideId),
+  );
+
+  $$PersonalRecordsTableProcessedTableManager get personalRecordsRefs {
+    final manager = $$PersonalRecordsTableTableManager(
+      $_db,
+      $_db.personalRecords,
+    ).filter((f) => f.rideId.id.sqlEquals($_itemColumn<String>('id')!));
+
+    final cache = $_typedResult.readTableOrNull(
+      _personalRecordsRefsTable($_db),
+    );
     return ProcessedTableManager(
       manager.$state.copyWith(prefetchedData: cache),
     );
@@ -4275,6 +5371,56 @@ class $$RidesTableFilterComposer extends Composer<_$AppDatabase, $RidesTable> {
           }) => $$ExportQueueTableFilterComposer(
             $db: $db,
             $table: $db.exportQueue,
+            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+            joinBuilder: joinBuilder,
+            $removeJoinBuilderFromRootComposer:
+                $removeJoinBuilderFromRootComposer,
+          ),
+    );
+    return f(composer);
+  }
+
+  Expression<bool> scheduledWorkoutsRefs(
+    Expression<bool> Function($$ScheduledWorkoutsTableFilterComposer f) f,
+  ) {
+    final $$ScheduledWorkoutsTableFilterComposer composer = $composerBuilder(
+      composer: this,
+      getCurrentColumn: (t) => t.id,
+      referencedTable: $db.scheduledWorkouts,
+      getReferencedColumn: (t) => t.completedRideId,
+      builder:
+          (
+            joinBuilder, {
+            $addJoinBuilderToRootComposer,
+            $removeJoinBuilderFromRootComposer,
+          }) => $$ScheduledWorkoutsTableFilterComposer(
+            $db: $db,
+            $table: $db.scheduledWorkouts,
+            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+            joinBuilder: joinBuilder,
+            $removeJoinBuilderFromRootComposer:
+                $removeJoinBuilderFromRootComposer,
+          ),
+    );
+    return f(composer);
+  }
+
+  Expression<bool> personalRecordsRefs(
+    Expression<bool> Function($$PersonalRecordsTableFilterComposer f) f,
+  ) {
+    final $$PersonalRecordsTableFilterComposer composer = $composerBuilder(
+      composer: this,
+      getCurrentColumn: (t) => t.id,
+      referencedTable: $db.personalRecords,
+      getReferencedColumn: (t) => t.rideId,
+      builder:
+          (
+            joinBuilder, {
+            $addJoinBuilderToRootComposer,
+            $removeJoinBuilderFromRootComposer,
+          }) => $$PersonalRecordsTableFilterComposer(
+            $db: $db,
+            $table: $db.personalRecords,
             $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
             joinBuilder: joinBuilder,
             $removeJoinBuilderFromRootComposer:
@@ -4542,6 +5688,57 @@ class $$RidesTableAnnotationComposer
     );
     return f(composer);
   }
+
+  Expression<T> scheduledWorkoutsRefs<T extends Object>(
+    Expression<T> Function($$ScheduledWorkoutsTableAnnotationComposer a) f,
+  ) {
+    final $$ScheduledWorkoutsTableAnnotationComposer composer =
+        $composerBuilder(
+          composer: this,
+          getCurrentColumn: (t) => t.id,
+          referencedTable: $db.scheduledWorkouts,
+          getReferencedColumn: (t) => t.completedRideId,
+          builder:
+              (
+                joinBuilder, {
+                $addJoinBuilderToRootComposer,
+                $removeJoinBuilderFromRootComposer,
+              }) => $$ScheduledWorkoutsTableAnnotationComposer(
+                $db: $db,
+                $table: $db.scheduledWorkouts,
+                $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+                joinBuilder: joinBuilder,
+                $removeJoinBuilderFromRootComposer:
+                    $removeJoinBuilderFromRootComposer,
+              ),
+        );
+    return f(composer);
+  }
+
+  Expression<T> personalRecordsRefs<T extends Object>(
+    Expression<T> Function($$PersonalRecordsTableAnnotationComposer a) f,
+  ) {
+    final $$PersonalRecordsTableAnnotationComposer composer = $composerBuilder(
+      composer: this,
+      getCurrentColumn: (t) => t.id,
+      referencedTable: $db.personalRecords,
+      getReferencedColumn: (t) => t.rideId,
+      builder:
+          (
+            joinBuilder, {
+            $addJoinBuilderToRootComposer,
+            $removeJoinBuilderFromRootComposer,
+          }) => $$PersonalRecordsTableAnnotationComposer(
+            $db: $db,
+            $table: $db.personalRecords,
+            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+            joinBuilder: joinBuilder,
+            $removeJoinBuilderFromRootComposer:
+                $removeJoinBuilderFromRootComposer,
+          ),
+    );
+    return f(composer);
+  }
 }
 
 class $$RidesTableTableManager
@@ -4561,6 +5758,8 @@ class $$RidesTableTableManager
             bool sensorReadingsRefs,
             bool lapsRefs,
             bool exportQueueRefs,
+            bool scheduledWorkoutsRefs,
+            bool personalRecordsRefs,
           })
         > {
   $$RidesTableTableManager(_$AppDatabase db, $RidesTable table)
@@ -4673,6 +5872,8 @@ class $$RidesTableTableManager
                 sensorReadingsRefs = false,
                 lapsRefs = false,
                 exportQueueRefs = false,
+                scheduledWorkoutsRefs = false,
+                personalRecordsRefs = false,
               }) {
                 return PrefetchHooks(
                   db: db,
@@ -4680,6 +5881,8 @@ class $$RidesTableTableManager
                     if (sensorReadingsRefs) db.sensorReadings,
                     if (lapsRefs) db.laps,
                     if (exportQueueRefs) db.exportQueue,
+                    if (scheduledWorkoutsRefs) db.scheduledWorkouts,
+                    if (personalRecordsRefs) db.personalRecords,
                   ],
                   addJoins: null,
                   getPrefetchedDataCallback: (items) async {
@@ -4739,6 +5942,48 @@ class $$RidesTableTableManager
                               ),
                           typedResults: items,
                         ),
+                      if (scheduledWorkoutsRefs)
+                        await $_getPrefetchedData<
+                          RideRow,
+                          $RidesTable,
+                          ScheduledWorkoutRow
+                        >(
+                          currentTable: table,
+                          referencedTable: $$RidesTableReferences
+                              ._scheduledWorkoutsRefsTable(db),
+                          managerFromTypedResult: (p0) =>
+                              $$RidesTableReferences(
+                                db,
+                                table,
+                                p0,
+                              ).scheduledWorkoutsRefs,
+                          referencedItemsForCurrentItem:
+                              (item, referencedItems) => referencedItems.where(
+                                (e) => e.completedRideId == item.id,
+                              ),
+                          typedResults: items,
+                        ),
+                      if (personalRecordsRefs)
+                        await $_getPrefetchedData<
+                          RideRow,
+                          $RidesTable,
+                          PersonalRecordRow
+                        >(
+                          currentTable: table,
+                          referencedTable: $$RidesTableReferences
+                              ._personalRecordsRefsTable(db),
+                          managerFromTypedResult: (p0) =>
+                              $$RidesTableReferences(
+                                db,
+                                table,
+                                p0,
+                              ).personalRecordsRefs,
+                          referencedItemsForCurrentItem:
+                              (item, referencedItems) => referencedItems.where(
+                                (e) => e.rideId == item.id,
+                              ),
+                          typedResults: items,
+                        ),
                     ];
                   },
                 );
@@ -4763,6 +6008,8 @@ typedef $$RidesTableProcessedTableManager =
         bool sensorReadingsRefs,
         bool lapsRefs,
         bool exportQueueRefs,
+        bool scheduledWorkoutsRefs,
+        bool personalRecordsRefs,
       })
     >;
 typedef $$SensorReadingsTableCreateCompanionBuilder =
@@ -5537,6 +6784,30 @@ final class $$WorkoutsTableReferences
       manager.$state.copyWith(prefetchedData: cache),
     );
   }
+
+  static MultiTypedResultKey<$ScheduledWorkoutsTable, List<ScheduledWorkoutRow>>
+  _scheduledWorkoutsRefsTable(_$AppDatabase db) =>
+      MultiTypedResultKey.fromTable(
+        db.scheduledWorkouts,
+        aliasName: $_aliasNameGenerator(
+          db.workouts.id,
+          db.scheduledWorkouts.workoutId,
+        ),
+      );
+
+  $$ScheduledWorkoutsTableProcessedTableManager get scheduledWorkoutsRefs {
+    final manager = $$ScheduledWorkoutsTableTableManager(
+      $_db,
+      $_db.scheduledWorkouts,
+    ).filter((f) => f.workoutId.id.sqlEquals($_itemColumn<String>('id')!));
+
+    final cache = $_typedResult.readTableOrNull(
+      _scheduledWorkoutsRefsTable($_db),
+    );
+    return ProcessedTableManager(
+      manager.$state.copyWith(prefetchedData: cache),
+    );
+  }
 }
 
 class $$WorkoutsTableFilterComposer
@@ -5584,6 +6855,31 @@ class $$WorkoutsTableFilterComposer
           }) => $$WorkoutStepsTableFilterComposer(
             $db: $db,
             $table: $db.workoutSteps,
+            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+            joinBuilder: joinBuilder,
+            $removeJoinBuilderFromRootComposer:
+                $removeJoinBuilderFromRootComposer,
+          ),
+    );
+    return f(composer);
+  }
+
+  Expression<bool> scheduledWorkoutsRefs(
+    Expression<bool> Function($$ScheduledWorkoutsTableFilterComposer f) f,
+  ) {
+    final $$ScheduledWorkoutsTableFilterComposer composer = $composerBuilder(
+      composer: this,
+      getCurrentColumn: (t) => t.id,
+      referencedTable: $db.scheduledWorkouts,
+      getReferencedColumn: (t) => t.workoutId,
+      builder:
+          (
+            joinBuilder, {
+            $addJoinBuilderToRootComposer,
+            $removeJoinBuilderFromRootComposer,
+          }) => $$ScheduledWorkoutsTableFilterComposer(
+            $db: $db,
+            $table: $db.scheduledWorkouts,
             $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
             joinBuilder: joinBuilder,
             $removeJoinBuilderFromRootComposer:
@@ -5671,6 +6967,32 @@ class $$WorkoutsTableAnnotationComposer
     );
     return f(composer);
   }
+
+  Expression<T> scheduledWorkoutsRefs<T extends Object>(
+    Expression<T> Function($$ScheduledWorkoutsTableAnnotationComposer a) f,
+  ) {
+    final $$ScheduledWorkoutsTableAnnotationComposer composer =
+        $composerBuilder(
+          composer: this,
+          getCurrentColumn: (t) => t.id,
+          referencedTable: $db.scheduledWorkouts,
+          getReferencedColumn: (t) => t.workoutId,
+          builder:
+              (
+                joinBuilder, {
+                $addJoinBuilderToRootComposer,
+                $removeJoinBuilderFromRootComposer,
+              }) => $$ScheduledWorkoutsTableAnnotationComposer(
+                $db: $db,
+                $table: $db.scheduledWorkouts,
+                $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+                joinBuilder: joinBuilder,
+                $removeJoinBuilderFromRootComposer:
+                    $removeJoinBuilderFromRootComposer,
+              ),
+        );
+    return f(composer);
+  }
 }
 
 class $$WorkoutsTableTableManager
@@ -5686,7 +7008,10 @@ class $$WorkoutsTableTableManager
           $$WorkoutsTableUpdateCompanionBuilder,
           (WorkoutRow, $$WorkoutsTableReferences),
           WorkoutRow,
-          PrefetchHooks Function({bool workoutStepsRefs})
+          PrefetchHooks Function({
+            bool workoutStepsRefs,
+            bool scheduledWorkoutsRefs,
+          })
         > {
   $$WorkoutsTableTableManager(_$AppDatabase db, $WorkoutsTable table)
     : super(
@@ -5735,35 +7060,63 @@ class $$WorkoutsTableTableManager
                 ),
               )
               .toList(),
-          prefetchHooksCallback: ({workoutStepsRefs = false}) {
-            return PrefetchHooks(
-              db: db,
-              explicitlyWatchedTables: [if (workoutStepsRefs) db.workoutSteps],
-              addJoins: null,
-              getPrefetchedDataCallback: (items) async {
-                return [
-                  if (workoutStepsRefs)
-                    await $_getPrefetchedData<
-                      WorkoutRow,
-                      $WorkoutsTable,
-                      WorkoutStepRow
-                    >(
-                      currentTable: table,
-                      referencedTable: $$WorkoutsTableReferences
-                          ._workoutStepsRefsTable(db),
-                      managerFromTypedResult: (p0) => $$WorkoutsTableReferences(
-                        db,
-                        table,
-                        p0,
-                      ).workoutStepsRefs,
-                      referencedItemsForCurrentItem: (item, referencedItems) =>
-                          referencedItems.where((e) => e.workoutId == item.id),
-                      typedResults: items,
-                    ),
-                ];
+          prefetchHooksCallback:
+              ({workoutStepsRefs = false, scheduledWorkoutsRefs = false}) {
+                return PrefetchHooks(
+                  db: db,
+                  explicitlyWatchedTables: [
+                    if (workoutStepsRefs) db.workoutSteps,
+                    if (scheduledWorkoutsRefs) db.scheduledWorkouts,
+                  ],
+                  addJoins: null,
+                  getPrefetchedDataCallback: (items) async {
+                    return [
+                      if (workoutStepsRefs)
+                        await $_getPrefetchedData<
+                          WorkoutRow,
+                          $WorkoutsTable,
+                          WorkoutStepRow
+                        >(
+                          currentTable: table,
+                          referencedTable: $$WorkoutsTableReferences
+                              ._workoutStepsRefsTable(db),
+                          managerFromTypedResult: (p0) =>
+                              $$WorkoutsTableReferences(
+                                db,
+                                table,
+                                p0,
+                              ).workoutStepsRefs,
+                          referencedItemsForCurrentItem:
+                              (item, referencedItems) => referencedItems.where(
+                                (e) => e.workoutId == item.id,
+                              ),
+                          typedResults: items,
+                        ),
+                      if (scheduledWorkoutsRefs)
+                        await $_getPrefetchedData<
+                          WorkoutRow,
+                          $WorkoutsTable,
+                          ScheduledWorkoutRow
+                        >(
+                          currentTable: table,
+                          referencedTable: $$WorkoutsTableReferences
+                              ._scheduledWorkoutsRefsTable(db),
+                          managerFromTypedResult: (p0) =>
+                              $$WorkoutsTableReferences(
+                                db,
+                                table,
+                                p0,
+                              ).scheduledWorkoutsRefs,
+                          referencedItemsForCurrentItem:
+                              (item, referencedItems) => referencedItems.where(
+                                (e) => e.workoutId == item.id,
+                              ),
+                          typedResults: items,
+                        ),
+                    ];
+                  },
+                );
               },
-            );
-          },
         ),
       );
 }
@@ -5780,7 +7133,10 @@ typedef $$WorkoutsTableProcessedTableManager =
       $$WorkoutsTableUpdateCompanionBuilder,
       (WorkoutRow, $$WorkoutsTableReferences),
       WorkoutRow,
-      PrefetchHooks Function({bool workoutStepsRefs})
+      PrefetchHooks Function({
+        bool workoutStepsRefs,
+        bool scheduledWorkoutsRefs,
+      })
     >;
 typedef $$WorkoutStepsTableCreateCompanionBuilder =
     WorkoutStepsCompanion Function({
@@ -6817,6 +8173,938 @@ typedef $$ExportQueueTableProcessedTableManager =
       ExportQueueRow,
       PrefetchHooks Function({bool rideId})
     >;
+typedef $$ScheduledWorkoutsTableCreateCompanionBuilder =
+    ScheduledWorkoutsCompanion Function({
+      required String id,
+      required String workoutId,
+      required int date,
+      Value<String?> completedRideId,
+      Value<String?> notes,
+      required int createdAt,
+      Value<int> rowid,
+    });
+typedef $$ScheduledWorkoutsTableUpdateCompanionBuilder =
+    ScheduledWorkoutsCompanion Function({
+      Value<String> id,
+      Value<String> workoutId,
+      Value<int> date,
+      Value<String?> completedRideId,
+      Value<String?> notes,
+      Value<int> createdAt,
+      Value<int> rowid,
+    });
+
+final class $$ScheduledWorkoutsTableReferences
+    extends
+        BaseReferences<
+          _$AppDatabase,
+          $ScheduledWorkoutsTable,
+          ScheduledWorkoutRow
+        > {
+  $$ScheduledWorkoutsTableReferences(
+    super.$_db,
+    super.$_table,
+    super.$_typedResult,
+  );
+
+  static $WorkoutsTable _workoutIdTable(_$AppDatabase db) =>
+      db.workouts.createAlias(
+        $_aliasNameGenerator(db.scheduledWorkouts.workoutId, db.workouts.id),
+      );
+
+  $$WorkoutsTableProcessedTableManager get workoutId {
+    final $_column = $_itemColumn<String>('workout_id')!;
+
+    final manager = $$WorkoutsTableTableManager(
+      $_db,
+      $_db.workouts,
+    ).filter((f) => f.id.sqlEquals($_column));
+    final item = $_typedResult.readTableOrNull(_workoutIdTable($_db));
+    if (item == null) return manager;
+    return ProcessedTableManager(
+      manager.$state.copyWith(prefetchedData: [item]),
+    );
+  }
+
+  static $RidesTable _completedRideIdTable(_$AppDatabase db) =>
+      db.rides.createAlias(
+        $_aliasNameGenerator(db.scheduledWorkouts.completedRideId, db.rides.id),
+      );
+
+  $$RidesTableProcessedTableManager? get completedRideId {
+    final $_column = $_itemColumn<String>('completed_ride_id');
+    if ($_column == null) return null;
+    final manager = $$RidesTableTableManager(
+      $_db,
+      $_db.rides,
+    ).filter((f) => f.id.sqlEquals($_column));
+    final item = $_typedResult.readTableOrNull(_completedRideIdTable($_db));
+    if (item == null) return manager;
+    return ProcessedTableManager(
+      manager.$state.copyWith(prefetchedData: [item]),
+    );
+  }
+}
+
+class $$ScheduledWorkoutsTableFilterComposer
+    extends Composer<_$AppDatabase, $ScheduledWorkoutsTable> {
+  $$ScheduledWorkoutsTableFilterComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  ColumnFilters<String> get id => $composableBuilder(
+    column: $table.id,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<int> get date => $composableBuilder(
+    column: $table.date,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get notes => $composableBuilder(
+    column: $table.notes,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<int> get createdAt => $composableBuilder(
+    column: $table.createdAt,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  $$WorkoutsTableFilterComposer get workoutId {
+    final $$WorkoutsTableFilterComposer composer = $composerBuilder(
+      composer: this,
+      getCurrentColumn: (t) => t.workoutId,
+      referencedTable: $db.workouts,
+      getReferencedColumn: (t) => t.id,
+      builder:
+          (
+            joinBuilder, {
+            $addJoinBuilderToRootComposer,
+            $removeJoinBuilderFromRootComposer,
+          }) => $$WorkoutsTableFilterComposer(
+            $db: $db,
+            $table: $db.workouts,
+            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+            joinBuilder: joinBuilder,
+            $removeJoinBuilderFromRootComposer:
+                $removeJoinBuilderFromRootComposer,
+          ),
+    );
+    return composer;
+  }
+
+  $$RidesTableFilterComposer get completedRideId {
+    final $$RidesTableFilterComposer composer = $composerBuilder(
+      composer: this,
+      getCurrentColumn: (t) => t.completedRideId,
+      referencedTable: $db.rides,
+      getReferencedColumn: (t) => t.id,
+      builder:
+          (
+            joinBuilder, {
+            $addJoinBuilderToRootComposer,
+            $removeJoinBuilderFromRootComposer,
+          }) => $$RidesTableFilterComposer(
+            $db: $db,
+            $table: $db.rides,
+            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+            joinBuilder: joinBuilder,
+            $removeJoinBuilderFromRootComposer:
+                $removeJoinBuilderFromRootComposer,
+          ),
+    );
+    return composer;
+  }
+}
+
+class $$ScheduledWorkoutsTableOrderingComposer
+    extends Composer<_$AppDatabase, $ScheduledWorkoutsTable> {
+  $$ScheduledWorkoutsTableOrderingComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  ColumnOrderings<String> get id => $composableBuilder(
+    column: $table.id,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<int> get date => $composableBuilder(
+    column: $table.date,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get notes => $composableBuilder(
+    column: $table.notes,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<int> get createdAt => $composableBuilder(
+    column: $table.createdAt,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  $$WorkoutsTableOrderingComposer get workoutId {
+    final $$WorkoutsTableOrderingComposer composer = $composerBuilder(
+      composer: this,
+      getCurrentColumn: (t) => t.workoutId,
+      referencedTable: $db.workouts,
+      getReferencedColumn: (t) => t.id,
+      builder:
+          (
+            joinBuilder, {
+            $addJoinBuilderToRootComposer,
+            $removeJoinBuilderFromRootComposer,
+          }) => $$WorkoutsTableOrderingComposer(
+            $db: $db,
+            $table: $db.workouts,
+            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+            joinBuilder: joinBuilder,
+            $removeJoinBuilderFromRootComposer:
+                $removeJoinBuilderFromRootComposer,
+          ),
+    );
+    return composer;
+  }
+
+  $$RidesTableOrderingComposer get completedRideId {
+    final $$RidesTableOrderingComposer composer = $composerBuilder(
+      composer: this,
+      getCurrentColumn: (t) => t.completedRideId,
+      referencedTable: $db.rides,
+      getReferencedColumn: (t) => t.id,
+      builder:
+          (
+            joinBuilder, {
+            $addJoinBuilderToRootComposer,
+            $removeJoinBuilderFromRootComposer,
+          }) => $$RidesTableOrderingComposer(
+            $db: $db,
+            $table: $db.rides,
+            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+            joinBuilder: joinBuilder,
+            $removeJoinBuilderFromRootComposer:
+                $removeJoinBuilderFromRootComposer,
+          ),
+    );
+    return composer;
+  }
+}
+
+class $$ScheduledWorkoutsTableAnnotationComposer
+    extends Composer<_$AppDatabase, $ScheduledWorkoutsTable> {
+  $$ScheduledWorkoutsTableAnnotationComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  GeneratedColumn<String> get id =>
+      $composableBuilder(column: $table.id, builder: (column) => column);
+
+  GeneratedColumn<int> get date =>
+      $composableBuilder(column: $table.date, builder: (column) => column);
+
+  GeneratedColumn<String> get notes =>
+      $composableBuilder(column: $table.notes, builder: (column) => column);
+
+  GeneratedColumn<int> get createdAt =>
+      $composableBuilder(column: $table.createdAt, builder: (column) => column);
+
+  $$WorkoutsTableAnnotationComposer get workoutId {
+    final $$WorkoutsTableAnnotationComposer composer = $composerBuilder(
+      composer: this,
+      getCurrentColumn: (t) => t.workoutId,
+      referencedTable: $db.workouts,
+      getReferencedColumn: (t) => t.id,
+      builder:
+          (
+            joinBuilder, {
+            $addJoinBuilderToRootComposer,
+            $removeJoinBuilderFromRootComposer,
+          }) => $$WorkoutsTableAnnotationComposer(
+            $db: $db,
+            $table: $db.workouts,
+            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+            joinBuilder: joinBuilder,
+            $removeJoinBuilderFromRootComposer:
+                $removeJoinBuilderFromRootComposer,
+          ),
+    );
+    return composer;
+  }
+
+  $$RidesTableAnnotationComposer get completedRideId {
+    final $$RidesTableAnnotationComposer composer = $composerBuilder(
+      composer: this,
+      getCurrentColumn: (t) => t.completedRideId,
+      referencedTable: $db.rides,
+      getReferencedColumn: (t) => t.id,
+      builder:
+          (
+            joinBuilder, {
+            $addJoinBuilderToRootComposer,
+            $removeJoinBuilderFromRootComposer,
+          }) => $$RidesTableAnnotationComposer(
+            $db: $db,
+            $table: $db.rides,
+            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+            joinBuilder: joinBuilder,
+            $removeJoinBuilderFromRootComposer:
+                $removeJoinBuilderFromRootComposer,
+          ),
+    );
+    return composer;
+  }
+}
+
+class $$ScheduledWorkoutsTableTableManager
+    extends
+        RootTableManager<
+          _$AppDatabase,
+          $ScheduledWorkoutsTable,
+          ScheduledWorkoutRow,
+          $$ScheduledWorkoutsTableFilterComposer,
+          $$ScheduledWorkoutsTableOrderingComposer,
+          $$ScheduledWorkoutsTableAnnotationComposer,
+          $$ScheduledWorkoutsTableCreateCompanionBuilder,
+          $$ScheduledWorkoutsTableUpdateCompanionBuilder,
+          (ScheduledWorkoutRow, $$ScheduledWorkoutsTableReferences),
+          ScheduledWorkoutRow,
+          PrefetchHooks Function({bool workoutId, bool completedRideId})
+        > {
+  $$ScheduledWorkoutsTableTableManager(
+    _$AppDatabase db,
+    $ScheduledWorkoutsTable table,
+  ) : super(
+        TableManagerState(
+          db: db,
+          table: table,
+          createFilteringComposer: () =>
+              $$ScheduledWorkoutsTableFilterComposer($db: db, $table: table),
+          createOrderingComposer: () =>
+              $$ScheduledWorkoutsTableOrderingComposer($db: db, $table: table),
+          createComputedFieldComposer: () =>
+              $$ScheduledWorkoutsTableAnnotationComposer(
+                $db: db,
+                $table: table,
+              ),
+          updateCompanionCallback:
+              ({
+                Value<String> id = const Value.absent(),
+                Value<String> workoutId = const Value.absent(),
+                Value<int> date = const Value.absent(),
+                Value<String?> completedRideId = const Value.absent(),
+                Value<String?> notes = const Value.absent(),
+                Value<int> createdAt = const Value.absent(),
+                Value<int> rowid = const Value.absent(),
+              }) => ScheduledWorkoutsCompanion(
+                id: id,
+                workoutId: workoutId,
+                date: date,
+                completedRideId: completedRideId,
+                notes: notes,
+                createdAt: createdAt,
+                rowid: rowid,
+              ),
+          createCompanionCallback:
+              ({
+                required String id,
+                required String workoutId,
+                required int date,
+                Value<String?> completedRideId = const Value.absent(),
+                Value<String?> notes = const Value.absent(),
+                required int createdAt,
+                Value<int> rowid = const Value.absent(),
+              }) => ScheduledWorkoutsCompanion.insert(
+                id: id,
+                workoutId: workoutId,
+                date: date,
+                completedRideId: completedRideId,
+                notes: notes,
+                createdAt: createdAt,
+                rowid: rowid,
+              ),
+          withReferenceMapper: (p0) => p0
+              .map(
+                (e) => (
+                  e.readTable(table),
+                  $$ScheduledWorkoutsTableReferences(db, table, e),
+                ),
+              )
+              .toList(),
+          prefetchHooksCallback:
+              ({workoutId = false, completedRideId = false}) {
+                return PrefetchHooks(
+                  db: db,
+                  explicitlyWatchedTables: [],
+                  addJoins:
+                      <
+                        T extends TableManagerState<
+                          dynamic,
+                          dynamic,
+                          dynamic,
+                          dynamic,
+                          dynamic,
+                          dynamic,
+                          dynamic,
+                          dynamic,
+                          dynamic,
+                          dynamic,
+                          dynamic
+                        >
+                      >(state) {
+                        if (workoutId) {
+                          state =
+                              state.withJoin(
+                                    currentTable: table,
+                                    currentColumn: table.workoutId,
+                                    referencedTable:
+                                        $$ScheduledWorkoutsTableReferences
+                                            ._workoutIdTable(db),
+                                    referencedColumn:
+                                        $$ScheduledWorkoutsTableReferences
+                                            ._workoutIdTable(db)
+                                            .id,
+                                  )
+                                  as T;
+                        }
+                        if (completedRideId) {
+                          state =
+                              state.withJoin(
+                                    currentTable: table,
+                                    currentColumn: table.completedRideId,
+                                    referencedTable:
+                                        $$ScheduledWorkoutsTableReferences
+                                            ._completedRideIdTable(db),
+                                    referencedColumn:
+                                        $$ScheduledWorkoutsTableReferences
+                                            ._completedRideIdTable(db)
+                                            .id,
+                                  )
+                                  as T;
+                        }
+
+                        return state;
+                      },
+                  getPrefetchedDataCallback: (items) async {
+                    return [];
+                  },
+                );
+              },
+        ),
+      );
+}
+
+typedef $$ScheduledWorkoutsTableProcessedTableManager =
+    ProcessedTableManager<
+      _$AppDatabase,
+      $ScheduledWorkoutsTable,
+      ScheduledWorkoutRow,
+      $$ScheduledWorkoutsTableFilterComposer,
+      $$ScheduledWorkoutsTableOrderingComposer,
+      $$ScheduledWorkoutsTableAnnotationComposer,
+      $$ScheduledWorkoutsTableCreateCompanionBuilder,
+      $$ScheduledWorkoutsTableUpdateCompanionBuilder,
+      (ScheduledWorkoutRow, $$ScheduledWorkoutsTableReferences),
+      ScheduledWorkoutRow,
+      PrefetchHooks Function({bool workoutId, bool completedRideId})
+    >;
+typedef $$PersonalRecordsTableCreateCompanionBuilder =
+    PersonalRecordsCompanion Function({
+      Value<int> id,
+      required String rideId,
+      required int durationSeconds,
+      required double watts,
+      required int achievedAt,
+    });
+typedef $$PersonalRecordsTableUpdateCompanionBuilder =
+    PersonalRecordsCompanion Function({
+      Value<int> id,
+      Value<String> rideId,
+      Value<int> durationSeconds,
+      Value<double> watts,
+      Value<int> achievedAt,
+    });
+
+final class $$PersonalRecordsTableReferences
+    extends
+        BaseReferences<
+          _$AppDatabase,
+          $PersonalRecordsTable,
+          PersonalRecordRow
+        > {
+  $$PersonalRecordsTableReferences(
+    super.$_db,
+    super.$_table,
+    super.$_typedResult,
+  );
+
+  static $RidesTable _rideIdTable(_$AppDatabase db) => db.rides.createAlias(
+    $_aliasNameGenerator(db.personalRecords.rideId, db.rides.id),
+  );
+
+  $$RidesTableProcessedTableManager get rideId {
+    final $_column = $_itemColumn<String>('ride_id')!;
+
+    final manager = $$RidesTableTableManager(
+      $_db,
+      $_db.rides,
+    ).filter((f) => f.id.sqlEquals($_column));
+    final item = $_typedResult.readTableOrNull(_rideIdTable($_db));
+    if (item == null) return manager;
+    return ProcessedTableManager(
+      manager.$state.copyWith(prefetchedData: [item]),
+    );
+  }
+}
+
+class $$PersonalRecordsTableFilterComposer
+    extends Composer<_$AppDatabase, $PersonalRecordsTable> {
+  $$PersonalRecordsTableFilterComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  ColumnFilters<int> get id => $composableBuilder(
+    column: $table.id,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<int> get durationSeconds => $composableBuilder(
+    column: $table.durationSeconds,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<double> get watts => $composableBuilder(
+    column: $table.watts,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<int> get achievedAt => $composableBuilder(
+    column: $table.achievedAt,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  $$RidesTableFilterComposer get rideId {
+    final $$RidesTableFilterComposer composer = $composerBuilder(
+      composer: this,
+      getCurrentColumn: (t) => t.rideId,
+      referencedTable: $db.rides,
+      getReferencedColumn: (t) => t.id,
+      builder:
+          (
+            joinBuilder, {
+            $addJoinBuilderToRootComposer,
+            $removeJoinBuilderFromRootComposer,
+          }) => $$RidesTableFilterComposer(
+            $db: $db,
+            $table: $db.rides,
+            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+            joinBuilder: joinBuilder,
+            $removeJoinBuilderFromRootComposer:
+                $removeJoinBuilderFromRootComposer,
+          ),
+    );
+    return composer;
+  }
+}
+
+class $$PersonalRecordsTableOrderingComposer
+    extends Composer<_$AppDatabase, $PersonalRecordsTable> {
+  $$PersonalRecordsTableOrderingComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  ColumnOrderings<int> get id => $composableBuilder(
+    column: $table.id,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<int> get durationSeconds => $composableBuilder(
+    column: $table.durationSeconds,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<double> get watts => $composableBuilder(
+    column: $table.watts,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<int> get achievedAt => $composableBuilder(
+    column: $table.achievedAt,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  $$RidesTableOrderingComposer get rideId {
+    final $$RidesTableOrderingComposer composer = $composerBuilder(
+      composer: this,
+      getCurrentColumn: (t) => t.rideId,
+      referencedTable: $db.rides,
+      getReferencedColumn: (t) => t.id,
+      builder:
+          (
+            joinBuilder, {
+            $addJoinBuilderToRootComposer,
+            $removeJoinBuilderFromRootComposer,
+          }) => $$RidesTableOrderingComposer(
+            $db: $db,
+            $table: $db.rides,
+            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+            joinBuilder: joinBuilder,
+            $removeJoinBuilderFromRootComposer:
+                $removeJoinBuilderFromRootComposer,
+          ),
+    );
+    return composer;
+  }
+}
+
+class $$PersonalRecordsTableAnnotationComposer
+    extends Composer<_$AppDatabase, $PersonalRecordsTable> {
+  $$PersonalRecordsTableAnnotationComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  GeneratedColumn<int> get id =>
+      $composableBuilder(column: $table.id, builder: (column) => column);
+
+  GeneratedColumn<int> get durationSeconds => $composableBuilder(
+    column: $table.durationSeconds,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<double> get watts =>
+      $composableBuilder(column: $table.watts, builder: (column) => column);
+
+  GeneratedColumn<int> get achievedAt => $composableBuilder(
+    column: $table.achievedAt,
+    builder: (column) => column,
+  );
+
+  $$RidesTableAnnotationComposer get rideId {
+    final $$RidesTableAnnotationComposer composer = $composerBuilder(
+      composer: this,
+      getCurrentColumn: (t) => t.rideId,
+      referencedTable: $db.rides,
+      getReferencedColumn: (t) => t.id,
+      builder:
+          (
+            joinBuilder, {
+            $addJoinBuilderToRootComposer,
+            $removeJoinBuilderFromRootComposer,
+          }) => $$RidesTableAnnotationComposer(
+            $db: $db,
+            $table: $db.rides,
+            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+            joinBuilder: joinBuilder,
+            $removeJoinBuilderFromRootComposer:
+                $removeJoinBuilderFromRootComposer,
+          ),
+    );
+    return composer;
+  }
+}
+
+class $$PersonalRecordsTableTableManager
+    extends
+        RootTableManager<
+          _$AppDatabase,
+          $PersonalRecordsTable,
+          PersonalRecordRow,
+          $$PersonalRecordsTableFilterComposer,
+          $$PersonalRecordsTableOrderingComposer,
+          $$PersonalRecordsTableAnnotationComposer,
+          $$PersonalRecordsTableCreateCompanionBuilder,
+          $$PersonalRecordsTableUpdateCompanionBuilder,
+          (PersonalRecordRow, $$PersonalRecordsTableReferences),
+          PersonalRecordRow,
+          PrefetchHooks Function({bool rideId})
+        > {
+  $$PersonalRecordsTableTableManager(
+    _$AppDatabase db,
+    $PersonalRecordsTable table,
+  ) : super(
+        TableManagerState(
+          db: db,
+          table: table,
+          createFilteringComposer: () =>
+              $$PersonalRecordsTableFilterComposer($db: db, $table: table),
+          createOrderingComposer: () =>
+              $$PersonalRecordsTableOrderingComposer($db: db, $table: table),
+          createComputedFieldComposer: () =>
+              $$PersonalRecordsTableAnnotationComposer($db: db, $table: table),
+          updateCompanionCallback:
+              ({
+                Value<int> id = const Value.absent(),
+                Value<String> rideId = const Value.absent(),
+                Value<int> durationSeconds = const Value.absent(),
+                Value<double> watts = const Value.absent(),
+                Value<int> achievedAt = const Value.absent(),
+              }) => PersonalRecordsCompanion(
+                id: id,
+                rideId: rideId,
+                durationSeconds: durationSeconds,
+                watts: watts,
+                achievedAt: achievedAt,
+              ),
+          createCompanionCallback:
+              ({
+                Value<int> id = const Value.absent(),
+                required String rideId,
+                required int durationSeconds,
+                required double watts,
+                required int achievedAt,
+              }) => PersonalRecordsCompanion.insert(
+                id: id,
+                rideId: rideId,
+                durationSeconds: durationSeconds,
+                watts: watts,
+                achievedAt: achievedAt,
+              ),
+          withReferenceMapper: (p0) => p0
+              .map(
+                (e) => (
+                  e.readTable(table),
+                  $$PersonalRecordsTableReferences(db, table, e),
+                ),
+              )
+              .toList(),
+          prefetchHooksCallback: ({rideId = false}) {
+            return PrefetchHooks(
+              db: db,
+              explicitlyWatchedTables: [],
+              addJoins:
+                  <
+                    T extends TableManagerState<
+                      dynamic,
+                      dynamic,
+                      dynamic,
+                      dynamic,
+                      dynamic,
+                      dynamic,
+                      dynamic,
+                      dynamic,
+                      dynamic,
+                      dynamic,
+                      dynamic
+                    >
+                  >(state) {
+                    if (rideId) {
+                      state =
+                          state.withJoin(
+                                currentTable: table,
+                                currentColumn: table.rideId,
+                                referencedTable:
+                                    $$PersonalRecordsTableReferences
+                                        ._rideIdTable(db),
+                                referencedColumn:
+                                    $$PersonalRecordsTableReferences
+                                        ._rideIdTable(db)
+                                        .id,
+                              )
+                              as T;
+                    }
+
+                    return state;
+                  },
+              getPrefetchedDataCallback: (items) async {
+                return [];
+              },
+            );
+          },
+        ),
+      );
+}
+
+typedef $$PersonalRecordsTableProcessedTableManager =
+    ProcessedTableManager<
+      _$AppDatabase,
+      $PersonalRecordsTable,
+      PersonalRecordRow,
+      $$PersonalRecordsTableFilterComposer,
+      $$PersonalRecordsTableOrderingComposer,
+      $$PersonalRecordsTableAnnotationComposer,
+      $$PersonalRecordsTableCreateCompanionBuilder,
+      $$PersonalRecordsTableUpdateCompanionBuilder,
+      (PersonalRecordRow, $$PersonalRecordsTableReferences),
+      PersonalRecordRow,
+      PrefetchHooks Function({bool rideId})
+    >;
+typedef $$FtpHistoryTableCreateCompanionBuilder =
+    FtpHistoryCompanion Function({
+      Value<int> id,
+      required int effectiveDate,
+      required double ftp,
+    });
+typedef $$FtpHistoryTableUpdateCompanionBuilder =
+    FtpHistoryCompanion Function({
+      Value<int> id,
+      Value<int> effectiveDate,
+      Value<double> ftp,
+    });
+
+class $$FtpHistoryTableFilterComposer
+    extends Composer<_$AppDatabase, $FtpHistoryTable> {
+  $$FtpHistoryTableFilterComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  ColumnFilters<int> get id => $composableBuilder(
+    column: $table.id,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<int> get effectiveDate => $composableBuilder(
+    column: $table.effectiveDate,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<double> get ftp => $composableBuilder(
+    column: $table.ftp,
+    builder: (column) => ColumnFilters(column),
+  );
+}
+
+class $$FtpHistoryTableOrderingComposer
+    extends Composer<_$AppDatabase, $FtpHistoryTable> {
+  $$FtpHistoryTableOrderingComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  ColumnOrderings<int> get id => $composableBuilder(
+    column: $table.id,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<int> get effectiveDate => $composableBuilder(
+    column: $table.effectiveDate,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<double> get ftp => $composableBuilder(
+    column: $table.ftp,
+    builder: (column) => ColumnOrderings(column),
+  );
+}
+
+class $$FtpHistoryTableAnnotationComposer
+    extends Composer<_$AppDatabase, $FtpHistoryTable> {
+  $$FtpHistoryTableAnnotationComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  GeneratedColumn<int> get id =>
+      $composableBuilder(column: $table.id, builder: (column) => column);
+
+  GeneratedColumn<int> get effectiveDate => $composableBuilder(
+    column: $table.effectiveDate,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<double> get ftp =>
+      $composableBuilder(column: $table.ftp, builder: (column) => column);
+}
+
+class $$FtpHistoryTableTableManager
+    extends
+        RootTableManager<
+          _$AppDatabase,
+          $FtpHistoryTable,
+          FtpHistoryRow,
+          $$FtpHistoryTableFilterComposer,
+          $$FtpHistoryTableOrderingComposer,
+          $$FtpHistoryTableAnnotationComposer,
+          $$FtpHistoryTableCreateCompanionBuilder,
+          $$FtpHistoryTableUpdateCompanionBuilder,
+          (
+            FtpHistoryRow,
+            BaseReferences<_$AppDatabase, $FtpHistoryTable, FtpHistoryRow>,
+          ),
+          FtpHistoryRow,
+          PrefetchHooks Function()
+        > {
+  $$FtpHistoryTableTableManager(_$AppDatabase db, $FtpHistoryTable table)
+    : super(
+        TableManagerState(
+          db: db,
+          table: table,
+          createFilteringComposer: () =>
+              $$FtpHistoryTableFilterComposer($db: db, $table: table),
+          createOrderingComposer: () =>
+              $$FtpHistoryTableOrderingComposer($db: db, $table: table),
+          createComputedFieldComposer: () =>
+              $$FtpHistoryTableAnnotationComposer($db: db, $table: table),
+          updateCompanionCallback:
+              ({
+                Value<int> id = const Value.absent(),
+                Value<int> effectiveDate = const Value.absent(),
+                Value<double> ftp = const Value.absent(),
+              }) => FtpHistoryCompanion(
+                id: id,
+                effectiveDate: effectiveDate,
+                ftp: ftp,
+              ),
+          createCompanionCallback:
+              ({
+                Value<int> id = const Value.absent(),
+                required int effectiveDate,
+                required double ftp,
+              }) => FtpHistoryCompanion.insert(
+                id: id,
+                effectiveDate: effectiveDate,
+                ftp: ftp,
+              ),
+          withReferenceMapper: (p0) => p0
+              .map((e) => (e.readTable(table), BaseReferences(db, table, e)))
+              .toList(),
+          prefetchHooksCallback: null,
+        ),
+      );
+}
+
+typedef $$FtpHistoryTableProcessedTableManager =
+    ProcessedTableManager<
+      _$AppDatabase,
+      $FtpHistoryTable,
+      FtpHistoryRow,
+      $$FtpHistoryTableFilterComposer,
+      $$FtpHistoryTableOrderingComposer,
+      $$FtpHistoryTableAnnotationComposer,
+      $$FtpHistoryTableCreateCompanionBuilder,
+      $$FtpHistoryTableUpdateCompanionBuilder,
+      (
+        FtpHistoryRow,
+        BaseReferences<_$AppDatabase, $FtpHistoryTable, FtpHistoryRow>,
+      ),
+      FtpHistoryRow,
+      PrefetchHooks Function()
+    >;
 
 class $AppDatabaseManager {
   final _$AppDatabase _db;
@@ -6834,4 +9122,10 @@ class $AppDatabaseManager {
       $$UserProfilesTableTableManager(_db, _db.userProfiles);
   $$ExportQueueTableTableManager get exportQueue =>
       $$ExportQueueTableTableManager(_db, _db.exportQueue);
+  $$ScheduledWorkoutsTableTableManager get scheduledWorkouts =>
+      $$ScheduledWorkoutsTableTableManager(_db, _db.scheduledWorkouts);
+  $$PersonalRecordsTableTableManager get personalRecords =>
+      $$PersonalRecordsTableTableManager(_db, _db.personalRecords);
+  $$FtpHistoryTableTableManager get ftpHistory =>
+      $$FtpHistoryTableTableManager(_db, _db.ftpHistory);
 }

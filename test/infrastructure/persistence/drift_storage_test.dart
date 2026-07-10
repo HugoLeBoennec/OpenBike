@@ -339,4 +339,246 @@ void main() {
       expect(await storage.getSensorReadings(ride2.id), hasLength(2));
     });
   });
+
+  // ===========================================================================
+  // FTP-at-time metrics on saveRide
+  // ===========================================================================
+
+  group('DriftStorage — saveRide with ftp', () {
+    test('persists tss, intensityFactor, and ftpAtTime when ftp is given',
+        () async {
+      final ride = _testRide();
+      await storage.saveRide(ride, ftp: const Watts(220));
+
+      final loaded = await storage.getRide(ride.id);
+      expect(loaded!.cachedIntensityFactor, isNotNull);
+      expect(loaded.cachedTss, isNotNull);
+      expect(loaded.cachedIntensityFactor, closeTo(ride.intensityFactor(const Watts(220)), 1e-9));
+      expect(loaded.cachedTss, closeTo(ride.tss(const Watts(220)), 1e-9));
+    });
+
+    test('leaves tss/intensityFactor/ftpAtTime null when ftp is omitted',
+        () async {
+      final ride = _testRide();
+      await storage.saveRide(ride);
+
+      final loaded = await storage.getRide(ride.id);
+      expect(loaded!.cachedTss, isNull);
+      expect(loaded.cachedIntensityFactor, isNull);
+    });
+  });
+
+  // ===========================================================================
+  // FTP history
+  // ===========================================================================
+
+  group('DriftStorage — FTP history', () {
+    test('saveProfile seeds an initial FTP history entry', () async {
+      await storage.saveProfile(const UserProfile(
+        name: 'A',
+        ftp: Watts(200),
+        maxHr: HeartRate(180),
+        restingHr: HeartRate(60),
+        weight: 70,
+        height: 1.75,
+      ));
+
+      final history = await storage.getFtpHistory();
+      expect(history, hasLength(1));
+      expect(history.single.ftp.value, 200);
+    });
+
+    test('saveProfile appends a new entry only when ftp actually changes',
+        () async {
+      const base = UserProfile(
+        name: 'A',
+        ftp: Watts(200),
+        maxHr: HeartRate(180),
+        restingHr: HeartRate(60),
+        weight: 70,
+        height: 1.75,
+      );
+      await storage.saveProfile(base);
+      // Same FTP, different name — should not add a second history entry.
+      await storage.saveProfile(base.copyWith(name: 'B'));
+      expect(await storage.getFtpHistory(), hasLength(1));
+
+      // FTP actually changes — a new entry is appended.
+      await storage.saveProfile(base.copyWith(ftp: const Watts(230)));
+      final history = await storage.getFtpHistory();
+      expect(history, hasLength(2));
+      expect(history.last.ftp.value, 230);
+    });
+  });
+
+  // ===========================================================================
+  // Scheduled workouts (training calendar)
+  // ===========================================================================
+
+  group('DriftStorage — scheduled workouts', () {
+    test('saveScheduledWorkout then getScheduledWorkouts round-trips',
+        () async {
+      final scheduled = ScheduledWorkout(
+        id: 'sched-1',
+        workoutId: 'w-1',
+        date: DateTime(2026, 7, 15),
+        notes: 'Race prep',
+      );
+      await storage.saveScheduledWorkout(scheduled);
+
+      final loaded = await storage.getScheduledWorkouts();
+      expect(loaded, hasLength(1));
+      expect(loaded.single.id, 'sched-1');
+      expect(loaded.single.workoutId, 'w-1');
+      expect(loaded.single.date, DateTime(2026, 7, 15));
+      expect(loaded.single.notes, 'Race prep');
+      expect(loaded.single.completedRideId, isNull);
+    });
+
+    test('getScheduledWorkouts orders by date ascending', () async {
+      await storage.saveScheduledWorkout(ScheduledWorkout(
+        id: 'later',
+        workoutId: 'w-1',
+        date: DateTime(2026, 7, 20),
+      ));
+      await storage.saveScheduledWorkout(ScheduledWorkout(
+        id: 'earlier',
+        workoutId: 'w-1',
+        date: DateTime(2026, 7, 10),
+      ));
+
+      final loaded = await storage.getScheduledWorkouts();
+      expect(loaded.map((s) => s.id), ['earlier', 'later']);
+    });
+
+    test('linkCompletedRide sets the completedRideId', () async {
+      final ride = _testRide();
+      await storage.saveRide(ride);
+      await storage.saveScheduledWorkout(ScheduledWorkout(
+        id: 'sched-1',
+        workoutId: 'w-1',
+        date: DateTime(2026, 7, 15),
+      ));
+
+      await storage.linkCompletedRide('sched-1', ride.id);
+
+      final loaded = await storage.getScheduledWorkouts();
+      expect(loaded.single.completedRideId, ride.id);
+    });
+
+    test('deleteScheduledWorkout removes only the targeted entry', () async {
+      await storage.saveScheduledWorkout(ScheduledWorkout(
+        id: 'keep',
+        workoutId: 'w-1',
+        date: DateTime(2026, 7, 10),
+      ));
+      await storage.saveScheduledWorkout(ScheduledWorkout(
+        id: 'remove',
+        workoutId: 'w-1',
+        date: DateTime(2026, 7, 11),
+      ));
+
+      await storage.deleteScheduledWorkout('remove');
+
+      final loaded = await storage.getScheduledWorkouts();
+      expect(loaded.map((s) => s.id), ['keep']);
+    });
+
+    test('deleting the completed ride clears completedRideId, not the entry',
+        () async {
+      final ride = _testRide();
+      await storage.saveRide(ride);
+      await storage.saveScheduledWorkout(ScheduledWorkout(
+        id: 'sched-1',
+        workoutId: 'w-1',
+        date: DateTime(2026, 7, 15),
+      ));
+      await storage.linkCompletedRide('sched-1', ride.id);
+
+      await storage.deleteRide(ride.id);
+
+      final loaded = await storage.getScheduledWorkouts();
+      expect(loaded, hasLength(1));
+      expect(loaded.single.completedRideId, isNull);
+    });
+  });
+
+  // ===========================================================================
+  // Personal records
+  // ===========================================================================
+
+  group('DriftStorage — personal records', () {
+    test('savePersonalRecords then getPersonalRecords round-trips', () async {
+      final ride = _testRide();
+      await storage.saveRide(ride);
+
+      await storage.savePersonalRecords([
+        PersonalRecord(
+          rideId: ride.id,
+          durationSeconds: 300,
+          watts: const Watts(280),
+          achievedAt: ride.startTime,
+        ),
+        PersonalRecord(
+          rideId: ride.id,
+          durationSeconds: 1200,
+          watts: const Watts(230),
+          achievedAt: ride.startTime,
+        ),
+      ]);
+
+      final records = await storage.getPersonalRecords();
+      expect(records, hasLength(2));
+      expect(records.map((r) => r.durationSeconds), containsAll([300, 1200]));
+    });
+
+    test('upserts on (rideId, durationSeconds) instead of duplicating',
+        () async {
+      final ride = _testRide();
+      await storage.saveRide(ride);
+
+      await storage.savePersonalRecords([
+        PersonalRecord(
+          rideId: ride.id,
+          durationSeconds: 300,
+          watts: const Watts(280),
+          achievedAt: ride.startTime,
+        ),
+      ]);
+      await storage.savePersonalRecords([
+        PersonalRecord(
+          rideId: ride.id,
+          durationSeconds: 300,
+          watts: const Watts(295), // re-computed, slightly different value
+          achievedAt: ride.startTime,
+        ),
+      ]);
+
+      final records = await storage.getPersonalRecords();
+      expect(records, hasLength(1));
+      expect(records.single.watts.value, 295);
+    });
+
+    test('deleteRide removes that ride personal records', () async {
+      final ride = _testRide();
+      await storage.saveRide(ride);
+      await storage.savePersonalRecords([
+        PersonalRecord(
+          rideId: ride.id,
+          durationSeconds: 300,
+          watts: const Watts(280),
+          achievedAt: ride.startTime,
+        ),
+      ]);
+
+      await storage.deleteRide(ride.id);
+
+      expect(await storage.getPersonalRecords(), isEmpty);
+    });
+
+    test('savePersonalRecords with an empty list is a no-op', () async {
+      await storage.savePersonalRecords([]);
+      expect(await storage.getPersonalRecords(), isEmpty);
+    });
+  });
 }

@@ -587,6 +587,120 @@ final rideDetailProvider = FutureProvider.family<Ride?, String>((ref, id) async 
 });
 
 // ---------------------------------------------------------------------------
+// Training calendar (scheduled workouts)
+// ---------------------------------------------------------------------------
+
+final scheduledWorkoutsProvider =
+    FutureProvider<List<ScheduledWorkout>>((ref) async {
+  final storage = ref.watch(storageProvider);
+  return storage.getScheduledWorkouts();
+});
+
+/// Scheduled workouts falling on today's date, for the home screen's "Today"
+/// card.
+final todaysScheduledWorkoutsProvider =
+    Provider<AsyncValue<List<ScheduledWorkout>>>((ref) {
+  final all = ref.watch(scheduledWorkoutsProvider);
+  return all.whenData((list) {
+    final now = DateTime.now();
+    return list
+        .where((s) =>
+            s.date.year == now.year &&
+            s.date.month == now.month &&
+            s.date.day == now.day)
+        .toList();
+  });
+});
+
+/// Set by [RideScreen] when started from a scheduled calendar entry (via
+/// [RideExtra.scheduledWorkoutId]) so [scheduledWorkoutLinkerProvider] can
+/// link the finished ride back to it once recording stops.
+final activeScheduledWorkoutIdProvider = StateProvider<String?>((ref) => null);
+
+/// Watch this once from [RideScreen] to auto-link a finished ride back to
+/// the scheduled workout it was started from.
+final scheduledWorkoutLinkerProvider = Provider<void>((ref) {
+  final storage = ref.watch(storageProvider);
+  final eventBus = ref.watch(eventBusProvider);
+  final sub = eventBus.on<RideEvent>().listen((event) {
+    if (event is! RideStopped) return;
+    final scheduledId = ref.read(activeScheduledWorkoutIdProvider);
+    if (scheduledId == null) return;
+    ref.read(activeScheduledWorkoutIdProvider.notifier).state = null;
+    storage.linkCompletedRide(scheduledId, event.ride.id).then((_) {
+      ref.invalidate(scheduledWorkoutsProvider);
+    });
+  });
+  ref.onDispose(sub.cancel);
+});
+
+// ---------------------------------------------------------------------------
+// Personal records
+// ---------------------------------------------------------------------------
+
+final personalRecordsProvider =
+    FutureProvider<List<PersonalRecord>>((ref) async {
+  final storage = ref.watch(storageProvider);
+  return storage.getPersonalRecords();
+});
+
+/// Best (highest-watts) record per duration bucket, scoped to all-time or
+/// the last 90 days.
+Map<int, PersonalRecord> bestPerDuration(
+  List<PersonalRecord> records, {
+  bool last90DaysOnly = false,
+}) {
+  final cutoff = DateTime.now().subtract(const Duration(days: 90));
+  final best = <int, PersonalRecord>{};
+  for (final r in records) {
+    if (last90DaysOnly && r.achievedAt.isBefore(cutoff)) continue;
+    final current = best[r.durationSeconds];
+    if (current == null || r.watts.value > current.watts.value) {
+      best[r.durationSeconds] = r;
+    }
+  }
+  return best;
+}
+
+/// Duration buckets (of [personalRecordDurations]) where [rideId] holds the
+/// all-time best — drives the "New PR!" badge on the ride summary screen.
+final newPersonalRecordsForRideProvider =
+    Provider.family<List<int>, String>((ref, rideId) {
+  final records = ref.watch(personalRecordsProvider).valueOrNull ?? [];
+  final best = bestPerDuration(records);
+  return [
+    for (final entry in best.entries)
+      if (entry.value.rideId == rideId) entry.key,
+  ]..sort();
+});
+
+// ---------------------------------------------------------------------------
+// Performance Management Chart (CTL / ATL / TSB)
+// ---------------------------------------------------------------------------
+
+final fitnessHistoryProvider =
+    FutureProvider<List<FitnessDataPoint>>((ref) async {
+  final storage = ref.watch(storageProvider);
+  final rides = await storage.getRides();
+  final ftpHistory = await storage.getFtpHistory();
+  final currentFtp = ref.watch(ftpProvider);
+  final daily = dailyTssFromRides(
+    rides,
+    ftpHistory: ftpHistory,
+    currentFtp: currentFtp,
+  );
+  return FitnessCalculator().calculate(daily);
+});
+
+/// Today's fitness point (or null if there's no ride history yet) — drives
+/// the home screen's compact CTL/TSB sparkline.
+final currentFitnessProvider = Provider<FitnessDataPoint?>((ref) {
+  final points = ref.watch(fitnessHistoryProvider).valueOrNull;
+  if (points == null || points.isEmpty) return null;
+  return points.last;
+});
+
+// ---------------------------------------------------------------------------
 // Physics & route simulation
 // ---------------------------------------------------------------------------
 

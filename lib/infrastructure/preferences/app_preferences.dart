@@ -21,6 +21,7 @@ class AppPreferences {
   static const _kUnitSystem = 'unit_system';
   static const _kThemeMode = 'theme_mode';
   static const _kAutoPauseEnabled = 'auto_pause_enabled';
+  static const _kHasBackfilledPersonalRecords = 'has_backfilled_personal_records';
 
   // -------------------------------------------------------------------------
   // Onboarding
@@ -112,4 +113,14 @@ class AppPreferences {
 
   Future<void> setAutoPauseEnabled(bool value) =>
       _prefs.setBool(_kAutoPauseEnabled, value);
+
+  // -------------------------------------------------------------------------
+  // Personal records backfill (one-time job, see [backfillPersonalRecords])
+  // -------------------------------------------------------------------------
+
+  bool get hasBackfilledPersonalRecords =>
+      _prefs.getBool(_kHasBackfilledPersonalRecords) ?? false;
+
+  Future<void> setHasBackfilledPersonalRecords(bool value) =>
+      _prefs.setBool(_kHasBackfilledPersonalRecords, value);
 }

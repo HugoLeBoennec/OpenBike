@@ -62,11 +62,16 @@ class RideSummaryScreen extends ConsumerWidget {
                     style: TextStyle(color: Colors.white54)),
               );
             }
+            final newPrDurations = ref.watch(newPersonalRecordsForRideProvider(ride.id));
             return ListView(
               padding: const EdgeInsets.all(16),
               children: [
                 HeaderCard(ride: ride),
                 const SizedBox(height: 16),
+                if (newPrDurations.isNotEmpty) ...[
+                  NewPersonalRecordsBanner(durations: newPrDurations),
+                  const SizedBox(height: 16),
+                ],
                 MetricsGrid(ride: ride, ftp: ftp),
                 const SizedBox(height: 24),
                 if (ride.readings.isNotEmpty) ...[

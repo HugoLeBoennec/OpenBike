@@ -8,6 +8,54 @@ import '../../infrastructure/persistence/export_queue_service.dart';
 import '../state/providers.dart';
 
 // ---------------------------------------------------------------------------
+// New personal records banner
+// ---------------------------------------------------------------------------
+
+class NewPersonalRecordsBanner extends StatelessWidget {
+  const NewPersonalRecordsBanner({super.key, required this.durations});
+
+  /// Duration buckets (seconds) this ride set an all-time best for.
+  final List<int> durations;
+
+  static const _labels = {5: '5 sec', 60: '1 min', 300: '5 min', 1200: '20 min'};
+
+  @override
+  Widget build(BuildContext context) {
+    final labels = durations.map((d) => _labels[d] ?? '${d}s').join(', ');
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+      decoration: BoxDecoration(
+        color: Colors.amber.withValues(alpha: 0.12),
+        borderRadius: BorderRadius.circular(12),
+        border: Border.all(color: Colors.amber.withValues(alpha: 0.4)),
+      ),
+      child: Row(
+        children: [
+          const Icon(Icons.emoji_events, color: Colors.amber, size: 22),
+          const SizedBox(width: 12),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                const Text('New PR!',
+                    style: TextStyle(
+                        color: Colors.amber,
+                        fontWeight: FontWeight.w700,
+                        fontSize: 15)),
+                Text(
+                  'Best-ever $labels power',
+                  style: const TextStyle(color: Colors.white70, fontSize: 12),
+                ),
+              ],
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+// ---------------------------------------------------------------------------
 // Header card
 // ---------------------------------------------------------------------------
 

@@ -5,6 +5,7 @@ import 'package:go_router/go_router.dart';
 import '../../core/domain/entities/ride.dart';
 import '../../core/domain/value_objects/value_objects.dart';
 import '../state/providers.dart';
+import '../widgets/personal_records_panel.dart';
 
 /// Ride history list screen.
 class HistoryScreen extends ConsumerWidget {
@@ -14,15 +15,26 @@ class HistoryScreen extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final ridesAsync = ref.watch(rideHistoryProvider);
     final ftp = ref.watch(ftpProvider);
+    final recordsAsync = ref.watch(personalRecordsProvider);
 
     return Scaffold(
       backgroundColor: Colors.black,
       appBar: AppBar(
         title: const Text('History'),
         backgroundColor: Colors.black,
+        actions: [
+          IconButton(
+            icon: const Icon(Icons.show_chart, color: Colors.white54),
+            tooltip: 'Trends',
+            onPressed: () => context.go('/trends'),
+          ),
+        ],
       ),
       body: RefreshIndicator(
-        onRefresh: () async => ref.invalidate(rideHistoryProvider),
+        onRefresh: () async {
+          ref.invalidate(rideHistoryProvider);
+          ref.invalidate(personalRecordsProvider);
+        },
         child: ridesAsync.when(
           loading: () => const Center(
               child: CircularProgressIndicator(color: Colors.white30)),
@@ -52,9 +64,18 @@ class HistoryScreen extends ConsumerWidget {
             }
             return ListView.builder(
               padding: const EdgeInsets.symmetric(vertical: 8),
-              itemCount: rides.length,
+              itemCount: rides.length + 1,
               itemBuilder: (context, index) {
-                final ride = rides[index];
+                if (index == 0) {
+                  return Padding(
+                    padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 4),
+                    child: recordsAsync.maybeWhen(
+                      data: (records) => PersonalRecordsPanel(records: records),
+                      orElse: () => const SizedBox.shrink(),
+                    ),
+                  );
+                }
+                final ride = rides[index - 1];
                 return _RideTile(
                   ride: ride,
                   ftp: ftp,

@@ -145,7 +145,7 @@ An agent picking up a phase MUST:
 | [P2](P2-connectivity.md) | Connectivity — multi-sensor, background recording, Windows BLE | DONE |
 | [P3](P3-ride-experience.md) | Ride experience — workout HUD, route profile | DONE |
 | [P4](P4-workout-builder.md) | Workout builder, FTP tests, starter library | DONE |
-| [P5](P5-training-features.md) | Calendar, PMC, personal records | NOT_STARTED |
+| [P5](P5-training-features.md) | Calendar, PMC, personal records | DONE |
 | [P6](P6-integrations.md) | Integrations — Strava UI, GPX export, Records, OpenCoach | NOT_STARTED |
 | [P7](P7-design-system.md) | Design system — themes, polish, accessibility | NOT_STARTED |
 | [P8](P8-desktop.md) | Desktop — macOS + Windows packaging, ANT+ stretch | NOT_STARTED |

@@ -10,6 +10,7 @@ import '../../domain/ports/storage_port.dart';
 import '../../domain/value_objects/value_objects.dart';
 import '../../events/app_event.dart';
 import '../../events/event_bus.dart';
+import 'personal_records_calculator.dart';
 
 final _log = Logger('RecordingEngine');
 
@@ -23,13 +24,16 @@ class RecordingEngine {
     required EventBus eventBus,
     required StoragePort storage,
     Uuid? uuid,
+    PersonalRecordsCalculator? personalRecordsCalculator,
   })  : _eventBus = eventBus,
         _storage = storage,
-        _uuid = uuid ?? Uuid();
+        _uuid = uuid ?? Uuid(),
+        _personalRecords = personalRecordsCalculator ?? PersonalRecordsCalculator();
 
   final EventBus _eventBus;
   final StoragePort _storage;
   final Uuid _uuid;
+  final PersonalRecordsCalculator _personalRecords;
 
   // ---------------------------------------------------------------------------
   // Public state
@@ -217,7 +221,9 @@ class RecordingEngine {
   /// Finalises the ride, computes metrics, persists everything, and returns
   /// the completed [Ride].
   ///
-  /// Pass [ftp] to compute TSS and IF. If null, those metrics are skipped.
+  /// Pass [ftp] to compute and persist TSS, IF, and the FTP-at-time snapshot.
+  /// If null, those metrics are skipped. Mean-max power personal-record
+  /// candidates are always computed and cached, independent of [ftp].
   Future<Ride> stop({Watts? ftp}) async {
     if (_state == RecordingState.idle) {
       throw StateError('Cannot stop: engine is idle');
@@ -257,12 +263,25 @@ class RecordingEngine {
     );
 
     // Persist.
-    await _storage.saveRide(finalRide);
+    if (ftp != null) {
+      await _storage.saveRide(finalRide, ftp: ftp);
+    } else {
+      await _storage.saveRide(finalRide);
+    }
     if (_readings.isNotEmpty) {
       await _storage.saveSensorReadings(finalRide.id, _readings);
     }
     if (_laps.isNotEmpty) {
       await _storage.saveLaps(finalRide.id, _laps);
+    }
+
+    final records = _personalRecords.computeRecords(
+      rideId: finalRide.id,
+      achievedAt: finalRide.startTime,
+      readings: _readings,
+    );
+    if (records.isNotEmpty) {
+      await _storage.savePersonalRecords(records);
     }
 
     _eventBus.fire(RideEvent.stopped(finalRide));

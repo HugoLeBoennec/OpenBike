@@ -4,6 +4,7 @@ import 'dart:math';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
+import '../../core/application/services/personal_records_backfill.dart';
 import '../../core/domain/entities/entities.dart';
 import '../../core/domain/value_objects/value_objects.dart';
 import '../../core/events/app_event.dart';
@@ -160,6 +161,12 @@ class _DevToolsScreenState extends ConsumerState<DevToolsScreen> {
             subtitle: '3600 synthetic readings (~180W avg)',
             onTap: () => _generateFakeRide(context),
           ),
+          _ActionTile(
+            icon: Icons.emoji_events_outlined,
+            title: 'Backfill Personal Records',
+            subtitle: 'Recompute mean-max power for every ride with readings',
+            onTap: () => _backfillPersonalRecords(context),
+          ),
 
           const SizedBox(height: 8),
 
@@ -252,6 +259,21 @@ class _DevToolsScreenState extends ConsumerState<DevToolsScreen> {
     messenger.showSnackBar(
       SnackBar(
         content: Text('Created ride $rideId with ${readings.length} readings'),
+        backgroundColor: Colors.green.shade800,
+      ),
+    );
+  }
+
+  Future<void> _backfillPersonalRecords(BuildContext context) async {
+    final messenger = ScaffoldMessenger.of(context);
+    final storage = ref.read(storageProvider);
+    final count = await backfillPersonalRecords(storage);
+
+    ref.invalidate(personalRecordsProvider);
+
+    messenger.showSnackBar(
+      SnackBar(
+        content: Text('Backfilled records from $count ride(s)'),
         backgroundColor: Colors.green.shade800,
       ),
     );

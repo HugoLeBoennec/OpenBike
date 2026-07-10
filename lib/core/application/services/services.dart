@@ -1,4 +1,7 @@
 export 'auto_pause_detector.dart';
+export 'fitness_calculator.dart';
+export 'personal_records_calculator.dart';
+export 'personal_records_backfill.dart';
 export 'physics_engine.dart';
 export 'recording_engine.dart';
 export 'route_simulator.dart';
