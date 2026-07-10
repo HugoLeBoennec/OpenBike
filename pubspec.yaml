@@ -55,6 +55,9 @@ dependencies:
   flutter_secure_storage: ^9.2.4
   connectivity_plus: ^6.1.4
 
+  # Deep link handling (Strava OAuth callback — see P6-integrations.md)
+  app_links: ^7.0.0
+
   # Charts
   fl_chart: ^0.70.2
 

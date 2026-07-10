@@ -55,16 +55,25 @@ class StravaExportPlugin implements ExportPlugin {
   String? _accessToken;
   String? _refreshToken;
   DateTime? _expiresAt;
+  String? _athleteName;
 
   // Secure storage keys.
   static const _keyAccessToken = 'strava_access_token';
   static const _keyRefreshToken = 'strava_refresh_token';
   static const _keyExpiresAt = 'strava_expires_at';
+  static const _keyAthleteName = 'strava_athlete_name';
 
   // API endpoints.
   static const _authorizeUrl = 'https://www.strava.com/oauth/authorize';
   static const _tokenUrl = 'https://www.strava.com/oauth/token';
   static const _uploadUrl = 'https://www.strava.com/api/v3/uploads';
+  static const _athleteUrl = 'https://www.strava.com/api/v3/athlete';
+
+  /// Display name of the connected athlete (e.g. "Jane Doe"), populated
+  /// after a successful [handleCallback] or from cache in [restoreSession].
+  /// `null` when not authenticated or the athlete profile hasn't been
+  /// fetched yet.
+  String? get athleteName => _athleteName;
 
   // Rate limits: 200/15min, 2000/day — tracked for informational purposes.
   static const _maxPer15Min = 200;
@@ -104,6 +113,7 @@ class StravaExportPlugin implements ExportPlugin {
       _expiresAt =
           DateTime.fromMillisecondsSinceEpoch(int.parse(expiresStr));
     }
+    _athleteName = await _storage.read(key: _keyAthleteName);
   }
 
   // ---------------------------------------------------------------------------
@@ -111,10 +121,22 @@ class StravaExportPlugin implements ExportPlugin {
   // ---------------------------------------------------------------------------
 
   @override
-  Future<void> authenticate() async {
+  Future<void> authenticate() => _authenticate(_config.redirectUri);
+
+  /// Starts the OAuth flow with an explicit [redirectUri] instead of
+  /// [StravaConfig.redirectUri]'s default `openbike://` scheme.
+  ///
+  /// Used on desktop (Windows/macOS/Linux), where custom URL schemes aren't
+  /// reliably routed back to a running app — the caller instead spins up a
+  /// [DesktopOAuthLoopbackServer] and passes its `http://127.0.0.1:<port>`
+  /// redirect URI here.
+  Future<void> authenticateWithRedirect(String redirectUri) =>
+      _authenticate(redirectUri);
+
+  Future<void> _authenticate(String redirectUri) async {
     final uri = Uri.parse(_authorizeUrl).replace(queryParameters: {
       'client_id': _config.clientId,
-      'redirect_uri': _config.redirectUri,
+      'redirect_uri': redirectUri,
       'response_type': 'code',
       'scope': 'activity:write',
       'approval_prompt': 'auto',
@@ -126,9 +148,9 @@ class StravaExportPlugin implements ExportPlugin {
     await launchUrl(uri, mode: LaunchMode.externalApplication);
   }
 
-  /// Called when the app receives the deep link callback.
-  ///
-  /// [callbackUri] is the full URI: `openbike://strava/callback?code=XXX`.
+  /// Called when the app receives the OAuth callback — either the
+  /// `openbike://strava/callback` deep link on mobile, or the loopback
+  /// server's request URI on desktop.
   Future<void> handleCallback(Uri callbackUri) async {
     final code = callbackUri.queryParameters['code'];
     if (code == null) {
@@ -137,6 +159,7 @@ class StravaExportPlugin implements ExportPlugin {
       );
     }
     await _exchangeCode(code);
+    await _fetchAthlete();
   }
 
   Future<void> _exchangeCode(String code) async {
@@ -206,9 +229,33 @@ class StravaExportPlugin implements ExportPlugin {
     _accessToken = null;
     _refreshToken = null;
     _expiresAt = null;
+    _athleteName = null;
     await _storage.delete(key: _keyAccessToken);
     await _storage.delete(key: _keyRefreshToken);
     await _storage.delete(key: _keyExpiresAt);
+    await _storage.delete(key: _keyAthleteName);
+  }
+
+  /// Fetches the connected athlete's display name from `GET /athlete` and
+  /// caches it. Non-fatal on failure — the connection still succeeds
+  /// without a display name (falls back to "Connected" in the UI).
+  Future<void> _fetchAthlete() async {
+    try {
+      final response = await _get(_athleteUrl);
+      if (response.statusCode != 200) return;
+
+      final json = jsonDecode(response.body) as Map<String, dynamic>;
+      final name = [json['firstname'], json['lastname']]
+          .whereType<String>()
+          .where((s) => s.isNotEmpty)
+          .join(' ');
+      if (name.isEmpty) return;
+
+      _athleteName = name;
+      await _storage.write(key: _keyAthleteName, value: name);
+    } catch (_) {
+      // Ignore — athlete display name is a nice-to-have.
+    }
   }
 
   // ---------------------------------------------------------------------------
