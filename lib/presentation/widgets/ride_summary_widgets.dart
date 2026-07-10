@@ -520,34 +520,81 @@ class ExportButton extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    final matching = queueItems
-        .where((i) => i.rideId == rideId && i.target == pluginId)
-        .toList();
-    final hasQueued = matching.isNotEmpty;
-    final isSuccess = matching.any((i) => i.isSuccess);
+    // queueItems (exportQueueProvider) is newest-first, so the first match
+    // for this ride/target is the current attempt.
+    final item = queueItems
+        .cast<ExportQueueItem?>()
+        .firstWhere((i) => i!.rideId == rideId && i.target == pluginId, orElse: () => null);
 
-    return OutlinedButton.icon(
-      style: OutlinedButton.styleFrom(
-        foregroundColor: isSuccess ? Colors.green : Colors.white70,
-        side: BorderSide(
-          color: isSuccess
-              ? Colors.green
-              : Colors.white.withValues(alpha: 0.2),
+    final isSuccess = item?.isSuccess ?? false;
+    final isBusy = item != null && (item.isUploading || item.isPending);
+    final isTerminallyFailed =
+        item != null && item.isFailed && item.retryCount >= ExportQueueService.maxRetries;
+    final isRetrying =
+        item != null && item.isFailed && item.retryCount < ExportQueueService.maxRetries;
+
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      mainAxisSize: MainAxisSize.min,
+      children: [
+        OutlinedButton.icon(
+          style: OutlinedButton.styleFrom(
+            foregroundColor: isSuccess
+                ? Colors.green
+                : isTerminallyFailed
+                    ? Colors.redAccent
+                    : Colors.white70,
+            side: BorderSide(
+              color: isSuccess
+                  ? Colors.green
+                  : isTerminallyFailed
+                      ? Colors.redAccent.withValues(alpha: 0.5)
+                      : Colors.white.withValues(alpha: 0.2),
+            ),
+          ),
+          onPressed: isSuccess || isBusy || isRetrying
+              ? null
+              : () => isTerminallyFailed
+                  ? ref.read(exportQueueServiceProvider).retry(item.id)
+                  : ref.read(exportRideProvider)(rideId, pluginId),
+          icon: Icon(
+            isSuccess
+                ? Icons.check_circle
+                : isTerminallyFailed
+                    ? Icons.refresh
+                    : isBusy || isRetrying
+                        ? Icons.hourglass_top
+                        : Icons.upload,
+            size: 16,
+          ),
+          label: Text(isTerminallyFailed ? 'Retry $pluginName' : pluginName),
         ),
-      ),
-      onPressed: hasQueued
-          ? null
-          : () => ref.read(exportRideProvider)(rideId, pluginId),
-      icon: Icon(
-        isSuccess
-            ? Icons.check_circle
-            : hasQueued
-                ? Icons.hourglass_top
-                : Icons.upload,
-        size: 16,
-      ),
-      label: Text(pluginName),
+        if (item != null)
+          Padding(
+            padding: const EdgeInsets.only(top: 2, left: 4),
+            child: Text(
+              _statusLabel(item),
+              style: TextStyle(
+                color: isTerminallyFailed ? Colors.redAccent : Colors.white38,
+                fontSize: 11,
+              ),
+            ),
+          ),
+      ],
     );
+  }
+
+  String _statusLabel(ExportQueueItem item) {
+    if (item.isSuccess) return 'Uploaded';
+    if (item.isUploading) return 'Uploading…';
+    if (item.isPending) return 'Queued';
+    if (item.isFailed) {
+      if (item.retryCount < ExportQueueService.maxRetries) {
+        return 'Retrying (${item.retryCount}/${ExportQueueService.maxRetries})…';
+      }
+      return 'Failed: ${item.errorMessage ?? 'unknown error'}';
+    }
+    return '';
   }
 }
 
