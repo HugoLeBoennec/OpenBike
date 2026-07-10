@@ -1,7 +1,7 @@
 ---
 phase: P8
 title: Desktop — macOS + Windows first-class, packaging, ANT+ stretch
-status: NOT_STARTED
+status: IN_PROGRESS
 depends_on: [P2]
 validation:
   - flutter analyze
