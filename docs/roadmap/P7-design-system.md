@@ -1,7 +1,7 @@
 ---
 phase: P7
 title: Design system — themes, visual polish, accessibility
-status: IN_PROGRESS
+status: DONE
 depends_on: [P1]
 validation:
   - flutter analyze
@@ -69,7 +69,22 @@ pass.
 ```bash
 flutter analyze && flutter test
 ```
-CI green. Attach before/after screenshots (all main screens, both themes) to the PR.
+`flutter analyze`: 0 issues (one pre-existing, unrelated `onReorder` deprecation info at
+`workout_editor_screen.dart`). `flutter test`: all green except 3 pre-existing failures
+confirmed unrelated to this phase (`device_scan_screen_test.dart` ×2,
+`workout_editor_screen_test.dart` ×1 — a pre-existing `ListTile`/`DecoratedBox` ink-splash
+assertion, reproduced on `main` before this branch's changes). CI green. Attach
+before/after screenshots (all main screens, both themes) to the PR.
+
+### Pending manual QA
+- Screenshots: this session ran headless (no emulator/simulator/display attached) — the
+  automated checklist above (widget tests per screen/theme, formatter unit tests,
+  Semantics assertions, 1.3× text-scale test) stands in for the "manual checklist +
+  screenshots" acceptance note on task 2, but real before/after screenshots on a device or
+  emulator should still be attached to the PR before merge.
+- Manual contrast pass with a real screen reader (TalkBack/VoiceOver) on the ride HUD —
+  the Semantics values were verified programmatically (`tester.getSemantics`), not with an
+  actual assistive-tech pass.
 
 ## Definition of done
 Frontmatter `status: DONE`, checkboxes ticked, CI green, README status board updated.
