@@ -26,6 +26,8 @@ class PowerGauge extends ConsumerWidget {
           child: Semantics(
             label: 'Power gauge',
             value: '${power.value.round()} watts',
+            container: true,
+            excludeSemantics: true,
             child: SizedBox(
               width: size,
               height: size,

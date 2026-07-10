@@ -22,6 +22,8 @@ class DataFieldCell extends ConsumerWidget {
 
     return Semantics(
       label: '${fieldType.label}: $value $unit',
+      container: true,
+      excludeSemantics: true,
       child: Container(
         decoration: BoxDecoration(
           color: zoneColor != null
@@ -29,40 +31,52 @@ class DataFieldCell extends ConsumerWidget {
               : tokens.rideSurface,
           border: Border.all(color: tokens.surfaceTier3Line, width: 0.5),
         ),
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            Text(
-              fieldType.label,
-              style: tokens.dataFieldLabelStyle,
-            ),
-            const SizedBox(height: 2),
-            FittedBox(
-              fit: BoxFit.scaleDown,
-              child: Row(
-                mainAxisAlignment: MainAxisAlignment.center,
-                crossAxisAlignment: CrossAxisAlignment.baseline,
-                textBaseline: TextBaseline.alphabetic,
-                children: [
-                  Text(
-                    value,
-                    style: tokens.dataFieldValueStyle.copyWith(
-                      fontSize: 32,
-                      color: zoneColor ?? tokens.rideOnSurface,
-                    ),
-                  ),
-                  if (unit.isNotEmpty) ...[
-                    const SizedBox(width: 3),
-                    Text(
-                      unit,
-                      style: tokens.dataFieldLabelStyle
-                          .copyWith(fontSize: 11, letterSpacing: 0),
-                    ),
-                  ],
-                ],
+        child: Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 2),
+          child: Column(
+            mainAxisAlignment: MainAxisAlignment.center,
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Text(
+                fieldType.label,
+                style: tokens.dataFieldLabelStyle,
+                maxLines: 1,
+                overflow: TextOverflow.ellipsis,
               ),
-            ),
-          ],
+              const SizedBox(height: 2),
+              // Flexible bounds the FittedBox to the space left over after
+              // the label, so BoxFit.scaleDown actually has a height to
+              // shrink into instead of overflowing the cell at larger text
+              // scales (see P7 1.3x text-scale audit).
+              Flexible(
+                child: FittedBox(
+                  fit: BoxFit.scaleDown,
+                  child: Row(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    crossAxisAlignment: CrossAxisAlignment.baseline,
+                    textBaseline: TextBaseline.alphabetic,
+                    children: [
+                      Text(
+                        value,
+                        style: tokens.dataFieldValueStyle.copyWith(
+                          fontSize: 32,
+                          color: zoneColor ?? tokens.rideOnSurface,
+                        ),
+                      ),
+                      if (unit.isNotEmpty) ...[
+                        const SizedBox(width: 3),
+                        Text(
+                          unit,
+                          style: tokens.dataFieldLabelStyle
+                              .copyWith(fontSize: 11, letterSpacing: 0),
+                        ),
+                      ],
+                    ],
+                  ),
+                ),
+              ),
+            ],
+          ),
         ),
       ),
     );

@@ -4,6 +4,17 @@ import 'package:flutter/material.dart';
 
 import '../../core/domain/entities/power_zone.dart';
 
+/// Picks whichever of black/white has the higher WCAG contrast ratio
+/// against [background] — used for text drawn directly on a zone-colored
+/// fill, since a fixed white label fails AA contrast on the brighter zones
+/// (Threshold yellow ≈ 1.2:1, VO2max orange ≈ 2.2:1 — see P7 contrast audit).
+Color contrastingTextColor(Color background) {
+  final luminance = background.computeLuminance();
+  final contrastWithWhite = 1.05 / (luminance + 0.05);
+  final contrastWithBlack = (luminance + 0.05) / 0.05;
+  return contrastWithBlack >= contrastWithWhite ? Colors.black : Colors.white;
+}
+
 /// Convenience accessor: `context.tokens.surfaceTier1`.
 ///
 /// Falls back to [AppTokens.dark] when no [AppTokens] extension is

@@ -77,8 +77,7 @@ class _RouteProfileContent extends ConsumerWidget {
                       size: 18,
                     ),
                     tooltip: showMiniMap ? 'Show elevation profile' : 'Show map',
-                    padding: EdgeInsets.zero,
-                    constraints: const BoxConstraints(),
+                    constraints: const BoxConstraints(minWidth: 48, minHeight: 48),
                     onPressed: () => ref
                         .read(showMiniMapProvider.notifier)
                         .state = !showMiniMap,

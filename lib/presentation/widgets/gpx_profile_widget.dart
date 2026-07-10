@@ -34,6 +34,8 @@ class GpxProfileWidget extends ConsumerWidget {
     return Semantics(
       label: 'Route elevation profile',
       value: semanticsValue,
+      container: true,
+      excludeSemantics: true,
       child: CustomPaint(
         painter: _ElevationPainter(
           points: points,

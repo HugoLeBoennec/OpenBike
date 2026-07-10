@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../state/providers.dart';
+import '../theme/app_theme.dart';
 
 /// Horizontal zone indicator bar — highlights the active Coggan power zone.
 class ZoneBar extends ConsumerWidget {
@@ -25,6 +26,8 @@ class ZoneBar extends ConsumerWidget {
       value: activeZone != null
           ? 'Zone ${activeIndex + 1}, ${activeZone.name}'
           : 'No active zone',
+      container: true,
+      excludeSemantics: true,
       child: SizedBox(
         height: 28,
         child: Padding(
@@ -49,7 +52,12 @@ class ZoneBar extends ConsumerWidget {
                         fontSize: 10,
                         fontWeight:
                             isActive ? FontWeight.bold : FontWeight.normal,
-                        color: isActive ? Colors.white : Colors.white54,
+                        // Active label sits on the zone's full-opacity fill,
+                        // so pick black/white per-zone for WCAG contrast
+                        // (a fixed white fails on the brighter zones).
+                        color: isActive
+                            ? contrastingTextColor(zone.color)
+                            : context.tokens.rideOnSurfaceMuted,
                       ),
                     ),
                   ),

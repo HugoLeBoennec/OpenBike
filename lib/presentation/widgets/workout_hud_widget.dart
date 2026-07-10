@@ -294,8 +294,7 @@ class _SkipButton extends ConsumerWidget {
     return IconButton(
       icon: const Icon(Icons.skip_next, color: Colors.white70, size: 22),
       tooltip: 'Skip step',
-      padding: EdgeInsets.zero,
-      constraints: const BoxConstraints(),
+      constraints: const BoxConstraints(minWidth: 48, minHeight: 48),
       onPressed: () {
         final engine = ref.read(workoutEngineProvider);
         if (engine.state == WorkoutEngineState.running ||

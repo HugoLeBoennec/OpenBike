@@ -49,11 +49,11 @@ pass.
       screenshots per screen.
 
 ### 3. Accessibility
-- [ ] Semantics labels on custom-painted widgets (PowerGauge, ZoneBar, profile charts)
+- [x] Semantics labels on custom-painted widgets (PowerGauge, ZoneBar, profile charts)
       exposing current value as text.
-- [ ] Contrast audit of zone colors on both themes (WCAG AA for text, best-effort for
+- [x] Contrast audit of zone colors on both themes (WCAG AA for text, best-effort for
       chart fills); text-scale test at 1.3× (no overflow on ride screen data fields).
-- [ ] Touch targets ≥ 48dp on in-ride controls (sweaty fingers on a trainer!).
+- [x] Touch targets ≥ 48dp on in-ride controls (sweaty fingers on a trainer!).
       **Accept:** widget tests asserting Semantics nodes exist; text-scale golden test.
 
 ### 4. Onboarding upgrade
