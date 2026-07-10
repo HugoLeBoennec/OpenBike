@@ -82,4 +82,9 @@ flutter run
 
 ## License
 
-TBD
+Apache License 2.0 — see [LICENSE](LICENSE) and [NOTICE](NOTICE). Chosen (over
+GPL/MPL) because the open-core split (`docs/roadmap/README.md` §"Open-core
+strategy") requires the closed-source `openbike_private_plugins` companion
+package to be able to link against this core; Apache-2.0 also adds an express
+patent grant that plain MIT lacks. Third-party package licenses are listed
+in-app at Settings → About → Open-source licenses.
