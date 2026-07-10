@@ -9,3 +9,6 @@ export 'sensor_reading.dart';
 export 'paired_devices.dart';
 export 'power_zone.dart';
 export 'user_profile.dart';
+export 'scheduled_workout.dart';
+export 'personal_record.dart';
+export 'ftp_history_entry.dart';

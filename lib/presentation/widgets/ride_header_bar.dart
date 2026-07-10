@@ -147,6 +147,8 @@ class RideHeaderBar extends ConsumerWidget {
 
     WakelockPlus.disable();
     ref.invalidate(rideHistoryProvider);
+    ref.invalidate(personalRecordsProvider);
+    ref.invalidate(scheduledWorkoutsProvider);
 
     if (context.mounted) {
       context.go('/ride/summary/${ride.id}');

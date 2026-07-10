@@ -1,7 +1,9 @@
 import 'package:flutter_test/flutter_test.dart';
 import 'package:mocktail/mocktail.dart';
+import 'package:open_bike/core/application/services/personal_records_calculator.dart';
 import 'package:open_bike/core/application/services/recording_engine.dart';
 import 'package:open_bike/core/domain/entities/lap.dart';
+import 'package:open_bike/core/domain/entities/personal_record.dart';
 import 'package:open_bike/core/domain/entities/ride.dart';
 import 'package:open_bike/core/domain/entities/sensor_reading.dart';
 import 'package:open_bike/core/domain/ports/storage_port.dart';
@@ -21,6 +23,22 @@ class FakeSensorReading extends Fake implements SensorReading {}
 
 class FakeLap extends Fake implements Lap {}
 
+/// Always returns a fixed set of records regardless of input — lets tests
+/// exercise the stop()-persists-records wiring without waiting several
+/// wall-clock seconds for a real ride to accumulate enough 1 Hz readings.
+class _FixedRecordsCalculator extends PersonalRecordsCalculator {
+  _FixedRecordsCalculator(this.records);
+  final List<PersonalRecord> records;
+
+  @override
+  List<PersonalRecord> computeRecords({
+    required String rideId,
+    required DateTime achievedAt,
+    required List<SensorReading> readings,
+  }) =>
+      records;
+}
+
 void main() {
   late EventBus eventBus;
   late MockStoragePort storage;
@@ -38,9 +56,12 @@ void main() {
 
     // Default stubs — succeed silently.
     when(() => storage.saveRide(any())).thenAnswer((_) async {});
+    when(() => storage.saveRide(any(), ftp: any(named: 'ftp')))
+        .thenAnswer((_) async {});
     when(() => storage.saveSensorReadings(any(), any()))
         .thenAnswer((_) async {});
     when(() => storage.saveLaps(any(), any())).thenAnswer((_) async {});
+    when(() => storage.savePersonalRecords(any())).thenAnswer((_) async {});
 
     engine = RecordingEngine(
       eventBus: eventBus,
@@ -453,6 +474,69 @@ void main() {
       expect(ride.maxPower.value, closeTo(250, 1));
       expect(ride.averageCadence.rpm, closeTo(90, 1));
       expect(ride.averageHr.bpm, closeTo(155, 1));
+    });
+  });
+
+  // =========================================================================
+  // FTP-at-time persistence (data hygiene for longitudinal metrics)
+  // =========================================================================
+
+  group('RecordingEngine — FTP-at-time metrics', () {
+    test('stop with ftp persists the ride with that ftp', () async {
+      await engine.start();
+      await engine.stop(ftp: const Watts(200));
+
+      verify(() => storage.saveRide(any(), ftp: const Watts(200))).called(1);
+    });
+
+    test('stop without ftp saves the ride without a named ftp argument',
+        () async {
+      await engine.start();
+      await engine.stop();
+
+      // start() + stop() both hit the no-ftp overload.
+      verify(() => storage.saveRide(any())).called(2);
+      verifyNever(() => storage.saveRide(any(), ftp: any(named: 'ftp')));
+    });
+  });
+
+  // =========================================================================
+  // Personal records
+  // =========================================================================
+
+  group('RecordingEngine — personal records', () {
+    test('stop persists personal-record candidates from the calculator',
+        () async {
+      final fixedRecords = [
+        PersonalRecord(
+          rideId: 'placeholder',
+          durationSeconds: 300,
+          watts: const Watts(280),
+          achievedAt: DateTime(2026, 1, 1),
+        ),
+      ];
+      final customEngine = RecordingEngine(
+        eventBus: eventBus,
+        storage: storage,
+        personalRecordsCalculator: _FixedRecordsCalculator(fixedRecords),
+      );
+
+      await customEngine.start();
+      await customEngine.stop();
+
+      verify(() => storage.savePersonalRecords(fixedRecords)).called(1);
+
+      await customEngine.dispose();
+    });
+
+    test('stop skips savePersonalRecords when there are no candidates',
+        () async {
+      await engine.start();
+      await engine.stop();
+
+      // The default engine's calculator sees far fewer than 5 readings in
+      // this short test, so no duration bucket has enough data.
+      verifyNever(() => storage.savePersonalRecords(any()));
     });
   });
 }

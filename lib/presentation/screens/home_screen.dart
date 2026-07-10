@@ -1,6 +1,7 @@
 import 'dart:io';
 
 import 'package:file_picker/file_picker.dart';
+import 'package:fl_chart/fl_chart.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
@@ -11,6 +12,7 @@ import '../../infrastructure/files/gpx_parser.dart';
 import '../models/ride_extra.dart';
 import '../state/providers.dart';
 import '../widgets/ride_summary_widgets.dart';
+import '../widgets/workout_mini_profile.dart';
 
 /// Home dashboard — device status, ride/workout/simulate actions, recent rides.
 class HomeScreen extends ConsumerWidget {
@@ -38,6 +40,14 @@ class HomeScreen extends ConsumerWidget {
         children: [
           // Device status
           _DeviceStatusSection(),
+          const SizedBox(height: 24),
+
+          // Today's scheduled workout
+          const _TodayCard(),
+          const SizedBox(height: 24),
+
+          // Fitness sparkline (CTL/TSB)
+          const _FitnessSparkline(),
           const SizedBox(height: 24),
 
           // Action cards
@@ -342,5 +352,203 @@ class _RecentRideTile extends StatelessWidget {
     if (ifactor < 0.90) return Colors.yellow;
     if (ifactor < 1.05) return Colors.orange;
     return Colors.red;
+  }
+}
+
+// ---------------------------------------------------------------------------
+// Today's scheduled workout
+// ---------------------------------------------------------------------------
+
+class _TodayCard extends ConsumerWidget {
+  const _TodayCard();
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final todayAsync = ref.watch(todaysScheduledWorkoutsProvider);
+    final workouts = ref.watch(workoutListProvider);
+
+    return todayAsync.when(
+      loading: () => const SizedBox.shrink(),
+      error: (_, __) => const SizedBox.shrink(),
+      data: (scheduled) {
+        if (scheduled.isEmpty) return const SizedBox.shrink();
+
+        Workout? workoutFor(String id) {
+          for (final w in workouts) {
+            if (w.id == id) return w;
+          }
+          return null;
+        }
+
+        return Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            const Text('TODAY',
+                style: TextStyle(
+                    color: Colors.white54,
+                    fontSize: 11,
+                    fontWeight: FontWeight.w600,
+                    letterSpacing: 1.2)),
+            const SizedBox(height: 8),
+            for (final s in scheduled)
+              _TodayTile(
+                scheduled: s,
+                workout: workoutFor(s.workoutId),
+              ),
+          ],
+        );
+      },
+    );
+  }
+}
+
+class _TodayTile extends StatelessWidget {
+  const _TodayTile({required this.scheduled, required this.workout});
+  final ScheduledWorkout scheduled;
+  final Workout? workout;
+
+  @override
+  Widget build(BuildContext context) {
+    final isDone = scheduled.completedRideId != null;
+    return Padding(
+      padding: const EdgeInsets.only(bottom: 6),
+      child: Material(
+        color: Colors.blue.withValues(alpha: 0.1),
+        borderRadius: BorderRadius.circular(12),
+        child: InkWell(
+          borderRadius: BorderRadius.circular(12),
+          onTap: () => context.push('/calendar'),
+          child: Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+            child: Row(
+              children: [
+                if (workout != null)
+                  SizedBox(
+                    width: 40,
+                    height: 28,
+                    child: WorkoutMiniProfile(steps: workout!.steps),
+                  )
+                else
+                  const Icon(Icons.fitness_center, color: Colors.white38),
+                const SizedBox(width: 12),
+                Expanded(
+                  child: Text(
+                    workout?.name ?? 'Scheduled workout',
+                    style: const TextStyle(
+                        color: Colors.white, fontWeight: FontWeight.w600),
+                  ),
+                ),
+                if (isDone)
+                  const Icon(Icons.check_circle, color: Colors.green, size: 20)
+                else
+                  const Icon(Icons.chevron_right, color: Colors.white24),
+              ],
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+// ---------------------------------------------------------------------------
+// Fitness sparkline (CTL / TSB)
+// ---------------------------------------------------------------------------
+
+class _FitnessSparkline extends ConsumerWidget {
+  const _FitnessSparkline();
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final fitnessAsync = ref.watch(fitnessHistoryProvider);
+
+    return fitnessAsync.when(
+      loading: () => const SizedBox.shrink(),
+      error: (_, __) => const SizedBox.shrink(),
+      data: (points) {
+        if (points.isEmpty) return const SizedBox.shrink();
+
+        final recent = points.length > 42
+            ? points.sublist(points.length - 42)
+            : points;
+        final latest = points.last;
+
+        return InkWell(
+          borderRadius: BorderRadius.circular(12),
+          onTap: () => context.go('/trends'),
+          child: Container(
+            padding: const EdgeInsets.all(16),
+            decoration: BoxDecoration(
+              color: Colors.white.withValues(alpha: 0.05),
+              borderRadius: BorderRadius.circular(12),
+            ),
+            child: Row(
+              children: [
+                Expanded(
+                  child: Row(
+                    children: [
+                      _FitnessNumber(
+                          label: 'CTL', value: latest.ctl, color: Colors.blueAccent),
+                      const SizedBox(width: 16),
+                      _FitnessNumber(
+                          label: 'TSB', value: latest.tsb, color: Colors.purpleAccent),
+                    ],
+                  ),
+                ),
+                SizedBox(
+                  width: 90,
+                  height: 32,
+                  child: LineChart(
+                    LineChartData(
+                      gridData: const FlGridData(show: false),
+                      borderData: FlBorderData(show: false),
+                      titlesData: const FlTitlesData(
+                        leftTitles: AxisTitles(sideTitles: SideTitles(showTitles: false)),
+                        bottomTitles: AxisTitles(sideTitles: SideTitles(showTitles: false)),
+                        topTitles: AxisTitles(sideTitles: SideTitles(showTitles: false)),
+                        rightTitles: AxisTitles(sideTitles: SideTitles(showTitles: false)),
+                      ),
+                      lineTouchData: const LineTouchData(enabled: false),
+                      lineBarsData: [
+                        LineChartBarData(
+                          spots: [
+                            for (var i = 0; i < recent.length; i++)
+                              FlSpot(i.toDouble(), recent[i].ctl),
+                          ],
+                          isCurved: true,
+                          color: Colors.blueAccent,
+                          barWidth: 2,
+                          dotData: const FlDotData(show: false),
+                        ),
+                      ],
+                    ),
+                    duration: Duration.zero,
+                  ),
+                ),
+              ],
+            ),
+          ),
+        );
+      },
+    );
+  }
+}
+
+class _FitnessNumber extends StatelessWidget {
+  const _FitnessNumber({required this.label, required this.value, required this.color});
+  final String label;
+  final double value;
+  final Color color;
+
+  @override
+  Widget build(BuildContext context) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Text(value.round().toString(),
+            style: TextStyle(color: color, fontSize: 20, fontWeight: FontWeight.w700)),
+        Text(label, style: const TextStyle(color: Colors.white54, fontSize: 10)),
+      ],
+    );
   }
 }

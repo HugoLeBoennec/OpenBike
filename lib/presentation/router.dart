@@ -11,7 +11,8 @@ import 'widgets/app_shell.dart';
 ///   /onboarding, /ride, /ride/summary/:id, /scan
 ///
 /// Routes inside the shell (with bottom nav / sidebar):
-///   /, /workouts, /workouts/:id, /history, /history/:id, /settings, /dev
+///   /, /calendar, /workouts, /workouts/:id, /history, /history/:id, /trends,
+///   /settings, /dev
 GoRouter createAppRouter({required bool hasCompletedOnboarding}) {
   return GoRouter(
     initialLocation: hasCompletedOnboarding ? '/' : '/onboarding',
@@ -77,8 +78,16 @@ GoRouter createAppRouter({required bool hasCompletedOnboarding}) {
             },
           ),
           GoRoute(
+            path: '/calendar',
+            builder: (_, __) => const CalendarScreen(),
+          ),
+          GoRoute(
             path: '/history',
             builder: (_, __) => const HistoryScreen(),
+          ),
+          GoRoute(
+            path: '/trends',
+            builder: (_, __) => const TrendsScreen(),
           ),
           GoRoute(
             path: '/history/:id',

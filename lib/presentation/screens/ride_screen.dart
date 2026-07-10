@@ -67,6 +67,13 @@ class _RideScreenState extends ConsumerState<RideScreen> {
       });
     }
 
+    if (widget.extra?.scheduledWorkoutId != null) {
+      Future.microtask(() {
+        ref.read(activeScheduledWorkoutIdProvider.notifier).state =
+            widget.extra!.scheduledWorkoutId;
+      });
+    }
+
     // If a route was passed, start the route simulator and watch for
     // completion so we can prompt to stop & save.
     if (widget.extra?.route != null) {
@@ -180,6 +187,8 @@ class _RideScreenState extends ConsumerState<RideScreen> {
 
     WakelockPlus.disable();
     ref.invalidate(rideHistoryProvider);
+    ref.invalidate(personalRecordsProvider);
+    ref.invalidate(scheduledWorkoutsProvider);
 
     if (mounted) {
       context.go('/ride/summary/${ride.id}');
@@ -195,6 +204,8 @@ class _RideScreenState extends ConsumerState<RideScreen> {
     ref.watch(hrHistoryUpdaterProvider);
     // Starts/stops the Android foreground service with recording state.
     ref.watch(backgroundRecordingServiceProvider);
+    // Links a finished ride back to the calendar entry it was started from.
+    ref.watch(scheduledWorkoutLinkerProvider);
 
     return PopScope(
       canPop: false,

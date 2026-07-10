@@ -71,6 +71,7 @@ void main() {
     when(() => storage.saveSensorReadings(any(), any()))
         .thenAnswer((_) async {});
     when(() => storage.saveLaps(any(), any())).thenAnswer((_) async {});
+    when(() => storage.savePersonalRecords(any())).thenAnswer((_) async {});
 
     engine = RecordingEngine(eventBus: eventBus, storage: storage);
     controller = FakeForegroundServiceController();

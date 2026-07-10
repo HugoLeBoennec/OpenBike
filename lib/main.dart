@@ -9,6 +9,7 @@ import 'package:path_provider/path_provider.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 import 'core/application/services/bundled_workouts.dart';
+import 'core/application/services/personal_records_backfill.dart';
 import 'core/application/services/physics_engine.dart';
 import 'core/events/event_bus.dart';
 import 'infrastructure/ble/ble_transport.dart';
@@ -51,6 +52,12 @@ void main() async {
   // ---- Seed the starter workout library (idempotent) and load workouts ----
   await BundledWorkouts.seedIfNeeded(storage);
   final savedWorkouts = await storage.getWorkouts();
+
+  // ---- One-time backfill of personal records for rides predating P5 ----
+  if (!appPrefs.hasBackfilledPersonalRecords) {
+    await backfillPersonalRecords(storage);
+    await appPrefs.setHasBackfilledPersonalRecords(true);
+  }
 
   runApp(
     ProviderScope(

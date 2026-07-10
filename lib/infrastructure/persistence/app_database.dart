@@ -136,6 +136,53 @@ class ExportQueue extends Table {
 }
 
 // ---------------------------------------------------------------------------
+// Scheduled Workouts (training calendar)
+// ---------------------------------------------------------------------------
+
+@DataClassName('ScheduledWorkoutRow')
+class ScheduledWorkouts extends Table {
+  TextColumn get id => text()();
+  TextColumn get workoutId => text().references(Workouts, #id)();
+  IntColumn get date => integer()(); // epoch ms, local midnight of that day
+  TextColumn get completedRideId =>
+      text().nullable().references(Rides, #id)();
+  TextColumn get notes => text().nullable()();
+  IntColumn get createdAt => integer()(); // epoch ms
+
+  @override
+  Set<Column> get primaryKey => {id};
+}
+
+// ---------------------------------------------------------------------------
+// Personal Records (mean-max power cache)
+// ---------------------------------------------------------------------------
+
+@DataClassName('PersonalRecordRow')
+class PersonalRecords extends Table {
+  IntColumn get id => integer().autoIncrement()();
+  TextColumn get rideId => text().references(Rides, #id)();
+  IntColumn get durationSeconds => integer()(); // 5, 60, 300, 1200
+  RealColumn get watts => real()();
+  IntColumn get achievedAt => integer()(); // epoch ms (ride start time)
+
+  @override
+  List<Set<Column>> get uniqueKeys => [
+        {rideId, durationSeconds},
+      ];
+}
+
+// ---------------------------------------------------------------------------
+// FTP History
+// ---------------------------------------------------------------------------
+
+@DataClassName('FtpHistoryRow')
+class FtpHistory extends Table {
+  IntColumn get id => integer().autoIncrement()();
+  IntColumn get effectiveDate => integer()(); // epoch ms
+  RealColumn get ftp => real()();
+}
+
+// ---------------------------------------------------------------------------
 // Database
 // ---------------------------------------------------------------------------
 
@@ -147,12 +194,15 @@ class ExportQueue extends Table {
   WorkoutSteps,
   UserProfiles,
   ExportQueue,
+  ScheduledWorkouts,
+  PersonalRecords,
+  FtpHistory,
 ])
 class AppDatabase extends _$AppDatabase {
   AppDatabase(super.e);
 
   @override
-  int get schemaVersion => 3;
+  int get schemaVersion => 4;
 
   @override
   MigrationStrategy get migration => MigrationStrategy(
@@ -173,6 +223,11 @@ class AppDatabase extends _$AppDatabase {
               from2To3: (m, schema) async {
                 // No column/table changes between v2 and v3.
               },
+              from3To4: (m, schema) async {
+                await m.createTable(schema.scheduledWorkouts);
+                await m.createTable(schema.personalRecords);
+                await m.createTable(schema.ftpHistory);
+              },
             )(m, from, to);
           }
           await createIndices();
@@ -187,18 +242,54 @@ class AppDatabase extends _$AppDatabase {
   List<TableInfo> get allTables => super.allTables.toList();
 
   Future<void> createIndices() async {
-    await customStatement(
+    await _createIndexIfTableExists(
+      'rides',
       'CREATE INDEX IF NOT EXISTS idx_rides_start_time ON rides (start_time)',
     );
-    await customStatement(
+    await _createIndexIfTableExists(
+      'sensor_readings',
       'CREATE INDEX IF NOT EXISTS idx_sensor_readings_ride_ts '
       'ON sensor_readings (ride_id, timestamp)',
     );
-    await customStatement(
+    await _createIndexIfTableExists(
+      'laps',
       'CREATE INDEX IF NOT EXISTS idx_laps_ride ON laps (ride_id)',
     );
-    await customStatement(
+    await _createIndexIfTableExists(
+      'export_queue',
       'CREATE INDEX IF NOT EXISTS idx_export_queue_ride ON export_queue (ride_id)',
     );
+    await _createIndexIfTableExists(
+      'scheduled_workouts',
+      'CREATE INDEX IF NOT EXISTS idx_scheduled_workouts_date '
+      'ON scheduled_workouts (date)',
+    );
+    await _createIndexIfTableExists(
+      'personal_records',
+      'CREATE INDEX IF NOT EXISTS idx_personal_records_duration '
+      'ON personal_records (duration_seconds, watts)',
+    );
+    await _createIndexIfTableExists(
+      'ftp_history',
+      'CREATE INDEX IF NOT EXISTS idx_ftp_history_date '
+      'ON ftp_history (effective_date)',
+    );
+  }
+
+  /// Guards index creation against tables that don't exist yet — relevant
+  /// when a migration is validated against an intermediate target version
+  /// (see [SchemaVerifier] usage in the migration tests), where a later
+  /// version's tables genuinely aren't present.
+  Future<void> _createIndexIfTableExists(
+    String tableName,
+    String createIndexSql,
+  ) async {
+    final exists = await customSelect(
+      "SELECT name FROM sqlite_master WHERE type = 'table' AND name = ?",
+      variables: [Variable.withString(tableName)],
+    ).getSingleOrNull();
+    if (exists != null) {
+      await customStatement(createIndexSql);
+    }
   }
 }

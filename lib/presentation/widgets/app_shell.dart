@@ -10,8 +10,10 @@ class AppShell extends StatelessWidget {
 
   static const _tabs = [
     _TabConfig('/', 'Home', Icons.home),
+    _TabConfig('/calendar', 'Calendar', Icons.calendar_month),
     _TabConfig('/workouts', 'Workouts', Icons.fitness_center),
     _TabConfig('/history', 'History', Icons.history),
+    _TabConfig('/trends', 'Trends', Icons.show_chart),
     _TabConfig('/settings', 'Settings', Icons.settings),
   ];
 
