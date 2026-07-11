@@ -64,6 +64,7 @@ graph TD
     P7 --> P9
     P8 --> P9
     P9 -.-> P10[P10 Monetization<br/>OPTIONAL, blocked]
+    P3 --> P11[P11 Manual trainer control<br/>port from stole-version]
 ```
 
 Phases with no dependency edge between them (e.g. P2, P3, P7) can be executed in parallel
@@ -151,3 +152,4 @@ An agent picking up a phase MUST:
 | [P8](P8-desktop.md) | Desktop — macOS + Windows packaging, ANT+ stretch | DONE |
 | [P9](P9-release.md) | Release — stores, crash reporting, LICENSE | DONE |
 | [P10](P10-monetization-optional.md) | Monetization scaffolding (optional) | BLOCKED |
+| [P11](P11-trainer-control-port.md) | Manual trainer control port (ERG/resistance/SIM on the fly, from `stole-version`) | NOT_STARTED |
