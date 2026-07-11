@@ -29,6 +29,7 @@ import 'infrastructure/preferences/app_preferences.dart';
 import 'infrastructure/simulator/simulator.dart';
 import 'plugins/exports/garmin_export_plugin.dart';
 import 'plugins/exports/strava_export_plugin.dart';
+import 'plugins/exports/tcx_file_export_plugin.dart';
 import 'plugins/plugin_registry.dart';
 import 'plugins/private_plugins.dart';
 import 'presentation/router.dart';
@@ -178,6 +179,9 @@ void _registerPlugins(
 
   // Garmin Connect — local FIT file export (always available).
   registry.registerExport(GarminConnectExportPlugin());
+
+  // TCX — local file export (always available).
+  registry.registerExport(TcxFileExportPlugin());
 
   // Strava — OAuth2 upload (requires client credentials via env).
   const stravaClientId = String.fromEnvironment('STRAVA_CLIENT_ID');

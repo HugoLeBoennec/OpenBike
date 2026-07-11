@@ -168,4 +168,37 @@ void main() {
       expect(reloaded.crashReportingEnabled, isFalse);
     });
   });
+
+  group('AppPreferences — manual trainer control', () {
+    test('defaults', () async {
+      final appPrefs = await makePrefs();
+      expect(appPrefs.lastErgWatts, 150.0);
+      expect(appPrefs.lastResistanceLevel, 3.0);
+      expect(appPrefs.trainerDifficulty, 0.5);
+    });
+
+    test('setLastErgWatts persists across reload', () async {
+      final appPrefs = await makePrefs();
+      await appPrefs.setLastErgWatts(220.0);
+
+      final reloaded = AppPreferences(await SharedPreferences.getInstance());
+      expect(reloaded.lastErgWatts, 220.0);
+    });
+
+    test('setLastResistanceLevel persists across reload', () async {
+      final appPrefs = await makePrefs();
+      await appPrefs.setLastResistanceLevel(7.5);
+
+      final reloaded = AppPreferences(await SharedPreferences.getInstance());
+      expect(reloaded.lastResistanceLevel, 7.5);
+    });
+
+    test('setTrainerDifficulty clamps to 0.0-1.0 and persists', () async {
+      final appPrefs = await makePrefs();
+      await appPrefs.setTrainerDifficulty(1.5);
+
+      final reloaded = AppPreferences(await SharedPreferences.getInstance());
+      expect(reloaded.trainerDifficulty, 1.0);
+    });
+  });
 }

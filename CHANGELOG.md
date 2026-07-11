@@ -7,6 +7,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/).
 
 ## [Unreleased]
 
+### Added
+- Manual trainer control (ERG target, resistance level, SIM difficulty)
+  available during free rides; TCX file export.
+
 ## [1.0.0] - 2026-07-10
 
 First public release. Built in ten phases (`docs/roadmap/`) from an existing

@@ -16,6 +16,10 @@ import '../../core/application/services/device_pairing_service.dart';
 import '../../core/application/services/services.dart';
 import '../../infrastructure/ant/ant_usb_transport.dart';
 import '../../infrastructure/ble/ble_transport.dart';
+import '../../infrastructure/ble/ftms/ftms_control_client.dart'
+    show PowerRange, ResistanceLevelRange;
+import '../../infrastructure/ble/ftms/ftms_device_plugin.dart'
+    show FtmsTrainerAdapter;
 import '../../infrastructure/ble/sensors/sensor_fusion.dart';
 import '../../infrastructure/foreground/foreground_service_controller.dart';
 import '../../infrastructure/preferences/app_preferences.dart';
@@ -756,6 +760,85 @@ final simulationProgressProvider = StreamProvider<SimulationProgress>((ref) {
 /// Toggles the OSM mini-map in [RouteProfilePane]. Off by default — it's a
 /// stretch feature (P3 task 3) layered on top of the elevation profile.
 final showMiniMapProvider = StateProvider<bool>((ref) => false);
+
+// ---------------------------------------------------------------------------
+// Manual trainer control (P11: on-the-fly ERG/resistance/SIM difficulty)
+// ---------------------------------------------------------------------------
+
+/// Last manually-set ERG target power, watts. Seeded from [AppPreferences]
+/// and persisted by [ManualTrainerControls] on every change.
+final ergTargetWattsProvider = StateProvider<double>((ref) {
+  return ref.read(appPreferencesProvider).lastErgWatts;
+});
+
+/// Last manually-set resistance level. Seeded from [AppPreferences].
+final resistanceLevelProvider = StateProvider<double>((ref) {
+  return ref.read(appPreferencesProvider).lastResistanceLevel;
+});
+
+/// Gradient difficulty scalar (0.0–1.0) applied to SIM mode grade.
+///
+/// Seeded from [AppPreferences]. Propagated to the connected
+/// [FtmsTrainerAdapter] below and persisted via
+/// [AppPreferences.setTrainerDifficulty].
+final trainerDifficultyProvider = StateProvider<double>((ref) {
+  return ref.read(appPreferencesProvider).trainerDifficulty;
+});
+
+/// Supported power range read from the connected FTMS trainer's
+/// capabilities (0x2AD8) — used to clamp/step [ManualTrainerControls]'s ERG
+/// stepper. Falls back to [PowerRange.defaultRange] for non-FTMS trainers
+/// (simulator, ANT+) or when nothing is connected.
+final ergPowerRangeProvider = Provider<PowerRange>((ref) {
+  final port = ref.watch(activeTrainerPortProvider);
+  if (port is FtmsTrainerAdapter) return port.controlClient.powerRange;
+  return PowerRange.defaultRange;
+});
+
+/// Supported resistance level range read from the connected FTMS trainer's
+/// capabilities (0x2AD6). Falls back to [ResistanceLevelRange.defaultRange].
+final resistanceRangeProvider = Provider<ResistanceLevelRange>((ref) {
+  final port = ref.watch(activeTrainerPortProvider);
+  if (port is FtmsTrainerAdapter) return port.controlClient.resistanceRange;
+  return ResistanceLevelRange.defaultRange;
+});
+
+/// Single source of truth for the current trainer control mode. Listens to
+/// [WorkoutEvent] / [SimulationEvent] on the [EventBus] and switches modes
+/// automatically; exposed to the UI via [trainerModeProvider]. Also the
+/// single writer of mode-transition commands to [TrainerPort] — see
+/// [TrainerModeController]'s doc comment for the ownership split with
+/// [WorkoutEngine] / [RouteSimulator]'s existing per-tick writes.
+final trainerModeControllerProvider =
+    StateNotifierProvider<TrainerModeController, TrainerModeState>((ref) {
+  final controller = TrainerModeController(
+    eventBus: ref.watch(eventBusProvider),
+    getDefaultResistance: () => ref.read(resistanceLevelProvider),
+  );
+
+  controller.setTrainerPort(ref.read(activeTrainerPortProvider));
+  ref.listen(activeTrainerPortProvider, (_, port) {
+    controller.setTrainerPort(port);
+    // Propagate current difficulty immediately to any new FTMS adapter.
+    if (port is FtmsTrainerAdapter) {
+      port.difficulty = ref.read(trainerDifficultyProvider);
+    }
+  });
+
+  // Propagate difficulty changes to the currently connected FTMS adapter.
+  ref.listen(trainerDifficultyProvider, (_, difficulty) {
+    final port = ref.read(activeTrainerPortProvider);
+    if (port is FtmsTrainerAdapter) port.difficulty = difficulty;
+  });
+
+  ref.onDispose(controller.dispose);
+  return controller;
+});
+
+/// The current [ControlMode] — convenient shorthand for widgets.
+final trainerModeProvider = Provider<ControlMode>((ref) {
+  return ref.watch(trainerModeControllerProvider).mode;
+});
 
 // ---------------------------------------------------------------------------
 // Export
