@@ -1,7 +1,7 @@
 ---
 phase: P11
 title: Port manual trainer control (ERG/resistance/SIM on the fly) from stole-version
-status: NOT_STARTED
+status: IN_PROGRESS
 depends_on: [P3]
 validation:
   - flutter analyze
