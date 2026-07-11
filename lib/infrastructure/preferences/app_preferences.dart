@@ -30,6 +30,9 @@ class AppPreferences {
   static const _kWindowY = 'window_y';
   static const _kWindowWidth = 'window_width';
   static const _kWindowHeight = 'window_height';
+  static const _kLastErgWatts = 'last_erg_watts';
+  static const _kLastResistanceLevel = 'last_resistance_level';
+  static const _kTrainerDifficulty = 'trainer_difficulty';
 
   // -------------------------------------------------------------------------
   // Onboarding
@@ -200,4 +203,30 @@ class AppPreferences {
     await _prefs.setDouble(_kWindowWidth, width);
     await _prefs.setDouble(_kWindowHeight, height);
   }
+
+  // -------------------------------------------------------------------------
+  // Manual trainer control — last-used ERG watts / resistance level /
+  // gradient difficulty (P11: free-ride on-the-fly control)
+  // -------------------------------------------------------------------------
+
+  /// Last ERG target power the user set manually, watts (default 150 W).
+  double get lastErgWatts => _prefs.getDouble(_kLastErgWatts) ?? 150.0;
+
+  Future<void> setLastErgWatts(double value) =>
+      _prefs.setDouble(_kLastErgWatts, value);
+
+  /// Last resistance level the user set manually (default 3.0).
+  double get lastResistanceLevel =>
+      _prefs.getDouble(_kLastResistanceLevel) ?? 3.0;
+
+  Future<void> setLastResistanceLevel(double value) =>
+      _prefs.setDouble(_kLastResistanceLevel, value);
+
+  /// Gradient difficulty scalar applied to SIM mode grade (0.0–1.0,
+  /// default 0.5 — Zwift-style half gradient).
+  double get trainerDifficulty =>
+      (_prefs.getDouble(_kTrainerDifficulty) ?? 0.5).clamp(0.0, 1.0);
+
+  Future<void> setTrainerDifficulty(double value) =>
+      _prefs.setDouble(_kTrainerDifficulty, value.clamp(0.0, 1.0));
 }

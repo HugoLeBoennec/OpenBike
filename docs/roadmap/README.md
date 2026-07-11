@@ -152,4 +152,4 @@ An agent picking up a phase MUST:
 | [P8](P8-desktop.md) | Desktop — macOS + Windows packaging, ANT+ stretch | DONE |
 | [P9](P9-release.md) | Release — stores, crash reporting, LICENSE | DONE |
 | [P10](P10-monetization-optional.md) | Monetization scaffolding (optional) | BLOCKED |
-| [P11](P11-trainer-control-port.md) | Manual trainer control port (ERG/resistance/SIM on the fly, from `stole-version`) | NOT_STARTED |
+| [P11](P11-trainer-control-port.md) | Manual trainer control port (ERG/resistance/SIM on the fly, from `stole-version`) | DONE |

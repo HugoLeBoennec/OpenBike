@@ -16,6 +16,7 @@ import '../theme/app_theme.dart';
 import '../widgets/connection_banner.dart';
 import '../widgets/data_field_grid.dart';
 import '../widgets/live_chart.dart';
+import '../widgets/manual_trainer_controls.dart';
 import '../widgets/power_gauge.dart';
 import '../widgets/ride_header_bar.dart';
 import '../widgets/ride_keyboard_shortcuts.dart';
@@ -296,6 +297,7 @@ class _RideScreenState extends ConsumerState<RideScreen> {
       children: [
         const RideHeaderBar(),
         const ZoneBar(),
+        const ManualTrainerControls(),
         Expanded(
           flex: 3,
           child: _PagedDataGrid(
@@ -331,6 +333,7 @@ class _RideScreenState extends ConsumerState<RideScreen> {
             children: [
               const RideHeaderBar(),
               const ZoneBar(),
+              const ManualTrainerControls(),
               Expanded(
                 child: DataFieldGrid(
                   fields: fields,
@@ -382,6 +385,7 @@ class _RideScreenState extends ConsumerState<RideScreen> {
             children: [
               const RideHeaderBar(),
               const ZoneBar(),
+              const ManualTrainerControls(),
               Expanded(
                 child: DataFieldGrid(
                   fields: fields,

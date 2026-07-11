@@ -123,6 +123,16 @@ class FtmsTrainerAdapter implements TrainerPort {
   StreamSubscription? _dataSub;
   StreamSubscription? _connectionStateSub;
 
+  /// Grade difficulty scalar (0.0–1.0). Applied to every [setSimulationParams]
+  /// call before forwarding to the FTMS control client. Default 0.5 (Zwift
+  /// style: half the real gradient, downhills halved again).
+  double _difficulty = 0.5;
+
+  /// Updates the gradient difficulty at runtime (e.g. from a ride-screen
+  /// slider).
+  // ignore: avoid_setters_without_getters
+  set difficulty(double value) => _difficulty = value.clamp(0.0, 1.0);
+
   @override
   Stream<SensorReading> get dataStream => _dataController.stream;
 
@@ -217,9 +227,13 @@ class FtmsTrainerAdapter implements TrainerPort {
     double crr,
     double cda,
   ) async {
+    // Scale grade by difficulty (Zwift-style: half-difficulty on downhills).
+    var scaledGrade = grade.percent * _difficulty;
+    if (scaledGrade < 0) scaledGrade *= 0.5;
+
     final response = await _controlClient.setSimulationParameters(
       windSpeed: windSpeed,
-      grade: grade.percent,
+      grade: scaledGrade,
       crr: crr,
       cda: cda,
     );
