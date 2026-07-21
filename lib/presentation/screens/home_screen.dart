@@ -71,7 +71,7 @@ class HomeScreen extends ConsumerWidget {
             title: 'Simulate Route',
             subtitle: 'Load a .gpx file to simulate',
             color: Colors.green,
-            onTap: () => _pickRoute(context),
+            onTap: () => _pickRoute(context, ref),
           ),
           const SizedBox(height: 24),
 
@@ -82,7 +82,32 @@ class HomeScreen extends ConsumerWidget {
     );
   }
 
-  Future<void> _pickRoute(BuildContext context) async {
+  Future<void> _pickRoute(BuildContext context, WidgetRef ref) async {
+    if (ref.read(activeTrainerPortProvider) == null) {
+      final connect = await showDialog<bool>(
+        context: context,
+        builder: (ctx) => AlertDialog(
+          title: const Text('Connect a trainer'),
+          content: const Text(
+            'Route simulation drives your trainer\'s resistance to match '
+            'the terrain — pair a trainer first.',
+          ),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.of(ctx).pop(false),
+              child: const Text('Cancel'),
+            ),
+            TextButton(
+              onPressed: () => Navigator.of(ctx).pop(true),
+              child: const Text('Connect Device'),
+            ),
+          ],
+        ),
+      );
+      if (connect == true && context.mounted) context.push('/scan');
+      return;
+    }
+
     final result = await FilePicker.platform.pickFiles(
       type: FileType.custom,
       allowedExtensions: ['gpx'],

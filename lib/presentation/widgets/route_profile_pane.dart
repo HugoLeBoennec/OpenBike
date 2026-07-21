@@ -17,6 +17,26 @@ class RouteProfilePane extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
+    // routeSimulatorProvider requires a connected trainer (it writes SIM
+    // grade commands to it) — check first so an unpaired trainer shows a
+    // message here instead of throwing during build.
+    if (ref.watch(activeTrainerPortProvider) == null) {
+      return Container(
+        color: context.tokens.rideSurfaceDeep,
+        child: const Center(
+          child: Text('Connect a trainer to simulate this route',
+              style: TextStyle(color: Colors.grey), textAlign: TextAlign.center),
+        ),
+      );
+    }
+
+    // routeSimulatorProvider is a plain Provider returning a stable
+    // RouteSimulator instance — watching it alone doesn't trigger a rebuild
+    // when RideScreen's post-frame `.start()` call mutates its internal
+    // state. Watch the state stream too so this pane picks up the route as
+    // soon as the simulation actually starts.
+    ref.watch(simulationStateProvider);
+
     final route = ref.watch(routeSimulatorProvider).currentRoute;
     if (route == null) {
       return Container(

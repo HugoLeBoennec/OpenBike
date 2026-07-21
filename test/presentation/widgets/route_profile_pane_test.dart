@@ -66,13 +66,33 @@ SimulationProgress _progressAt(int pointIndex) {
 }
 
 void main() {
+  testWidgets('shows connect-trainer message when no trainer is connected',
+      (tester) async {
+    final sim = _FakeRouteSimulator(_route);
+    addTearDown(sim.dispose);
+
+    await tester.pumpWidget(
+      ProviderScope(
+        overrides: [routeSimulatorProvider.overrideWithValue(sim)],
+        child: const MaterialApp(home: Scaffold(body: RouteProfilePane())),
+      ),
+    );
+    await tester.pump();
+
+    expect(find.text('Connect a trainer to simulate this route'),
+        findsOneWidget);
+  });
+
   testWidgets('shows placeholder when no route is loaded', (tester) async {
     final sim = _FakeRouteSimulator(null);
     addTearDown(sim.dispose);
 
     await tester.pumpWidget(
       ProviderScope(
-        overrides: [routeSimulatorProvider.overrideWithValue(sim)],
+        overrides: [
+          routeSimulatorProvider.overrideWithValue(sim),
+          activeTrainerPortProvider.overrideWith((ref) => MockTrainerPort()),
+        ],
         child: const MaterialApp(home: Scaffold(body: RouteProfilePane())),
       ),
     );
@@ -96,6 +116,7 @@ void main() {
       ProviderScope(
         overrides: [
           routeSimulatorProvider.overrideWithValue(sim),
+          activeTrainerPortProvider.overrideWith((ref) => MockTrainerPort()),
           simulationProgressProvider.overrideWith((ref) => controller.stream),
           appPreferencesProvider.overrideWithValue(appPrefs),
         ],
