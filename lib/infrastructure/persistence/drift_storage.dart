@@ -43,6 +43,7 @@ class DriftStorage implements StoragePort {
             tss: Value(ftp != null ? ride.tss(ftp) : null),
             intensityFactor: Value(ftp != null ? ride.intensityFactor(ftp) : null),
             ftpAtTime: Value(ftp?.value),
+            elevationGainM: Value(ride.elevationGain?.meters),
           ),
         );
   }
@@ -105,6 +106,8 @@ class DriftStorage implements StoragePort {
           row.totalDistance != null ? Distance(row.totalDistance!) : null,
       cachedTss: row.tss,
       cachedIntensityFactor: row.intensityFactor,
+      cachedElevationGain:
+          row.elevationGainM != null ? Distance(row.elevationGainM!) : null,
     );
   }
 

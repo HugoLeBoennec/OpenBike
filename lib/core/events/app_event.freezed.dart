@@ -2630,7 +2630,13 @@ mixin _$SimulationEvent {
   @optionalTypeArgs
   TResult when<TResult extends Object?>({
     required TResult Function(Route route) started,
-    required TResult Function(RoutePoint point, Speed speed) positionChanged,
+    required TResult Function(
+      RoutePoint point,
+      Speed speed,
+      double distanceCovered,
+      double elevationGain,
+    )
+    positionChanged,
     required TResult Function() paused,
     required TResult Function() resumed,
     required TResult Function() completed,
@@ -2638,7 +2644,13 @@ mixin _$SimulationEvent {
   @optionalTypeArgs
   TResult? whenOrNull<TResult extends Object?>({
     TResult? Function(Route route)? started,
-    TResult? Function(RoutePoint point, Speed speed)? positionChanged,
+    TResult? Function(
+      RoutePoint point,
+      Speed speed,
+      double distanceCovered,
+      double elevationGain,
+    )?
+    positionChanged,
     TResult? Function()? paused,
     TResult? Function()? resumed,
     TResult? Function()? completed,
@@ -2646,7 +2658,13 @@ mixin _$SimulationEvent {
   @optionalTypeArgs
   TResult maybeWhen<TResult extends Object?>({
     TResult Function(Route route)? started,
-    TResult Function(RoutePoint point, Speed speed)? positionChanged,
+    TResult Function(
+      RoutePoint point,
+      Speed speed,
+      double distanceCovered,
+      double elevationGain,
+    )?
+    positionChanged,
     TResult Function()? paused,
     TResult Function()? resumed,
     TResult Function()? completed,
@@ -2787,7 +2805,13 @@ class _$SimulationStartedImpl implements SimulationStarted {
   @optionalTypeArgs
   TResult when<TResult extends Object?>({
     required TResult Function(Route route) started,
-    required TResult Function(RoutePoint point, Speed speed) positionChanged,
+    required TResult Function(
+      RoutePoint point,
+      Speed speed,
+      double distanceCovered,
+      double elevationGain,
+    )
+    positionChanged,
     required TResult Function() paused,
     required TResult Function() resumed,
     required TResult Function() completed,
@@ -2799,7 +2823,13 @@ class _$SimulationStartedImpl implements SimulationStarted {
   @optionalTypeArgs
   TResult? whenOrNull<TResult extends Object?>({
     TResult? Function(Route route)? started,
-    TResult? Function(RoutePoint point, Speed speed)? positionChanged,
+    TResult? Function(
+      RoutePoint point,
+      Speed speed,
+      double distanceCovered,
+      double elevationGain,
+    )?
+    positionChanged,
     TResult? Function()? paused,
     TResult? Function()? resumed,
     TResult? Function()? completed,
@@ -2811,7 +2841,13 @@ class _$SimulationStartedImpl implements SimulationStarted {
   @optionalTypeArgs
   TResult maybeWhen<TResult extends Object?>({
     TResult Function(Route route)? started,
-    TResult Function(RoutePoint point, Speed speed)? positionChanged,
+    TResult Function(
+      RoutePoint point,
+      Speed speed,
+      double distanceCovered,
+      double elevationGain,
+    )?
+    positionChanged,
     TResult Function()? paused,
     TResult Function()? resumed,
     TResult Function()? completed,
@@ -2883,7 +2919,12 @@ abstract class _$$SimulationPositionChangedImplCopyWith<$Res> {
     $Res Function(_$SimulationPositionChangedImpl) then,
   ) = __$$SimulationPositionChangedImplCopyWithImpl<$Res>;
   @useResult
-  $Res call({RoutePoint point, Speed speed});
+  $Res call({
+    RoutePoint point,
+    Speed speed,
+    double distanceCovered,
+    double elevationGain,
+  });
 
   $RoutePointCopyWith<$Res> get point;
   $SpeedCopyWith<$Res> get speed;
@@ -2902,7 +2943,12 @@ class __$$SimulationPositionChangedImplCopyWithImpl<$Res>
   /// with the given fields replaced by the non-null parameter values.
   @pragma('vm:prefer-inline')
   @override
-  $Res call({Object? point = null, Object? speed = null}) {
+  $Res call({
+    Object? point = null,
+    Object? speed = null,
+    Object? distanceCovered = null,
+    Object? elevationGain = null,
+  }) {
     return _then(
       _$SimulationPositionChangedImpl(
         null == point
@@ -2913,6 +2959,14 @@ class __$$SimulationPositionChangedImplCopyWithImpl<$Res>
             ? _value.speed
             : speed // ignore: cast_nullable_to_non_nullable
                   as Speed,
+        null == distanceCovered
+            ? _value.distanceCovered
+            : distanceCovered // ignore: cast_nullable_to_non_nullable
+                  as double,
+        null == elevationGain
+            ? _value.elevationGain
+            : elevationGain // ignore: cast_nullable_to_non_nullable
+                  as double,
       ),
     );
   }
@@ -2941,16 +2995,25 @@ class __$$SimulationPositionChangedImplCopyWithImpl<$Res>
 /// @nodoc
 
 class _$SimulationPositionChangedImpl implements SimulationPositionChanged {
-  const _$SimulationPositionChangedImpl(this.point, this.speed);
+  const _$SimulationPositionChangedImpl(
+    this.point,
+    this.speed,
+    this.distanceCovered,
+    this.elevationGain,
+  );
 
   @override
   final RoutePoint point;
   @override
   final Speed speed;
+  @override
+  final double distanceCovered;
+  @override
+  final double elevationGain;
 
   @override
   String toString() {
-    return 'SimulationEvent.positionChanged(point: $point, speed: $speed)';
+    return 'SimulationEvent.positionChanged(point: $point, speed: $speed, distanceCovered: $distanceCovered, elevationGain: $elevationGain)';
   }
 
   @override
@@ -2959,11 +3022,16 @@ class _$SimulationPositionChangedImpl implements SimulationPositionChanged {
         (other.runtimeType == runtimeType &&
             other is _$SimulationPositionChangedImpl &&
             (identical(other.point, point) || other.point == point) &&
-            (identical(other.speed, speed) || other.speed == speed));
+            (identical(other.speed, speed) || other.speed == speed) &&
+            (identical(other.distanceCovered, distanceCovered) ||
+                other.distanceCovered == distanceCovered) &&
+            (identical(other.elevationGain, elevationGain) ||
+                other.elevationGain == elevationGain));
   }
 
   @override
-  int get hashCode => Object.hash(runtimeType, point, speed);
+  int get hashCode =>
+      Object.hash(runtimeType, point, speed, distanceCovered, elevationGain);
 
   /// Create a copy of SimulationEvent
   /// with the given fields replaced by the non-null parameter values.
@@ -2980,38 +3048,56 @@ class _$SimulationPositionChangedImpl implements SimulationPositionChanged {
   @optionalTypeArgs
   TResult when<TResult extends Object?>({
     required TResult Function(Route route) started,
-    required TResult Function(RoutePoint point, Speed speed) positionChanged,
+    required TResult Function(
+      RoutePoint point,
+      Speed speed,
+      double distanceCovered,
+      double elevationGain,
+    )
+    positionChanged,
     required TResult Function() paused,
     required TResult Function() resumed,
     required TResult Function() completed,
   }) {
-    return positionChanged(point, speed);
+    return positionChanged(point, speed, distanceCovered, elevationGain);
   }
 
   @override
   @optionalTypeArgs
   TResult? whenOrNull<TResult extends Object?>({
     TResult? Function(Route route)? started,
-    TResult? Function(RoutePoint point, Speed speed)? positionChanged,
+    TResult? Function(
+      RoutePoint point,
+      Speed speed,
+      double distanceCovered,
+      double elevationGain,
+    )?
+    positionChanged,
     TResult? Function()? paused,
     TResult? Function()? resumed,
     TResult? Function()? completed,
   }) {
-    return positionChanged?.call(point, speed);
+    return positionChanged?.call(point, speed, distanceCovered, elevationGain);
   }
 
   @override
   @optionalTypeArgs
   TResult maybeWhen<TResult extends Object?>({
     TResult Function(Route route)? started,
-    TResult Function(RoutePoint point, Speed speed)? positionChanged,
+    TResult Function(
+      RoutePoint point,
+      Speed speed,
+      double distanceCovered,
+      double elevationGain,
+    )?
+    positionChanged,
     TResult Function()? paused,
     TResult Function()? resumed,
     TResult Function()? completed,
     required TResult orElse(),
   }) {
     if (positionChanged != null) {
-      return positionChanged(point, speed);
+      return positionChanged(point, speed, distanceCovered, elevationGain);
     }
     return orElse();
   }
@@ -3061,10 +3147,14 @@ abstract class SimulationPositionChanged implements SimulationEvent {
   const factory SimulationPositionChanged(
     final RoutePoint point,
     final Speed speed,
+    final double distanceCovered,
+    final double elevationGain,
   ) = _$SimulationPositionChangedImpl;
 
   RoutePoint get point;
   Speed get speed;
+  double get distanceCovered;
+  double get elevationGain;
 
   /// Create a copy of SimulationEvent
   /// with the given fields replaced by the non-null parameter values.
@@ -3117,7 +3207,13 @@ class _$SimulationPausedImpl implements SimulationPaused {
   @optionalTypeArgs
   TResult when<TResult extends Object?>({
     required TResult Function(Route route) started,
-    required TResult Function(RoutePoint point, Speed speed) positionChanged,
+    required TResult Function(
+      RoutePoint point,
+      Speed speed,
+      double distanceCovered,
+      double elevationGain,
+    )
+    positionChanged,
     required TResult Function() paused,
     required TResult Function() resumed,
     required TResult Function() completed,
@@ -3129,7 +3225,13 @@ class _$SimulationPausedImpl implements SimulationPaused {
   @optionalTypeArgs
   TResult? whenOrNull<TResult extends Object?>({
     TResult? Function(Route route)? started,
-    TResult? Function(RoutePoint point, Speed speed)? positionChanged,
+    TResult? Function(
+      RoutePoint point,
+      Speed speed,
+      double distanceCovered,
+      double elevationGain,
+    )?
+    positionChanged,
     TResult? Function()? paused,
     TResult? Function()? resumed,
     TResult? Function()? completed,
@@ -3141,7 +3243,13 @@ class _$SimulationPausedImpl implements SimulationPaused {
   @optionalTypeArgs
   TResult maybeWhen<TResult extends Object?>({
     TResult Function(Route route)? started,
-    TResult Function(RoutePoint point, Speed speed)? positionChanged,
+    TResult Function(
+      RoutePoint point,
+      Speed speed,
+      double distanceCovered,
+      double elevationGain,
+    )?
+    positionChanged,
     TResult Function()? paused,
     TResult Function()? resumed,
     TResult Function()? completed,
@@ -3242,7 +3350,13 @@ class _$SimulationResumedImpl implements SimulationResumed {
   @optionalTypeArgs
   TResult when<TResult extends Object?>({
     required TResult Function(Route route) started,
-    required TResult Function(RoutePoint point, Speed speed) positionChanged,
+    required TResult Function(
+      RoutePoint point,
+      Speed speed,
+      double distanceCovered,
+      double elevationGain,
+    )
+    positionChanged,
     required TResult Function() paused,
     required TResult Function() resumed,
     required TResult Function() completed,
@@ -3254,7 +3368,13 @@ class _$SimulationResumedImpl implements SimulationResumed {
   @optionalTypeArgs
   TResult? whenOrNull<TResult extends Object?>({
     TResult? Function(Route route)? started,
-    TResult? Function(RoutePoint point, Speed speed)? positionChanged,
+    TResult? Function(
+      RoutePoint point,
+      Speed speed,
+      double distanceCovered,
+      double elevationGain,
+    )?
+    positionChanged,
     TResult? Function()? paused,
     TResult? Function()? resumed,
     TResult? Function()? completed,
@@ -3266,7 +3386,13 @@ class _$SimulationResumedImpl implements SimulationResumed {
   @optionalTypeArgs
   TResult maybeWhen<TResult extends Object?>({
     TResult Function(Route route)? started,
-    TResult Function(RoutePoint point, Speed speed)? positionChanged,
+    TResult Function(
+      RoutePoint point,
+      Speed speed,
+      double distanceCovered,
+      double elevationGain,
+    )?
+    positionChanged,
     TResult Function()? paused,
     TResult Function()? resumed,
     TResult Function()? completed,
@@ -3368,7 +3494,13 @@ class _$SimulationCompletedImpl implements SimulationCompleted {
   @optionalTypeArgs
   TResult when<TResult extends Object?>({
     required TResult Function(Route route) started,
-    required TResult Function(RoutePoint point, Speed speed) positionChanged,
+    required TResult Function(
+      RoutePoint point,
+      Speed speed,
+      double distanceCovered,
+      double elevationGain,
+    )
+    positionChanged,
     required TResult Function() paused,
     required TResult Function() resumed,
     required TResult Function() completed,
@@ -3380,7 +3512,13 @@ class _$SimulationCompletedImpl implements SimulationCompleted {
   @optionalTypeArgs
   TResult? whenOrNull<TResult extends Object?>({
     TResult? Function(Route route)? started,
-    TResult? Function(RoutePoint point, Speed speed)? positionChanged,
+    TResult? Function(
+      RoutePoint point,
+      Speed speed,
+      double distanceCovered,
+      double elevationGain,
+    )?
+    positionChanged,
     TResult? Function()? paused,
     TResult? Function()? resumed,
     TResult? Function()? completed,
@@ -3392,7 +3530,13 @@ class _$SimulationCompletedImpl implements SimulationCompleted {
   @optionalTypeArgs
   TResult maybeWhen<TResult extends Object?>({
     TResult Function(Route route)? started,
-    TResult Function(RoutePoint point, Speed speed)? positionChanged,
+    TResult Function(
+      RoutePoint point,
+      Speed speed,
+      double distanceCovered,
+      double elevationGain,
+    )?
+    positionChanged,
     TResult Function()? paused,
     TResult Function()? resumed,
     TResult Function()? completed,

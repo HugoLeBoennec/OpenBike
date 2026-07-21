@@ -33,6 +33,12 @@ class Ride with _$Ride {
     Distance? cachedTotalDistance,
     double? cachedTss,
     double? cachedIntensityFactor,
+
+    // Elevation climbed during a route-simulated ride. There's no way to
+    // compute this from readings (no elevation source besides the route
+    // itself) — it's set once from RouteSimulator's live total on stop and
+    // persisted verbatim, same as the other cached fields above.
+    Distance? cachedElevationGain,
   }) = _Ride;
 
   // ---------------------------------------------------------------------------
@@ -127,6 +133,14 @@ class Ride with _$Ride {
     if (distances.isEmpty) return cachedTotalDistance ?? Distance.zero;
     return distances.last.distance!;
   }
+
+  // ---------------------------------------------------------------------------
+  // Elevation gain
+  // ---------------------------------------------------------------------------
+
+  /// Elevation climbed, for route-simulated rides only — null when the ride
+  /// had no route (indoor trainers have no altimeter of their own).
+  Distance? get elevationGain => cachedElevationGain;
 
   // ---------------------------------------------------------------------------
   // TSS / IF

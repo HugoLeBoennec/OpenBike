@@ -34,7 +34,12 @@ mixin _$Ride {
   HeartRate? get cachedMaxHr => throw _privateConstructorUsedError;
   Distance? get cachedTotalDistance => throw _privateConstructorUsedError;
   double? get cachedTss => throw _privateConstructorUsedError;
-  double? get cachedIntensityFactor => throw _privateConstructorUsedError;
+  double? get cachedIntensityFactor =>
+      throw _privateConstructorUsedError; // Elevation climbed during a route-simulated ride. There's no way to
+  // compute this from readings (no elevation source besides the route
+  // itself) — it's set once from RouteSimulator's live total on stop and
+  // persisted verbatim, same as the other cached fields above.
+  Distance? get cachedElevationGain => throw _privateConstructorUsedError;
 
   /// Create a copy of Ride
   /// with the given fields replaced by the non-null parameter values.
@@ -64,6 +69,7 @@ abstract class $RideCopyWith<$Res> {
     Distance? cachedTotalDistance,
     double? cachedTss,
     double? cachedIntensityFactor,
+    Distance? cachedElevationGain,
   });
 
   $WattsCopyWith<$Res>? get cachedAvgPower;
@@ -73,6 +79,7 @@ abstract class $RideCopyWith<$Res> {
   $HeartRateCopyWith<$Res>? get cachedAvgHr;
   $HeartRateCopyWith<$Res>? get cachedMaxHr;
   $DistanceCopyWith<$Res>? get cachedTotalDistance;
+  $DistanceCopyWith<$Res>? get cachedElevationGain;
 }
 
 /// @nodoc
@@ -106,6 +113,7 @@ class _$RideCopyWithImpl<$Res, $Val extends Ride>
     Object? cachedTotalDistance = freezed,
     Object? cachedTss = freezed,
     Object? cachedIntensityFactor = freezed,
+    Object? cachedElevationGain = freezed,
   }) {
     return _then(
       _value.copyWith(
@@ -173,6 +181,10 @@ class _$RideCopyWithImpl<$Res, $Val extends Ride>
                 ? _value.cachedIntensityFactor
                 : cachedIntensityFactor // ignore: cast_nullable_to_non_nullable
                       as double?,
+            cachedElevationGain: freezed == cachedElevationGain
+                ? _value.cachedElevationGain
+                : cachedElevationGain // ignore: cast_nullable_to_non_nullable
+                      as Distance?,
           )
           as $Val,
     );
@@ -275,6 +287,20 @@ class _$RideCopyWithImpl<$Res, $Val extends Ride>
       return _then(_value.copyWith(cachedTotalDistance: value) as $Val);
     });
   }
+
+  /// Create a copy of Ride
+  /// with the given fields replaced by the non-null parameter values.
+  @override
+  @pragma('vm:prefer-inline')
+  $DistanceCopyWith<$Res>? get cachedElevationGain {
+    if (_value.cachedElevationGain == null) {
+      return null;
+    }
+
+    return $DistanceCopyWith<$Res>(_value.cachedElevationGain!, (value) {
+      return _then(_value.copyWith(cachedElevationGain: value) as $Val);
+    });
+  }
 }
 
 /// @nodoc
@@ -302,6 +328,7 @@ abstract class _$$RideImplCopyWith<$Res> implements $RideCopyWith<$Res> {
     Distance? cachedTotalDistance,
     double? cachedTss,
     double? cachedIntensityFactor,
+    Distance? cachedElevationGain,
   });
 
   @override
@@ -318,6 +345,8 @@ abstract class _$$RideImplCopyWith<$Res> implements $RideCopyWith<$Res> {
   $HeartRateCopyWith<$Res>? get cachedMaxHr;
   @override
   $DistanceCopyWith<$Res>? get cachedTotalDistance;
+  @override
+  $DistanceCopyWith<$Res>? get cachedElevationGain;
 }
 
 /// @nodoc
@@ -348,6 +377,7 @@ class __$$RideImplCopyWithImpl<$Res>
     Object? cachedTotalDistance = freezed,
     Object? cachedTss = freezed,
     Object? cachedIntensityFactor = freezed,
+    Object? cachedElevationGain = freezed,
   }) {
     return _then(
       _$RideImpl(
@@ -415,6 +445,10 @@ class __$$RideImplCopyWithImpl<$Res>
             ? _value.cachedIntensityFactor
             : cachedIntensityFactor // ignore: cast_nullable_to_non_nullable
                   as double?,
+        cachedElevationGain: freezed == cachedElevationGain
+            ? _value.cachedElevationGain
+            : cachedElevationGain // ignore: cast_nullable_to_non_nullable
+                  as Distance?,
       ),
     );
   }
@@ -440,6 +474,7 @@ class _$RideImpl extends _Ride {
     this.cachedTotalDistance,
     this.cachedTss,
     this.cachedIntensityFactor,
+    this.cachedElevationGain,
   }) : _readings = readings,
        _laps = laps,
        super._();
@@ -494,10 +529,16 @@ class _$RideImpl extends _Ride {
   final double? cachedTss;
   @override
   final double? cachedIntensityFactor;
+  // Elevation climbed during a route-simulated ride. There's no way to
+  // compute this from readings (no elevation source besides the route
+  // itself) — it's set once from RouteSimulator's live total on stop and
+  // persisted verbatim, same as the other cached fields above.
+  @override
+  final Distance? cachedElevationGain;
 
   @override
   String toString() {
-    return 'Ride(id: $id, startTime: $startTime, endTime: $endTime, status: $status, readings: $readings, laps: $laps, pauseDuration: $pauseDuration, cachedAvgPower: $cachedAvgPower, cachedNormalizedPower: $cachedNormalizedPower, cachedMaxPower: $cachedMaxPower, cachedAvgCadence: $cachedAvgCadence, cachedAvgHr: $cachedAvgHr, cachedMaxHr: $cachedMaxHr, cachedTotalDistance: $cachedTotalDistance, cachedTss: $cachedTss, cachedIntensityFactor: $cachedIntensityFactor)';
+    return 'Ride(id: $id, startTime: $startTime, endTime: $endTime, status: $status, readings: $readings, laps: $laps, pauseDuration: $pauseDuration, cachedAvgPower: $cachedAvgPower, cachedNormalizedPower: $cachedNormalizedPower, cachedMaxPower: $cachedMaxPower, cachedAvgCadence: $cachedAvgCadence, cachedAvgHr: $cachedAvgHr, cachedMaxHr: $cachedMaxHr, cachedTotalDistance: $cachedTotalDistance, cachedTss: $cachedTss, cachedIntensityFactor: $cachedIntensityFactor, cachedElevationGain: $cachedElevationGain)';
   }
 
   @override
@@ -531,7 +572,9 @@ class _$RideImpl extends _Ride {
             (identical(other.cachedTss, cachedTss) ||
                 other.cachedTss == cachedTss) &&
             (identical(other.cachedIntensityFactor, cachedIntensityFactor) ||
-                other.cachedIntensityFactor == cachedIntensityFactor));
+                other.cachedIntensityFactor == cachedIntensityFactor) &&
+            (identical(other.cachedElevationGain, cachedElevationGain) ||
+                other.cachedElevationGain == cachedElevationGain));
   }
 
   @override
@@ -553,6 +596,7 @@ class _$RideImpl extends _Ride {
     cachedTotalDistance,
     cachedTss,
     cachedIntensityFactor,
+    cachedElevationGain,
   );
 
   /// Create a copy of Ride
@@ -582,6 +626,7 @@ abstract class _Ride extends Ride {
     final Distance? cachedTotalDistance,
     final double? cachedTss,
     final double? cachedIntensityFactor,
+    final Distance? cachedElevationGain,
   }) = _$RideImpl;
   const _Ride._() : super._();
 
@@ -617,7 +662,12 @@ abstract class _Ride extends Ride {
   @override
   double? get cachedTss;
   @override
-  double? get cachedIntensityFactor;
+  double? get cachedIntensityFactor; // Elevation climbed during a route-simulated ride. There's no way to
+  // compute this from readings (no elevation source besides the route
+  // itself) — it's set once from RouteSimulator's live total on stop and
+  // persisted verbatim, same as the other cached fields above.
+  @override
+  Distance? get cachedElevationGain;
 
   /// Create a copy of Ride
   /// with the given fields replaced by the non-null parameter values.

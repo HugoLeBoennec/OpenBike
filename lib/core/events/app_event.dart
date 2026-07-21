@@ -66,7 +66,11 @@ class RideEvent with _$RideEvent {
 class SimulationEvent with _$SimulationEvent {
   const factory SimulationEvent.started(Route route) = SimulationStarted;
   const factory SimulationEvent.positionChanged(
-      RoutePoint point, Speed speed) = SimulationPositionChanged;
+    RoutePoint point,
+    Speed speed,
+    double distanceCovered,
+    double elevationGain,
+  ) = SimulationPositionChanged;
   const factory SimulationEvent.paused() = SimulationPaused;
   const factory SimulationEvent.resumed() = SimulationResumed;
   const factory SimulationEvent.completed() = SimulationCompleted;

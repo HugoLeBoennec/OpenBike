@@ -53,6 +53,13 @@ class RecordingEngine {
 
   Grade? _latestGrade;
 
+  // Fallback distance/elevation-gain for route-simulated rides — many
+  // trainers don't report cumulative distance over BLE/ANT+, and none have
+  // an altimeter, so RouteSimulator's own physics-driven totals are the
+  // only source for either. Null whenever no route is active.
+  double? _latestSimDistance;
+  double? _latestSimElevationGain;
+
   /// Number of laps recorded so far (including the auto-closed final lap on stop).
   int get lapCount => _laps.length;
 
@@ -108,15 +115,21 @@ class RecordingEngine {
 
     // Listen to sensor events — buffer the latest reading.
     _latestGrade = null;
+    _latestSimDistance = null;
+    _latestSimElevationGain = null;
     _sensorSubscription = _eventBus.on<SensorEvent>().listen((event) {
       _latestReading = event.reading;
     });
 
-    // Listen to route simulation events — buffer the latest grade so SIM
-    // rides carry gradient in their recorded readings.
+    // Listen to route simulation events — buffer the latest grade/distance/
+    // elevation-gain so SIM rides carry them in their recorded readings even
+    // when the trainer itself doesn't report distance (and never reports
+    // elevation — it has no altimeter).
     _simulationSubscription = _eventBus.on<SimulationEvent>().listen((event) {
       if (event is SimulationPositionChanged) {
         _latestGrade = event.point.grade;
+        _latestSimDistance = event.distanceCovered;
+        _latestSimElevationGain = event.elevationGain;
       }
     });
 
@@ -260,6 +273,9 @@ class RecordingEngine {
       readings: List.unmodifiable(_readings),
       laps: List.unmodifiable(_laps),
       pauseDuration: _totalPauseDuration,
+      cachedElevationGain: _latestSimElevationGain != null
+          ? Distance(_latestSimElevationGain!)
+          : null,
     );
 
     // Persist.
@@ -326,7 +342,8 @@ class RecordingEngine {
         cadence: reading.cadence,
         heartRate: reading.heartRate,
         speed: reading.speed,
-        distance: reading.distance,
+        distance: reading.distance ??
+            (_latestSimDistance != null ? Distance(_latestSimDistance!) : null),
         grade: _latestGrade,
       );
       _readings.add(stamped);

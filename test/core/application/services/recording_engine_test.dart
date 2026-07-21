@@ -5,6 +5,7 @@ import 'package:open_bike/core/application/services/recording_engine.dart';
 import 'package:open_bike/core/domain/entities/lap.dart';
 import 'package:open_bike/core/domain/entities/personal_record.dart';
 import 'package:open_bike/core/domain/entities/ride.dart';
+import 'package:open_bike/core/domain/entities/route_point.dart';
 import 'package:open_bike/core/domain/entities/sensor_reading.dart';
 import 'package:open_bike/core/domain/ports/storage_port.dart';
 import 'package:open_bike/core/domain/value_objects/value_objects.dart';
@@ -497,6 +498,103 @@ void main() {
       // start() + stop() both hit the no-ftp overload.
       verify(() => storage.saveRide(any())).called(2);
       verifyNever(() => storage.saveRide(any(), ftp: any(named: 'ftp')));
+    });
+  });
+
+  // =========================================================================
+  // Route simulation — distance/elevation fallback
+  // =========================================================================
+
+  group('RecordingEngine — route simulation', () {
+    RoutePoint point({required double distance, required double elevation}) =>
+        RoutePoint(
+          position: const GeoPoint(lat: 45.0, lon: 6.0),
+          distanceFromStart: distance,
+          smoothedElevation: elevation,
+          grade: const Grade(2.0),
+        );
+
+    test(
+        'falls back to the simulator distance when the sensor reports none',
+        () async {
+      await engine.start();
+
+      // Trainer reports power/cadence but no distance (common for many
+      // FTMS trainers) — the simulator's own physics-driven distance
+      // should be stamped onto the reading instead.
+      eventBus.fire(SensorEvent(
+        reading: SensorReading(timestamp: DateTime.now(), power: const Watts(200)),
+        deviceId: 'test-trainer',
+      ));
+      eventBus.fire(SimulationEvent.positionChanged(
+        point(distance: 123.4, elevation: 500),
+        const Speed(8),
+        123.4,
+        5.0,
+      ));
+      await Future<void>.delayed(const Duration(milliseconds: 1200));
+
+      final ride = await engine.stop();
+      expect(ride.readings.first.distance?.meters, closeTo(123.4, 0.01));
+    });
+
+    test('sensor-reported distance takes priority over the simulator',
+        () async {
+      await engine.start();
+
+      eventBus.fire(SensorEvent(
+        reading: SensorReading(
+          timestamp: DateTime.now(),
+          power: const Watts(200),
+          distance: const Distance(999),
+        ),
+        deviceId: 'test-trainer',
+      ));
+      eventBus.fire(SimulationEvent.positionChanged(
+        point(distance: 123.4, elevation: 500),
+        const Speed(8),
+        123.4,
+        5.0,
+      ));
+      await Future<void>.delayed(const Duration(milliseconds: 1200));
+
+      final ride = await engine.stop();
+      expect(ride.readings.first.distance?.meters, 999);
+    });
+
+    test('stop persists the latest simulator elevation gain on the ride',
+        () async {
+      await engine.start();
+
+      eventBus.fire(SimulationEvent.positionChanged(
+        point(distance: 50, elevation: 505),
+        const Speed(8),
+        50,
+        5.0,
+      ));
+      await Future<void>.delayed(const Duration(milliseconds: 200));
+      eventBus.fire(SimulationEvent.positionChanged(
+        point(distance: 150, elevation: 520),
+        const Speed(8),
+        150,
+        18.0,
+      ));
+      await Future<void>.delayed(const Duration(milliseconds: 1200));
+
+      final ride = await engine.stop();
+      expect(ride.elevationGain?.meters, 18.0);
+    });
+
+    test('elevation gain is null for a ride with no route', () async {
+      await engine.start();
+      eventBus.fire(SensorEvent(
+        reading: SensorReading(timestamp: DateTime.now(), power: const Watts(200)),
+        deviceId: 'test-trainer',
+      ));
+      await Future<void>.delayed(const Duration(milliseconds: 1200));
+
+      final ride = await engine.stop();
+      expect(ride.elevationGain, isNull);
     });
   });
 

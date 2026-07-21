@@ -22,6 +22,7 @@ class ExportQueueItem {
   final DateTime? lastAttempt;
   final String? errorMessage;
   final DateTime createdAt;
+  final String? resultPath;
 
   const ExportQueueItem({
     required this.id,
@@ -32,6 +33,7 @@ class ExportQueueItem {
     this.lastAttempt,
     this.errorMessage,
     required this.createdAt,
+    this.resultPath,
   });
 
   bool get isPending => status == 'pending';
@@ -51,6 +53,7 @@ class ExportQueueItem {
           : null,
       errorMessage: row.errorMessage,
       createdAt: DateTime.fromMillisecondsSinceEpoch(row.createdAt),
+      resultPath: row.resultPath,
     );
   }
 }
@@ -200,13 +203,18 @@ class ExportQueueService {
         return;
       }
 
-      await plugin.export(ride);
+      final result = await plugin.export(ride);
 
-      // Success!
+      // Success! Only file-export plugins return a local path worth
+      // keeping around (e.g. for a share action) — Strava returns a
+      // remote activity id, which isn't useful here.
+      final isFileExport =
+          plugin.manifest.capabilities.contains('file-export');
       await (_db.update(_db.exportQueue)
             ..where((t) => t.id.equals(item.id)))
-          .write(const ExportQueueCompanion(
-        status: Value('success'),
+          .write(ExportQueueCompanion(
+        status: const Value('success'),
+        resultPath: Value(isFileExport ? result : null),
       ));
     } catch (e) {
       final nextRetry = item.retryCount + 1;

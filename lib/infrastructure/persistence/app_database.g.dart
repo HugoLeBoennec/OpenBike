@@ -202,6 +202,17 @@ class $RidesTable extends Rides with TableInfo<$RidesTable, RideRow> {
     type: DriftSqlType.double,
     requiredDuringInsert: false,
   );
+  static const VerificationMeta _elevationGainMMeta = const VerificationMeta(
+    'elevationGainM',
+  );
+  @override
+  late final GeneratedColumn<double> elevationGainM = GeneratedColumn<double>(
+    'elevation_gain_m',
+    aliasedName,
+    true,
+    type: DriftSqlType.double,
+    requiredDuringInsert: false,
+  );
   @override
   List<GeneratedColumn> get $columns => [
     id,
@@ -223,6 +234,7 @@ class $RidesTable extends Rides with TableInfo<$RidesTable, RideRow> {
     tss,
     intensityFactor,
     ftpAtTime,
+    elevationGainM,
   ];
   @override
   String get aliasedName => _alias ?? actualTableName;
@@ -368,6 +380,15 @@ class $RidesTable extends Rides with TableInfo<$RidesTable, RideRow> {
         ftpAtTime.isAcceptableOrUnknown(data['ftp_at_time']!, _ftpAtTimeMeta),
       );
     }
+    if (data.containsKey('elevation_gain_m')) {
+      context.handle(
+        _elevationGainMMeta,
+        elevationGainM.isAcceptableOrUnknown(
+          data['elevation_gain_m']!,
+          _elevationGainMMeta,
+        ),
+      );
+    }
     return context;
   }
 
@@ -453,6 +474,10 @@ class $RidesTable extends Rides with TableInfo<$RidesTable, RideRow> {
         DriftSqlType.double,
         data['${effectivePrefix}ftp_at_time'],
       ),
+      elevationGainM: attachedDatabase.typeMapping.read(
+        DriftSqlType.double,
+        data['${effectivePrefix}elevation_gain_m'],
+      ),
     );
   }
 
@@ -482,6 +507,7 @@ class RideRow extends DataClass implements Insertable<RideRow> {
   final double? tss;
   final double? intensityFactor;
   final double? ftpAtTime;
+  final double? elevationGainM;
   const RideRow({
     required this.id,
     required this.startTime,
@@ -502,6 +528,7 @@ class RideRow extends DataClass implements Insertable<RideRow> {
     this.tss,
     this.intensityFactor,
     this.ftpAtTime,
+    this.elevationGainM,
   });
   @override
   Map<String, Expression> toColumns(bool nullToAbsent) {
@@ -557,6 +584,9 @@ class RideRow extends DataClass implements Insertable<RideRow> {
     if (!nullToAbsent || ftpAtTime != null) {
       map['ftp_at_time'] = Variable<double>(ftpAtTime);
     }
+    if (!nullToAbsent || elevationGainM != null) {
+      map['elevation_gain_m'] = Variable<double>(elevationGainM);
+    }
     return map;
   }
 
@@ -611,6 +641,9 @@ class RideRow extends DataClass implements Insertable<RideRow> {
       ftpAtTime: ftpAtTime == null && nullToAbsent
           ? const Value.absent()
           : Value(ftpAtTime),
+      elevationGainM: elevationGainM == null && nullToAbsent
+          ? const Value.absent()
+          : Value(elevationGainM),
     );
   }
 
@@ -641,6 +674,7 @@ class RideRow extends DataClass implements Insertable<RideRow> {
       tss: serializer.fromJson<double?>(json['tss']),
       intensityFactor: serializer.fromJson<double?>(json['intensityFactor']),
       ftpAtTime: serializer.fromJson<double?>(json['ftpAtTime']),
+      elevationGainM: serializer.fromJson<double?>(json['elevationGainM']),
     );
   }
   @override
@@ -666,6 +700,7 @@ class RideRow extends DataClass implements Insertable<RideRow> {
       'tss': serializer.toJson<double?>(tss),
       'intensityFactor': serializer.toJson<double?>(intensityFactor),
       'ftpAtTime': serializer.toJson<double?>(ftpAtTime),
+      'elevationGainM': serializer.toJson<double?>(elevationGainM),
     };
   }
 
@@ -689,6 +724,7 @@ class RideRow extends DataClass implements Insertable<RideRow> {
     Value<double?> tss = const Value.absent(),
     Value<double?> intensityFactor = const Value.absent(),
     Value<double?> ftpAtTime = const Value.absent(),
+    Value<double?> elevationGainM = const Value.absent(),
   }) => RideRow(
     id: id ?? this.id,
     startTime: startTime ?? this.startTime,
@@ -719,6 +755,9 @@ class RideRow extends DataClass implements Insertable<RideRow> {
         ? intensityFactor.value
         : this.intensityFactor,
     ftpAtTime: ftpAtTime.present ? ftpAtTime.value : this.ftpAtTime,
+    elevationGainM: elevationGainM.present
+        ? elevationGainM.value
+        : this.elevationGainM,
   );
   RideRow copyWithCompanion(RidesCompanion data) {
     return RideRow(
@@ -753,6 +792,9 @@ class RideRow extends DataClass implements Insertable<RideRow> {
           ? data.intensityFactor.value
           : this.intensityFactor,
       ftpAtTime: data.ftpAtTime.present ? data.ftpAtTime.value : this.ftpAtTime,
+      elevationGainM: data.elevationGainM.present
+          ? data.elevationGainM.value
+          : this.elevationGainM,
     );
   }
 
@@ -777,7 +819,8 @@ class RideRow extends DataClass implements Insertable<RideRow> {
           ..write('pauseDurationSeconds: $pauseDurationSeconds, ')
           ..write('tss: $tss, ')
           ..write('intensityFactor: $intensityFactor, ')
-          ..write('ftpAtTime: $ftpAtTime')
+          ..write('ftpAtTime: $ftpAtTime, ')
+          ..write('elevationGainM: $elevationGainM')
           ..write(')'))
         .toString();
   }
@@ -803,6 +846,7 @@ class RideRow extends DataClass implements Insertable<RideRow> {
     tss,
     intensityFactor,
     ftpAtTime,
+    elevationGainM,
   );
   @override
   bool operator ==(Object other) =>
@@ -826,7 +870,8 @@ class RideRow extends DataClass implements Insertable<RideRow> {
           other.pauseDurationSeconds == this.pauseDurationSeconds &&
           other.tss == this.tss &&
           other.intensityFactor == this.intensityFactor &&
-          other.ftpAtTime == this.ftpAtTime);
+          other.ftpAtTime == this.ftpAtTime &&
+          other.elevationGainM == this.elevationGainM);
 }
 
 class RidesCompanion extends UpdateCompanion<RideRow> {
@@ -849,6 +894,7 @@ class RidesCompanion extends UpdateCompanion<RideRow> {
   final Value<double?> tss;
   final Value<double?> intensityFactor;
   final Value<double?> ftpAtTime;
+  final Value<double?> elevationGainM;
   final Value<int> rowid;
   const RidesCompanion({
     this.id = const Value.absent(),
@@ -870,6 +916,7 @@ class RidesCompanion extends UpdateCompanion<RideRow> {
     this.tss = const Value.absent(),
     this.intensityFactor = const Value.absent(),
     this.ftpAtTime = const Value.absent(),
+    this.elevationGainM = const Value.absent(),
     this.rowid = const Value.absent(),
   });
   RidesCompanion.insert({
@@ -892,6 +939,7 @@ class RidesCompanion extends UpdateCompanion<RideRow> {
     this.tss = const Value.absent(),
     this.intensityFactor = const Value.absent(),
     this.ftpAtTime = const Value.absent(),
+    this.elevationGainM = const Value.absent(),
     this.rowid = const Value.absent(),
   }) : id = Value(id),
        startTime = Value(startTime),
@@ -916,6 +964,7 @@ class RidesCompanion extends UpdateCompanion<RideRow> {
     Expression<double>? tss,
     Expression<double>? intensityFactor,
     Expression<double>? ftpAtTime,
+    Expression<double>? elevationGainM,
     Expression<int>? rowid,
   }) {
     return RawValuesInsertable({
@@ -939,6 +988,7 @@ class RidesCompanion extends UpdateCompanion<RideRow> {
       if (tss != null) 'tss': tss,
       if (intensityFactor != null) 'intensity_factor': intensityFactor,
       if (ftpAtTime != null) 'ftp_at_time': ftpAtTime,
+      if (elevationGainM != null) 'elevation_gain_m': elevationGainM,
       if (rowid != null) 'rowid': rowid,
     });
   }
@@ -963,6 +1013,7 @@ class RidesCompanion extends UpdateCompanion<RideRow> {
     Value<double?>? tss,
     Value<double?>? intensityFactor,
     Value<double?>? ftpAtTime,
+    Value<double?>? elevationGainM,
     Value<int>? rowid,
   }) {
     return RidesCompanion(
@@ -985,6 +1036,7 @@ class RidesCompanion extends UpdateCompanion<RideRow> {
       tss: tss ?? this.tss,
       intensityFactor: intensityFactor ?? this.intensityFactor,
       ftpAtTime: ftpAtTime ?? this.ftpAtTime,
+      elevationGainM: elevationGainM ?? this.elevationGainM,
       rowid: rowid ?? this.rowid,
     );
   }
@@ -1049,6 +1101,9 @@ class RidesCompanion extends UpdateCompanion<RideRow> {
     if (ftpAtTime.present) {
       map['ftp_at_time'] = Variable<double>(ftpAtTime.value);
     }
+    if (elevationGainM.present) {
+      map['elevation_gain_m'] = Variable<double>(elevationGainM.value);
+    }
     if (rowid.present) {
       map['rowid'] = Variable<int>(rowid.value);
     }
@@ -1077,6 +1132,7 @@ class RidesCompanion extends UpdateCompanion<RideRow> {
           ..write('tss: $tss, ')
           ..write('intensityFactor: $intensityFactor, ')
           ..write('ftpAtTime: $ftpAtTime, ')
+          ..write('elevationGainM: $elevationGainM, ')
           ..write('rowid: $rowid')
           ..write(')'))
         .toString();
@@ -3560,6 +3616,17 @@ class $ExportQueueTable extends ExportQueue
     type: DriftSqlType.int,
     requiredDuringInsert: true,
   );
+  static const VerificationMeta _resultPathMeta = const VerificationMeta(
+    'resultPath',
+  );
+  @override
+  late final GeneratedColumn<String> resultPath = GeneratedColumn<String>(
+    'result_path',
+    aliasedName,
+    true,
+    type: DriftSqlType.string,
+    requiredDuringInsert: false,
+  );
   @override
   List<GeneratedColumn> get $columns => [
     id,
@@ -3570,6 +3637,7 @@ class $ExportQueueTable extends ExportQueue
     lastAttempt,
     errorMessage,
     createdAt,
+    resultPath,
   ];
   @override
   String get aliasedName => _alias ?? actualTableName;
@@ -3640,6 +3708,12 @@ class $ExportQueueTable extends ExportQueue
     } else if (isInserting) {
       context.missing(_createdAtMeta);
     }
+    if (data.containsKey('result_path')) {
+      context.handle(
+        _resultPathMeta,
+        resultPath.isAcceptableOrUnknown(data['result_path']!, _resultPathMeta),
+      );
+    }
     return context;
   }
 
@@ -3681,6 +3755,10 @@ class $ExportQueueTable extends ExportQueue
         DriftSqlType.int,
         data['${effectivePrefix}created_at'],
       )!,
+      resultPath: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}result_path'],
+      ),
     );
   }
 
@@ -3699,6 +3777,7 @@ class ExportQueueRow extends DataClass implements Insertable<ExportQueueRow> {
   final int? lastAttempt;
   final String? errorMessage;
   final int createdAt;
+  final String? resultPath;
   const ExportQueueRow({
     required this.id,
     required this.rideId,
@@ -3708,6 +3787,7 @@ class ExportQueueRow extends DataClass implements Insertable<ExportQueueRow> {
     this.lastAttempt,
     this.errorMessage,
     required this.createdAt,
+    this.resultPath,
   });
   @override
   Map<String, Expression> toColumns(bool nullToAbsent) {
@@ -3724,6 +3804,9 @@ class ExportQueueRow extends DataClass implements Insertable<ExportQueueRow> {
       map['error_message'] = Variable<String>(errorMessage);
     }
     map['created_at'] = Variable<int>(createdAt);
+    if (!nullToAbsent || resultPath != null) {
+      map['result_path'] = Variable<String>(resultPath);
+    }
     return map;
   }
 
@@ -3741,6 +3824,9 @@ class ExportQueueRow extends DataClass implements Insertable<ExportQueueRow> {
           ? const Value.absent()
           : Value(errorMessage),
       createdAt: Value(createdAt),
+      resultPath: resultPath == null && nullToAbsent
+          ? const Value.absent()
+          : Value(resultPath),
     );
   }
 
@@ -3758,6 +3844,7 @@ class ExportQueueRow extends DataClass implements Insertable<ExportQueueRow> {
       lastAttempt: serializer.fromJson<int?>(json['lastAttempt']),
       errorMessage: serializer.fromJson<String?>(json['errorMessage']),
       createdAt: serializer.fromJson<int>(json['createdAt']),
+      resultPath: serializer.fromJson<String?>(json['resultPath']),
     );
   }
   @override
@@ -3772,6 +3859,7 @@ class ExportQueueRow extends DataClass implements Insertable<ExportQueueRow> {
       'lastAttempt': serializer.toJson<int?>(lastAttempt),
       'errorMessage': serializer.toJson<String?>(errorMessage),
       'createdAt': serializer.toJson<int>(createdAt),
+      'resultPath': serializer.toJson<String?>(resultPath),
     };
   }
 
@@ -3784,6 +3872,7 @@ class ExportQueueRow extends DataClass implements Insertable<ExportQueueRow> {
     Value<int?> lastAttempt = const Value.absent(),
     Value<String?> errorMessage = const Value.absent(),
     int? createdAt,
+    Value<String?> resultPath = const Value.absent(),
   }) => ExportQueueRow(
     id: id ?? this.id,
     rideId: rideId ?? this.rideId,
@@ -3793,6 +3882,7 @@ class ExportQueueRow extends DataClass implements Insertable<ExportQueueRow> {
     lastAttempt: lastAttempt.present ? lastAttempt.value : this.lastAttempt,
     errorMessage: errorMessage.present ? errorMessage.value : this.errorMessage,
     createdAt: createdAt ?? this.createdAt,
+    resultPath: resultPath.present ? resultPath.value : this.resultPath,
   );
   ExportQueueRow copyWithCompanion(ExportQueueCompanion data) {
     return ExportQueueRow(
@@ -3810,6 +3900,9 @@ class ExportQueueRow extends DataClass implements Insertable<ExportQueueRow> {
           ? data.errorMessage.value
           : this.errorMessage,
       createdAt: data.createdAt.present ? data.createdAt.value : this.createdAt,
+      resultPath: data.resultPath.present
+          ? data.resultPath.value
+          : this.resultPath,
     );
   }
 
@@ -3823,7 +3916,8 @@ class ExportQueueRow extends DataClass implements Insertable<ExportQueueRow> {
           ..write('retryCount: $retryCount, ')
           ..write('lastAttempt: $lastAttempt, ')
           ..write('errorMessage: $errorMessage, ')
-          ..write('createdAt: $createdAt')
+          ..write('createdAt: $createdAt, ')
+          ..write('resultPath: $resultPath')
           ..write(')'))
         .toString();
   }
@@ -3838,6 +3932,7 @@ class ExportQueueRow extends DataClass implements Insertable<ExportQueueRow> {
     lastAttempt,
     errorMessage,
     createdAt,
+    resultPath,
   );
   @override
   bool operator ==(Object other) =>
@@ -3850,7 +3945,8 @@ class ExportQueueRow extends DataClass implements Insertable<ExportQueueRow> {
           other.retryCount == this.retryCount &&
           other.lastAttempt == this.lastAttempt &&
           other.errorMessage == this.errorMessage &&
-          other.createdAt == this.createdAt);
+          other.createdAt == this.createdAt &&
+          other.resultPath == this.resultPath);
 }
 
 class ExportQueueCompanion extends UpdateCompanion<ExportQueueRow> {
@@ -3862,6 +3958,7 @@ class ExportQueueCompanion extends UpdateCompanion<ExportQueueRow> {
   final Value<int?> lastAttempt;
   final Value<String?> errorMessage;
   final Value<int> createdAt;
+  final Value<String?> resultPath;
   const ExportQueueCompanion({
     this.id = const Value.absent(),
     this.rideId = const Value.absent(),
@@ -3871,6 +3968,7 @@ class ExportQueueCompanion extends UpdateCompanion<ExportQueueRow> {
     this.lastAttempt = const Value.absent(),
     this.errorMessage = const Value.absent(),
     this.createdAt = const Value.absent(),
+    this.resultPath = const Value.absent(),
   });
   ExportQueueCompanion.insert({
     this.id = const Value.absent(),
@@ -3881,6 +3979,7 @@ class ExportQueueCompanion extends UpdateCompanion<ExportQueueRow> {
     this.lastAttempt = const Value.absent(),
     this.errorMessage = const Value.absent(),
     required int createdAt,
+    this.resultPath = const Value.absent(),
   }) : rideId = Value(rideId),
        target = Value(target),
        createdAt = Value(createdAt);
@@ -3893,6 +3992,7 @@ class ExportQueueCompanion extends UpdateCompanion<ExportQueueRow> {
     Expression<int>? lastAttempt,
     Expression<String>? errorMessage,
     Expression<int>? createdAt,
+    Expression<String>? resultPath,
   }) {
     return RawValuesInsertable({
       if (id != null) 'id': id,
@@ -3903,6 +4003,7 @@ class ExportQueueCompanion extends UpdateCompanion<ExportQueueRow> {
       if (lastAttempt != null) 'last_attempt': lastAttempt,
       if (errorMessage != null) 'error_message': errorMessage,
       if (createdAt != null) 'created_at': createdAt,
+      if (resultPath != null) 'result_path': resultPath,
     });
   }
 
@@ -3915,6 +4016,7 @@ class ExportQueueCompanion extends UpdateCompanion<ExportQueueRow> {
     Value<int?>? lastAttempt,
     Value<String?>? errorMessage,
     Value<int>? createdAt,
+    Value<String?>? resultPath,
   }) {
     return ExportQueueCompanion(
       id: id ?? this.id,
@@ -3925,6 +4027,7 @@ class ExportQueueCompanion extends UpdateCompanion<ExportQueueRow> {
       lastAttempt: lastAttempt ?? this.lastAttempt,
       errorMessage: errorMessage ?? this.errorMessage,
       createdAt: createdAt ?? this.createdAt,
+      resultPath: resultPath ?? this.resultPath,
     );
   }
 
@@ -3955,6 +4058,9 @@ class ExportQueueCompanion extends UpdateCompanion<ExportQueueRow> {
     if (createdAt.present) {
       map['created_at'] = Variable<int>(createdAt.value);
     }
+    if (resultPath.present) {
+      map['result_path'] = Variable<String>(resultPath.value);
+    }
     return map;
   }
 
@@ -3968,7 +4074,8 @@ class ExportQueueCompanion extends UpdateCompanion<ExportQueueRow> {
           ..write('retryCount: $retryCount, ')
           ..write('lastAttempt: $lastAttempt, ')
           ..write('errorMessage: $errorMessage, ')
-          ..write('createdAt: $createdAt')
+          ..write('createdAt: $createdAt, ')
+          ..write('resultPath: $resultPath')
           ..write(')'))
         .toString();
   }
@@ -5069,6 +5176,7 @@ typedef $$RidesTableCreateCompanionBuilder =
       Value<double?> tss,
       Value<double?> intensityFactor,
       Value<double?> ftpAtTime,
+      Value<double?> elevationGainM,
       Value<int> rowid,
     });
 typedef $$RidesTableUpdateCompanionBuilder =
@@ -5092,6 +5200,7 @@ typedef $$RidesTableUpdateCompanionBuilder =
       Value<double?> tss,
       Value<double?> intensityFactor,
       Value<double?> ftpAtTime,
+      Value<double?> elevationGainM,
       Value<int> rowid,
     });
 
@@ -5302,6 +5411,11 @@ class $$RidesTableFilterComposer extends Composer<_$AppDatabase, $RidesTable> {
 
   ColumnFilters<double> get ftpAtTime => $composableBuilder(
     column: $table.ftpAtTime,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<double> get elevationGainM => $composableBuilder(
+    column: $table.elevationGainM,
     builder: (column) => ColumnFilters(column),
   );
 
@@ -5534,6 +5648,11 @@ class $$RidesTableOrderingComposer
     column: $table.ftpAtTime,
     builder: (column) => ColumnOrderings(column),
   );
+
+  ColumnOrderings<double> get elevationGainM => $composableBuilder(
+    column: $table.elevationGainM,
+    builder: (column) => ColumnOrderings(column),
+  );
 }
 
 class $$RidesTableAnnotationComposer
@@ -5613,6 +5732,11 @@ class $$RidesTableAnnotationComposer
 
   GeneratedColumn<double> get ftpAtTime =>
       $composableBuilder(column: $table.ftpAtTime, builder: (column) => column);
+
+  GeneratedColumn<double> get elevationGainM => $composableBuilder(
+    column: $table.elevationGainM,
+    builder: (column) => column,
+  );
 
   Expression<T> sensorReadingsRefs<T extends Object>(
     Expression<T> Function($$SensorReadingsTableAnnotationComposer a) f,
@@ -5794,6 +5918,7 @@ class $$RidesTableTableManager
                 Value<double?> tss = const Value.absent(),
                 Value<double?> intensityFactor = const Value.absent(),
                 Value<double?> ftpAtTime = const Value.absent(),
+                Value<double?> elevationGainM = const Value.absent(),
                 Value<int> rowid = const Value.absent(),
               }) => RidesCompanion(
                 id: id,
@@ -5815,6 +5940,7 @@ class $$RidesTableTableManager
                 tss: tss,
                 intensityFactor: intensityFactor,
                 ftpAtTime: ftpAtTime,
+                elevationGainM: elevationGainM,
                 rowid: rowid,
               ),
           createCompanionCallback:
@@ -5838,6 +5964,7 @@ class $$RidesTableTableManager
                 Value<double?> tss = const Value.absent(),
                 Value<double?> intensityFactor = const Value.absent(),
                 Value<double?> ftpAtTime = const Value.absent(),
+                Value<double?> elevationGainM = const Value.absent(),
                 Value<int> rowid = const Value.absent(),
               }) => RidesCompanion.insert(
                 id: id,
@@ -5859,6 +5986,7 @@ class $$RidesTableTableManager
                 tss: tss,
                 intensityFactor: intensityFactor,
                 ftpAtTime: ftpAtTime,
+                elevationGainM: elevationGainM,
                 rowid: rowid,
               ),
           withReferenceMapper: (p0) => p0
@@ -7808,6 +7936,7 @@ typedef $$ExportQueueTableCreateCompanionBuilder =
       Value<int?> lastAttempt,
       Value<String?> errorMessage,
       required int createdAt,
+      Value<String?> resultPath,
     });
 typedef $$ExportQueueTableUpdateCompanionBuilder =
     ExportQueueCompanion Function({
@@ -7819,6 +7948,7 @@ typedef $$ExportQueueTableUpdateCompanionBuilder =
       Value<int?> lastAttempt,
       Value<String?> errorMessage,
       Value<int> createdAt,
+      Value<String?> resultPath,
     });
 
 final class $$ExportQueueTableReferences
@@ -7885,6 +8015,11 @@ class $$ExportQueueTableFilterComposer
 
   ColumnFilters<int> get createdAt => $composableBuilder(
     column: $table.createdAt,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get resultPath => $composableBuilder(
+    column: $table.resultPath,
     builder: (column) => ColumnFilters(column),
   );
 
@@ -7956,6 +8091,11 @@ class $$ExportQueueTableOrderingComposer
     builder: (column) => ColumnOrderings(column),
   );
 
+  ColumnOrderings<String> get resultPath => $composableBuilder(
+    column: $table.resultPath,
+    builder: (column) => ColumnOrderings(column),
+  );
+
   $$RidesTableOrderingComposer get rideId {
     final $$RidesTableOrderingComposer composer = $composerBuilder(
       composer: this,
@@ -8015,6 +8155,11 @@ class $$ExportQueueTableAnnotationComposer
 
   GeneratedColumn<int> get createdAt =>
       $composableBuilder(column: $table.createdAt, builder: (column) => column);
+
+  GeneratedColumn<String> get resultPath => $composableBuilder(
+    column: $table.resultPath,
+    builder: (column) => column,
+  );
 
   $$RidesTableAnnotationComposer get rideId {
     final $$RidesTableAnnotationComposer composer = $composerBuilder(
@@ -8076,6 +8221,7 @@ class $$ExportQueueTableTableManager
                 Value<int?> lastAttempt = const Value.absent(),
                 Value<String?> errorMessage = const Value.absent(),
                 Value<int> createdAt = const Value.absent(),
+                Value<String?> resultPath = const Value.absent(),
               }) => ExportQueueCompanion(
                 id: id,
                 rideId: rideId,
@@ -8085,6 +8231,7 @@ class $$ExportQueueTableTableManager
                 lastAttempt: lastAttempt,
                 errorMessage: errorMessage,
                 createdAt: createdAt,
+                resultPath: resultPath,
               ),
           createCompanionCallback:
               ({
@@ -8096,6 +8243,7 @@ class $$ExportQueueTableTableManager
                 Value<int?> lastAttempt = const Value.absent(),
                 Value<String?> errorMessage = const Value.absent(),
                 required int createdAt,
+                Value<String?> resultPath = const Value.absent(),
               }) => ExportQueueCompanion.insert(
                 id: id,
                 rideId: rideId,
@@ -8105,6 +8253,7 @@ class $$ExportQueueTableTableManager
                 lastAttempt: lastAttempt,
                 errorMessage: errorMessage,
                 createdAt: createdAt,
+                resultPath: resultPath,
               ),
           withReferenceMapper: (p0) => p0
               .map(

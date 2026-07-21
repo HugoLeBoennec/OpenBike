@@ -228,7 +228,12 @@ class RouteSimulator {
       elapsed: Duration(seconds: _elapsedSeconds),
     ));
 
-    _eventBus.fire(SimulationEvent.positionChanged(point, _speed));
+    _eventBus.fire(SimulationEvent.positionChanged(
+      point,
+      _speed,
+      _distanceCovered,
+      _elevationGain,
+    ));
 
     // Check completion.
     if (_distanceCovered >= totalDist) {

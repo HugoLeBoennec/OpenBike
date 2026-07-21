@@ -31,6 +31,7 @@ class Rides extends Table {
   RealColumn get tss => real().nullable()();
   RealColumn get intensityFactor => real().nullable()();
   RealColumn get ftpAtTime => real().nullable()();
+  RealColumn get elevationGainM => real().nullable()();
 
   @override
   Set<Column> get primaryKey => {id};
@@ -133,6 +134,9 @@ class ExportQueue extends Table {
   IntColumn get lastAttempt => integer().nullable()(); // epoch ms
   TextColumn get errorMessage => text().nullable()();
   IntColumn get createdAt => integer()(); // epoch ms
+  // Local file path for file-export plugins (null for network-upload
+  // plugins like Strava, which return a remote activity id instead).
+  TextColumn get resultPath => text().nullable()();
 }
 
 // ---------------------------------------------------------------------------
@@ -202,7 +206,7 @@ class AppDatabase extends _$AppDatabase {
   AppDatabase(super.e);
 
   @override
-  int get schemaVersion => 4;
+  int get schemaVersion => 5;
 
   @override
   MigrationStrategy get migration => MigrationStrategy(
@@ -227,6 +231,11 @@ class AppDatabase extends _$AppDatabase {
                 await m.createTable(schema.scheduledWorkouts);
                 await m.createTable(schema.personalRecords);
                 await m.createTable(schema.ftpHistory);
+              },
+              from4To5: (m, schema) async {
+                await m.addColumn(schema.rides, schema.rides.elevationGainM);
+                await m.addColumn(
+                    schema.exportQueue, schema.exportQueue.resultPath);
               },
             )(m, from, to);
           }

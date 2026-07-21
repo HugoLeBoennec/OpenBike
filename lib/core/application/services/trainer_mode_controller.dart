@@ -113,7 +113,7 @@ class TrainerModeController extends StateNotifier<TrainerModeState> {
         _hasActiveRoute = true;
         if (!_hasActiveWorkout) switchMode(ControlMode.simulation);
       },
-      positionChanged: (_, __) {},
+      positionChanged: (_, __, ___, ____) {},
       paused: () {},
       resumed: () {},
       completed: () {

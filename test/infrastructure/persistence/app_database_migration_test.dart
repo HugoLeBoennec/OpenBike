@@ -1,3 +1,4 @@
+import 'package:drift/drift.dart' hide isNull;
 import 'package:drift/native.dart';
 import 'package:drift_dev/api/migrations_native.dart';
 import 'package:flutter_test/flutter_test.dart';
@@ -7,6 +8,8 @@ import 'package:open_bike/infrastructure/persistence/generated_migrations/schema
     as v2;
 import 'package:open_bike/infrastructure/persistence/generated_migrations/schema_v3.dart'
     as v3;
+import 'package:open_bike/infrastructure/persistence/generated_migrations/schema_v4.dart'
+    as v4;
 
 void main() {
   final verifier = SchemaVerifier(GeneratedHelper());
@@ -65,6 +68,47 @@ void main() {
           createdAt: 3000,
         ));
     expect(await db.select(db.scheduledWorkouts).get(), hasLength(1));
+
+    await db.close();
+  });
+
+  test('v4 -> v5 migration adds the new columns and preserves existing data',
+      () async {
+    // Start with a real v4 database and insert a row directly, bypassing the
+    // current (v5) AppDatabase so we know the data pre-dates the migration.
+    final schema = await verifier.schemaAt(4);
+    final oldDb = v4.DatabaseAtV4(schema.newConnection());
+    await oldDb.into(oldDb.rides).insert(v4.RidesCompanion.insert(
+          id: 'ride-pre-v5',
+          startTime: 4000,
+          status: 'finished',
+        ));
+    await oldDb.into(oldDb.exportQueue).insert(v4.ExportQueueCompanion.insert(
+          rideId: 'ride-pre-v5',
+          target: 'tcx-file-export',
+          createdAt: 4000,
+        ));
+    await oldDb.close();
+
+    final db = AppDatabase(schema.newConnection());
+    await verifier.migrateAndValidate(db, 5);
+
+    final rides = await db.select(db.rides).get();
+    expect(rides, hasLength(1));
+    expect(rides.single.id, 'ride-pre-v5');
+    expect(rides.single.elevationGainM, isNull);
+
+    final queue = await db.select(db.exportQueue).get();
+    expect(queue, hasLength(1));
+    expect(queue.single.resultPath, isNull);
+
+    // The new columns are usable going forward.
+    await (db.update(db.rides)..where((t) => t.id.equals('ride-pre-v5')))
+        .write(const RidesCompanion(elevationGainM: Value(123.4)));
+    final updated =
+        await (db.select(db.rides)..where((t) => t.id.equals('ride-pre-v5')))
+            .getSingle();
+    expect(updated.elevationGainM, 123.4);
 
     await db.close();
   });

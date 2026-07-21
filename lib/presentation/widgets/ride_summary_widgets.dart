@@ -1,6 +1,7 @@
 import 'package:fl_chart/fl_chart.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:share_plus/share_plus.dart';
 
 import '../../core/domain/entities/entities.dart';
 import '../../core/domain/value_objects/value_objects.dart';
@@ -88,6 +89,11 @@ class HeaderCard extends ConsumerWidget {
             label: 'DISTANCE',
             value: formatter.distance(ride.totalDistance),
           ),
+          if (ride.elevationGain != null)
+            HeaderStat(
+              label: 'ELEV GAIN',
+              value: formatter.elevationM(ride.elevationGain!.meters),
+            ),
         ],
       ),
     );
@@ -541,37 +547,53 @@ class ExportButton extends ConsumerWidget {
       crossAxisAlignment: CrossAxisAlignment.start,
       mainAxisSize: MainAxisSize.min,
       children: [
-        OutlinedButton.icon(
-          style: OutlinedButton.styleFrom(
-            foregroundColor: isSuccess
-                ? Colors.green
-                : isTerminallyFailed
-                    ? Colors.redAccent
-                    : context.tokens.textSecondary,
-            side: BorderSide(
-              color: isSuccess
-                  ? Colors.green
-                  : isTerminallyFailed
-                      ? Colors.redAccent.withValues(alpha: 0.5)
-                      : context.tokens.textDisabled,
+        Row(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            OutlinedButton.icon(
+              style: OutlinedButton.styleFrom(
+                foregroundColor: isSuccess
+                    ? Colors.green
+                    : isTerminallyFailed
+                        ? Colors.redAccent
+                        : context.tokens.textSecondary,
+                side: BorderSide(
+                  color: isSuccess
+                      ? Colors.green
+                      : isTerminallyFailed
+                          ? Colors.redAccent.withValues(alpha: 0.5)
+                          : context.tokens.textDisabled,
+                ),
+              ),
+              onPressed: isSuccess || isBusy || isRetrying
+                  ? null
+                  : () => isTerminallyFailed
+                      ? ref.read(exportQueueServiceProvider).retry(item.id)
+                      : ref.read(exportRideProvider)(rideId, pluginId),
+              icon: Icon(
+                isSuccess
+                    ? Icons.check_circle
+                    : isTerminallyFailed
+                        ? Icons.refresh
+                        : isBusy || isRetrying
+                            ? Icons.hourglass_top
+                            : Icons.upload,
+                size: 16,
+              ),
+              label: Text(isTerminallyFailed ? 'Retry $pluginName' : pluginName),
             ),
-          ),
-          onPressed: isSuccess || isBusy || isRetrying
-              ? null
-              : () => isTerminallyFailed
-                  ? ref.read(exportQueueServiceProvider).retry(item.id)
-                  : ref.read(exportRideProvider)(rideId, pluginId),
-          icon: Icon(
-            isSuccess
-                ? Icons.check_circle
-                : isTerminallyFailed
-                    ? Icons.refresh
-                    : isBusy || isRetrying
-                        ? Icons.hourglass_top
-                        : Icons.upload,
-            size: 16,
-          ),
-          label: Text(isTerminallyFailed ? 'Retry $pluginName' : pluginName),
+            // Local file exports (Garmin FIT / TCX) just write to the app's
+            // sandboxed documents folder — offer the native share sheet so
+            // the user can actually get the file somewhere useful without
+            // digging through Finder/Files.
+            if (isSuccess && item?.resultPath != null)
+              IconButton(
+                tooltip: 'Share $pluginName file',
+                icon: Icon(Icons.ios_share, size: 18, color: context.tokens.textSecondary),
+                onPressed: () =>
+                    Share.shareXFiles([XFile(item!.resultPath!)]),
+              ),
+          ],
         ),
         if (item != null)
           Padding(
