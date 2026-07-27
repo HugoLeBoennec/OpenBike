@@ -104,6 +104,10 @@ void main() {
 
   setUp(() {
     mockPermissions = MockPermissionHandler();
+    // Both startScan and connectToDevice gate on this; individual tests
+    // re-stub it to false where they exercise the denied path.
+    when(() => mockPermissions.requestPermissions())
+        .thenAnswer((_) async => true);
   });
 
   group('BleTransport', () {
@@ -288,6 +292,28 @@ void main() {
 
     tearDown(() async {
       await transport.dispose();
+    });
+
+    test(
+        'connectToDevice waits on the BLE readiness gate and fails clearly '
+        'when it is not ready', () async {
+      // Mirrors a connect issued at app start (auto-reconnect) before the
+      // radio has powered up: it must surface as an error rather than
+      // silently attempting a doomed GATT connect.
+      when(() => mockPermissions.requestPermissions())
+          .thenAnswer((_) async => false);
+
+      await expectLater(
+        transport.connectToDevice('trainer-1'),
+        throwsA(isA<StateError>()),
+      );
+      expect(factory.attemptCount('trainer-1'), 0);
+
+      // Once the adapter is up, the same call goes through.
+      when(() => mockPermissions.requestPermissions())
+          .thenAnswer((_) async => true);
+      await transport.connectToDevice('trainer-1');
+      expect(factory.attemptCount('trainer-1'), 1);
     });
 
     test('connects to a trainer and an HRM simultaneously', () async {

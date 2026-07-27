@@ -235,6 +235,18 @@ class BleTransport {
   /// Reconnecting to a device id that is already connected replaces that
   /// single connection.
   Future<BleConnection> connectToDevice(String deviceId) async {
+    // Same gate [startScan] uses. Without it a connect issued before the
+    // radio has powered up — notably the auto-reconnect that fires on the
+    // first frame after launch — fails against a Bluetooth stack that
+    // simply wasn't ready yet.
+    final allowed = await _permissionHandler.requestPermissions();
+    if (!allowed) {
+      throw StateError(
+        'Bluetooth is not available — check that it is turned on and '
+        'permissions are granted.',
+      );
+    }
+
     if (_connections.containsKey(deviceId)) {
       await disconnectDeviceId(deviceId);
     }

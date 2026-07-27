@@ -77,8 +77,28 @@ class BlePermissionHandler {
   // Adapter state
   // ---------------------------------------------------------------------------
 
+  /// How long to wait for the adapter to report a settled state before
+  /// giving up. Only relevant right after launch.
+  static const adapterReadyTimeout = Duration(seconds: 5);
+
   Future<bool> _ensureBluetoothOn() async {
-    final state = await FlutterBluePlus.adapterState.first;
+    var state = FlutterBluePlus.adapterStateNow;
+
+    // CoreBluetooth reports `unknown` for a few hundred ms after launch
+    // while the central manager powers up. Taking the stream's *first*
+    // value there would reject a perfectly healthy radio — which is what
+    // made connects issued at app start (auto-reconnect) fail while the
+    // same connect from the Devices screen, seconds later, succeeded.
+    if (state == BluetoothAdapterState.unknown) {
+      _log.info('Bluetooth adapter still powering up — waiting…');
+      state = await FlutterBluePlus.adapterState
+          .firstWhere((s) => s != BluetoothAdapterState.unknown)
+          .timeout(
+            adapterReadyTimeout,
+            onTimeout: () => BluetoothAdapterState.unknown,
+          );
+    }
+
     if (state != BluetoothAdapterState.on) {
       _log.warning('Bluetooth adapter is $state — not ON');
       return false;
