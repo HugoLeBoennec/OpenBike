@@ -99,6 +99,16 @@ class RideHeaderBar extends ConsumerWidget {
               },
             ),
           ],
+
+          // Close — leaves the ride (discards an in-progress ride after a
+          // confirm, exits immediately when idle). Kept on the far right so
+          // the timer stays put on the left.
+          const SizedBox(width: 4),
+          IconButton(
+            icon: Icon(Icons.close, color: context.tokens.textTertiary, size: 26),
+            tooltip: 'Leave ride',
+            onPressed: () => leaveRide(context, ref),
+          ),
         ],
       ),
     );

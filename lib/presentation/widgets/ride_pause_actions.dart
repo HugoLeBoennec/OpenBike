@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:wakelock_plus/wakelock_plus.dart';
 
+import '../../core/application/services/recording_engine.dart';
 import '../../core/application/services/workout_engine.dart';
 import '../state/providers.dart';
 import '../theme/app_theme.dart';
@@ -82,6 +83,48 @@ Future<void> confirmStopRide(BuildContext context, WidgetRef ref) async {
 
   if (context.mounted) {
     context.go('/ride/summary/${ride.id}');
+  }
+}
+
+/// Leaves the ride screen without saving. A ride in progress is discarded
+/// (after a confirm), since the red stop button is the way to *save*; when
+/// idle there's nothing to lose, so it exits straight away. Shared by the
+/// header's close button, the `Esc` shortcut while idle, and the ride
+/// screen's back-gesture handler.
+Future<void> leaveRide(BuildContext context, WidgetRef ref) async {
+  final inProgress =
+      ref.read(recordingEngineProvider).state != RecordingState.idle;
+  if (inProgress) {
+    final confirmed = await showDialog<bool>(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        title: const Text('Leave ride?'),
+        content: const Text('Your current ride data will be lost.'),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.of(ctx).pop(false),
+            child: const Text('Stay'),
+          ),
+          TextButton(
+            onPressed: () => Navigator.of(ctx).pop(true),
+            child: const Text('Leave',
+                style: TextStyle(color: Colors.redAccent)),
+          ),
+        ],
+      ),
+    );
+    if (confirmed != true) return;
+  }
+
+  // No need to disable the wakelock here — leaving disposes RideScreen,
+  // whose dispose() already does it.
+  if (!context.mounted) return;
+  // The ride screen is reached via `context.go`, so there's usually nothing
+  // to pop back to — fall back to the home route in that case.
+  if (context.canPop()) {
+    context.pop();
+  } else {
+    context.go('/');
   }
 }
 

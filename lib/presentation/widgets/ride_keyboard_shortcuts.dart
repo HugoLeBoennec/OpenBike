@@ -30,7 +30,8 @@ class ToggleFullscreenIntent extends Intent {
 
 /// Binds desktop keyboard shortcuts for the ride screen to the same actions
 /// the on-screen controls use: Space (start/pause/resume), L (lap), Esc
-/// (stop, with confirmation), F (fullscreen toggle).
+/// (end & save while a ride is running, or leave the screen when idle), F
+/// (fullscreen toggle).
 class RideKeyboardShortcuts extends ConsumerWidget {
   const RideKeyboardShortcuts({super.key, required this.child});
 
@@ -56,7 +57,18 @@ class RideKeyboardShortcuts extends ConsumerWidget {
             onInvoke: (_) => markLap(context, ref),
           ),
           StopRideIntent: CallbackAction<StopRideIntent>(
-            onInvoke: (_) => confirmStopRide(context, ref),
+            // While a ride is running, Esc ends & saves it (matching the
+            // stop button). When idle there's nothing to stop, so Esc just
+            // leaves the screen instead of trying to stop an idle engine.
+            onInvoke: (_) {
+              if (ref.read(recordingEngineProvider).state ==
+                  RecordingState.idle) {
+                leaveRide(context, ref);
+              } else {
+                confirmStopRide(context, ref);
+              }
+              return null;
+            },
           ),
           ToggleFullscreenIntent: CallbackAction<ToggleFullscreenIntent>(
             onInvoke: (_) => _toggleFullscreen(),

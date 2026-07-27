@@ -215,7 +215,7 @@ class _RideScreenState extends ConsumerState<RideScreen> {
     return PopScope(
       canPop: false,
       onPopInvokedWithResult: (didPop, _) {
-        if (!didPop) _confirmExit(context);
+        if (!didPop) leaveRide(context, ref);
       },
       child: RideKeyboardShortcuts(
         child: Scaffold(
@@ -245,30 +245,6 @@ class _RideScreenState extends ConsumerState<RideScreen> {
         ),
       ),
     );
-  }
-
-  Future<void> _confirmExit(BuildContext context) async {
-    final confirmed = await showDialog<bool>(
-      context: context,
-      builder: (ctx) => AlertDialog(
-        title: const Text('Leave ride?'),
-        content: const Text('Your current ride data will be lost.'),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.of(ctx).pop(false),
-            child: const Text('Stay'),
-          ),
-          TextButton(
-            onPressed: () => Navigator.of(ctx).pop(true),
-            child:
-                const Text('Leave', style: TextStyle(color: Colors.redAccent)),
-          ),
-        ],
-      ),
-    );
-    if (confirmed == true && context.mounted) {
-      Navigator.of(context).pop();
-    }
   }
 
   // ─── Bottom pane — workout HUD / route profile / live chart ───────

@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:go_router/go_router.dart';
 import 'package:mocktail/mocktail.dart';
 
 import 'package:open_bike/core/application/services/recording_engine.dart';
@@ -63,6 +64,31 @@ void main() {
           body: RideKeyboardShortcuts(child: SizedBox.expand()),
         ),
       ),
+    );
+  }
+
+  /// Wraps the shortcuts in a real router (started at `/ride`) so the
+  /// idle-Esc path — which navigates home via `leaveRide` — has somewhere
+  /// to go and can be asserted on.
+  Widget wrapWithRouter() {
+    final router = GoRouter(
+      initialLocation: '/ride',
+      routes: [
+        GoRoute(
+          path: '/ride',
+          builder: (_, __) => const Scaffold(
+            body: RideKeyboardShortcuts(child: SizedBox.expand()),
+          ),
+        ),
+        GoRoute(
+          path: '/',
+          builder: (_, __) => const Scaffold(body: Text('home marker')),
+        ),
+      ],
+    );
+    return ProviderScope(
+      overrides: [recordingEngineProvider.overrideWithValue(engine)],
+      child: MaterialApp.router(routerConfig: router),
     );
   }
 
@@ -138,6 +164,21 @@ void main() {
 
     expect(find.text('End ride?'), findsOneWidget);
     expect(engine.state, RecordingState.recording);
+    await disposeEngine(tester);
+  });
+
+  testWidgets('Esc leaves the screen when idle instead of ending a ride',
+      (tester) async {
+    await tester.pumpWidget(wrapWithRouter());
+    await tester.pumpAndSettle();
+    expect(engine.state, RecordingState.idle);
+
+    await tester.sendKeyEvent(LogicalKeyboardKey.escape);
+    await tester.pumpAndSettle();
+
+    // No "stop & save" prompt for an idle engine — it just leaves.
+    expect(find.text('End ride?'), findsNothing);
+    expect(find.text('home marker'), findsOneWidget);
     await disposeEngine(tester);
   });
 
