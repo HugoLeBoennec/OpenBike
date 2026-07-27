@@ -532,6 +532,10 @@ class _OnboardingScreenState extends ConsumerState<OnboardingScreen> {
       ref.read(pairedDevicesProvider.notifier).state = updated;
       await ref.read(appPreferencesProvider).setPairedDevices(updated);
 
+      ref
+          .read(roleConnectionStatusProvider.notifier)
+          .markConnected(SensorRole.trainer);
+
       setState(() => _deviceConnected = true);
       _nextPage();
     } catch (_) {

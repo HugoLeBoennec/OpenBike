@@ -131,12 +131,12 @@ class _SensorStatusDots extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final paired = ref.watch(pairedDevicesProvider);
-    final status = ref.watch(roleConnectionStatusProvider);
+    final connection = ref.watch(roleConnectionProvider);
 
     return Row(
       mainAxisSize: MainAxisSize.min,
       children: [
-        for (final role in _roles) _dot(role, paired, status),
+        for (final role in _roles) _dot(role, paired, connection),
       ],
     );
   }
@@ -144,10 +144,12 @@ class _SensorStatusDots extends ConsumerWidget {
   Widget _dot(
     SensorRole role,
     PairedDevices paired,
-    Map<SensorRole, bool> status,
+    Map<SensorRole, RoleConnection> connection,
   ) {
     final isPaired = paired.forRole(role) != null;
-    final isConnected = status[role] ?? true;
+    // Paired is a saved preference, not a live connection — only an actual
+    // open port turns the dot green.
+    final isConnected = connection[role] == RoleConnection.connected;
 
     final Color color;
     if (!isPaired) {
@@ -161,7 +163,9 @@ class _SensorStatusDots extends ConsumerWidget {
     return Padding(
       padding: const EdgeInsets.only(left: 4),
       child: Tooltip(
-        message: roleLabel(role),
+        message: isPaired && !isConnected
+            ? '${roleLabel(role)} — not connected'
+            : roleLabel(role),
         child: Icon(Icons.circle, size: 9, color: color),
       ),
     );

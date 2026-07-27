@@ -228,14 +228,34 @@ final pairedDevicesProvider = StateProvider<PairedDevices>((ref) {
 // Per-role connection status (in-ride banner + sensor status dots)
 // ---------------------------------------------------------------------------
 
-/// Tracks connected/disconnected per [SensorRole], derived from
-/// [TrainerEvent]s on the [EventBus] correlated against [PairedDevices].
+/// Live connection state of a [SensorRole]'s paired device.
 ///
-/// A role with no entry in the map means "no disconnect has been observed
-/// yet" rather than "explicitly disconnected" — the `connected` event for a
-/// role fires at pairing time, which may be before this notifier existed
-/// (e.g. paired from the device screen before the ride screen ever mounted).
-class RoleConnectionNotifier extends StateNotifier<Map<SensorRole, bool>> {
+/// [lost] and [notConnected] both mean "no data is flowing", but they need
+/// different UI: a mid-session dropout is retried automatically by
+/// `BleTransport`, whereas a device that never connected is not — the user
+/// has to trigger a reconnect themselves.
+enum RoleConnection {
+  /// A live connection is open.
+  connected,
+
+  /// Was connected during this session and dropped — auto-retry is running.
+  lost,
+
+  /// No connection: never established this session, or an attempt failed.
+  notConnected,
+}
+
+/// Tracks connection state per [SensorRole], from [TrainerEvent]s on the
+/// [EventBus] correlated against [PairedDevices], plus explicit
+/// [markConnected]/[markFailed] calls from the connect paths.
+///
+/// A role with no entry means "nothing observed yet" — callers must treat
+/// that as *unknown*, not *connected*, and fall back to the pairing
+/// service's live ports (see [roleConnectionProvider]). Being paired is a
+/// saved preference that survives restarts; it says nothing about whether
+/// the device is reachable right now.
+class RoleConnectionNotifier
+    extends StateNotifier<Map<SensorRole, RoleConnection>> {
   RoleConnectionNotifier({
     required EventBus eventBus,
     required PairedDevices Function() getPairedDevices,
@@ -249,17 +269,36 @@ class RoleConnectionNotifier extends StateNotifier<Map<SensorRole, bool>> {
 
   void _onEvent(TrainerEvent event) {
     event.map(
-      connected: (e) => _setStatus(e.device.id, true),
-      disconnected: (e) => _setStatus(e.deviceId, false),
+      connected: (e) => _setStatus(e.device.id, RoleConnection.connected),
+      // A drop for a device we'd seen connected — BleTransport retries it.
+      disconnected: (e) => _setStatus(e.deviceId, RoleConnection.lost),
       controlAcquired: (_) {},
       modeChanged: (_) {},
     );
   }
 
-  void _setStatus(String deviceId, bool connected) {
+  /// Records that [role] connected successfully.
+  void markConnected(SensorRole role) {
+    state = {...state, role: RoleConnection.connected};
+  }
+
+  /// Records that a connect attempt for [role] failed. Called by the
+  /// auto-reconnect and manual-connect paths so a failure is visible in the
+  /// UI rather than silently absent.
+  void markFailed(SensorRole role) {
+    state = {...state, role: RoleConnection.notConnected};
+  }
+
+  /// Drops [role]'s entry — used when a role is forgotten, so a later
+  /// re-pair starts from "unknown" rather than a stale verdict.
+  void clearRole(SensorRole role) {
+    state = {...state}..remove(role);
+  }
+
+  void _setStatus(String deviceId, RoleConnection status) {
     final role = _getPairedDevices().roleForDevice(deviceId);
     if (role == null) return;
-    state = {...state, role: connected};
+    state = {...state, role: status};
   }
 
   @override
@@ -269,22 +308,42 @@ class RoleConnectionNotifier extends StateNotifier<Map<SensorRole, bool>> {
   }
 }
 
-final roleConnectionStatusProvider =
-    StateNotifierProvider<RoleConnectionNotifier, Map<SensorRole, bool>>((ref) {
+final roleConnectionStatusProvider = StateNotifierProvider<
+    RoleConnectionNotifier, Map<SensorRole, RoleConnection>>((ref) {
   return RoleConnectionNotifier(
     eventBus: ref.watch(eventBusProvider),
     getPairedDevices: () => ref.read(pairedDevicesProvider),
   );
 });
 
-/// Roles that are paired but whose device reported a disconnect that hasn't
-/// been followed by a reconnect yet — drives the in-ride connection banner.
+/// Resolved connection state for every role — the single source of truth
+/// behind each connection indicator in the UI.
+///
+/// Observed state wins; where nothing has been observed we fall back to
+/// whether [DevicePairingService] actually holds an open port, so a role
+/// can never render as connected merely because a pairing was saved.
+final roleConnectionProvider =
+    Provider<Map<SensorRole, RoleConnection>>((ref) {
+  final observed = ref.watch(roleConnectionStatusProvider);
+  final service = ref.watch(devicePairingServiceProvider);
+  return {
+    for (final role in SensorRole.values)
+      role: observed[role] ??
+          (service.portForRole(role) != null
+              ? RoleConnection.connected
+              : RoleConnection.notConnected),
+  };
+});
+
+/// Roles that are paired but have no live connection — drives the in-ride
+/// connection banner. Covers both a mid-ride dropout and a device that
+/// never came back after a restart.
 final disconnectedPairedRolesProvider = Provider<List<SensorRole>>((ref) {
   final paired = ref.watch(pairedDevicesProvider);
-  final status = ref.watch(roleConnectionStatusProvider);
+  final connection = ref.watch(roleConnectionProvider);
   return [
     for (final role in paired.byRole.keys)
-      if (status[role] == false) role,
+      if (connection[role] != RoleConnection.connected) role,
   ];
 });
 
@@ -321,8 +380,13 @@ final autoReconnectPairedRolesProvider = Provider<void>((ref) {
           ref.read(trainerDeviceProvider.notifier).state = device;
           ref.read(activeTrainerPortProvider.notifier).state = port;
         }
+        ref.read(roleConnectionStatusProvider.notifier).markConnected(role);
         _autoReconnectLog.info('Auto-reconnected $role → ${saved.name}');
       } catch (e) {
+        // Record the failure rather than only logging it — otherwise the
+        // role keeps rendering as connected and the user gets a paired
+        // device that silently produces no data.
+        ref.read(roleConnectionStatusProvider.notifier).markFailed(role);
         _autoReconnectLog.warning(
             'Auto-reconnect failed for $role (${saved.name}): $e');
       }

@@ -72,6 +72,7 @@ class _DeviceScanScreenState extends ConsumerState<DeviceScanScreen> {
     final isScanning = scanState.valueOrNull == BleTransportState.scanning;
     final devMode = ref.watch(devModeProvider);
     final pairedDevices = ref.watch(pairedDevicesProvider);
+    final roleConnection = ref.watch(roleConnectionProvider);
 
     return Scaffold(
       appBar: AppBar(
@@ -86,11 +87,13 @@ class _DeviceScanScreenState extends ConsumerState<DeviceScanScreen> {
             _RoleSlotTile(
               role: role,
               device: pairedDevices.forRole(role),
+              isConnected: roleConnection[role] == RoleConnection.connected,
               isAssigning: _assigningRole == role,
               isConnecting: _connectingRoles.contains(role),
               onTapAssign: () => setState(() {
                 _assigningRole = _assigningRole == role ? null : role;
               }),
+              onReconnect: () => _reconnectRole(role),
               onForget: () => _forgetRole(role),
               onRename: (name) => _renameRole(role, name),
             ),
@@ -326,8 +329,11 @@ class _DeviceScanScreenState extends ConsumerState<DeviceScanScreen> {
       if (!saved.contains(device.id)) {
         ref.read(savedDeviceIdsProvider.notifier).state = [...saved, device.id];
       }
+
+      ref.read(roleConnectionStatusProvider.notifier).markConnected(role);
     } catch (e, st) {
       _log.severe('[BLE-DEBUG] Assign to $role failed: $e', e, st);
+      ref.read(roleConnectionStatusProvider.notifier).markFailed(role);
       if (mounted) {
         setState(() => _bleError = 'Connection failed: $e');
       }
@@ -350,9 +356,28 @@ class _DeviceScanScreenState extends ConsumerState<DeviceScanScreen> {
       ref.read(activeTrainerPortProvider.notifier).state = null;
     }
 
+    ref.read(roleConnectionStatusProvider.notifier).clearRole(role);
+
     final updated = ref.read(pairedDevicesProvider).withoutRole(role);
     ref.read(pairedDevicesProvider.notifier).state = updated;
     await ref.read(appPreferencesProvider).setPairedDevices(updated);
+  }
+
+  /// Retries the connection for an already-paired role — the way back from
+  /// a failed auto-reconnect (device asleep at app start) without having to
+  /// forget the pairing and scan for it again.
+  Future<void> _reconnectRole(SensorRole role) async {
+    final saved = ref.read(pairedDevicesProvider).forRole(role);
+    if (saved == null) return;
+
+    await _assignDevice(
+      role,
+      TrainerDevice(
+        id: saved.deviceId,
+        name: saved.name,
+        protocol: saved.protocol,
+      ),
+    );
   }
 
   Future<void> _renameRole(SensorRole role, String newName) async {
@@ -378,31 +403,40 @@ class _RoleSlotTile extends StatelessWidget {
   const _RoleSlotTile({
     required this.role,
     required this.device,
+    required this.isConnected,
     required this.isAssigning,
     required this.isConnecting,
     required this.onTapAssign,
+    required this.onReconnect,
     required this.onForget,
     required this.onRename,
   });
 
   final SensorRole role;
   final PairedDevice? device;
+
+  /// Whether the paired device actually has a live connection right now —
+  /// distinct from [device] being non-null, which only means a pairing was
+  /// saved (and survives app restarts regardless of reachability).
+  final bool isConnected;
   final bool isAssigning;
   final bool isConnecting;
   final VoidCallback onTapAssign;
+  final VoidCallback onReconnect;
   final VoidCallback onForget;
   final ValueChanged<String> onRename;
 
   @override
   Widget build(BuildContext context) {
     final assigned = device != null;
+    final live = assigned && isConnected;
 
     final tokens = context.tokens;
     return Container(
       key: ValueKey('role-slot-${role.name}'),
       margin: const EdgeInsets.symmetric(horizontal: 12, vertical: 2),
       decoration: BoxDecoration(
-        color: assigned
+        color: live
             ? Colors.green.withValues(alpha: 0.12)
             : isAssigning
                 ? Colors.amber.withValues(alpha: 0.12)
@@ -415,16 +449,25 @@ class _RoleSlotTile extends StatelessWidget {
       child: ListTile(
         leading: Icon(
           roleIcon(role),
-          color: assigned ? Colors.green : tokens.textDisabled,
+          color: live ? Colors.green : tokens.textDisabled,
         ),
         title: Text(
           roleLabel(role),
           style: TextStyle(color: tokens.textPrimary, fontWeight: FontWeight.w600),
         ),
         subtitle: Text(
-          assigned ? device!.name : 'Tap to assign',
+          switch ((assigned, live, isConnecting)) {
+            (false, _, _) => 'Tap to assign',
+            (_, _, true) => 'Connecting to ${device!.name}…',
+            (_, true, _) => device!.name,
+            _ => '${device!.name} — not connected, tap to reconnect',
+          },
           style: TextStyle(
-            color: assigned ? tokens.textSecondary : tokens.textDisabled,
+            color: live
+                ? tokens.textSecondary
+                : assigned && !isConnecting
+                    ? Colors.orange
+                    : tokens.textDisabled,
             fontSize: 12,
           ),
         ),
@@ -438,6 +481,14 @@ class _RoleSlotTile extends StatelessWidget {
                 mainAxisSize: MainAxisSize.min,
                 children: [
                   if (assigned) ...[
+                    if (!live)
+                      IconButton(
+                        key: ValueKey('reconnect-${role.name}'),
+                        tooltip: 'Reconnect',
+                        icon: const Icon(Icons.refresh,
+                            color: Colors.orange, size: 20),
+                        onPressed: onReconnect,
+                      ),
                     IconButton(
                       key: ValueKey('rename-${role.name}'),
                       icon: Icon(Icons.edit, color: tokens.textDisabled, size: 20),
@@ -455,7 +506,15 @@ class _RoleSlotTile extends StatelessWidget {
                     ),
                 ],
               ),
-        onTap: assigned ? null : onTapAssign,
+        // An assigned-but-disconnected slot retries the connection; an empty
+        // slot starts the assign flow. A live one has nothing to do.
+        onTap: isConnecting
+            ? null
+            : !assigned
+                ? onTapAssign
+                : live
+                    ? null
+                    : onReconnect,
       ),
     );
   }

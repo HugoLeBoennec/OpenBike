@@ -175,6 +175,64 @@ void main() {
     expect(fused.heartRate?.bpm, 151); // dedicated HR strap wins fusion
   });
 
+  testWidgets(
+      'a saved pairing with no live connection reads as not connected, and '
+      'the reconnect action connects it', (tester) async {
+    final registry = PluginRegistry();
+    final hrPlugin = FakeDevicePlugin(DeviceProtocol.bleHr);
+    registry.registerDevice(hrPlugin);
+
+    // Simulates a fresh app launch: the pairing was restored from prefs, but
+    // nothing has actually connected (device was off/asleep, or the one-shot
+    // auto-reconnect failed).
+    final paired = const PairedDevices().withRole(
+      SensorRole.heartRate,
+      const PairedDevice(
+        deviceId: 'hrm-1',
+        name: 'TICKR',
+        protocol: DeviceProtocol.bleHr,
+      ),
+    );
+
+    late ProviderContainer container;
+    await tester.pumpWidget(_wrap(
+      overrides: [
+        pluginRegistryProvider.overrideWithValue(registry),
+        appPreferencesProvider.overrideWithValue(await _fakePrefs()),
+        pairedDevicesProvider.overrideWith((ref) => paired),
+        bleScanResultsProvider
+            .overrideWith((ref) => Stream.value(<BleScannedDevice>[])),
+        bleScanStateProvider
+            .overrideWith((ref) => Stream.value(BleTransportState.idle)),
+      ],
+      captureContainer: (c) => container = c,
+    ));
+    await tester.pumpAndSettle();
+
+    // The saved pairing must not masquerade as a live connection.
+    expect(
+      container.read(roleConnectionProvider)[SensorRole.heartRate],
+      RoleConnection.notConnected,
+    );
+    expect(
+      find.text('TICKR — not connected, tap to reconnect'),
+      findsOneWidget,
+    );
+    expect(hrPlugin.connectedPorts, isEmpty);
+
+    // Retry without having to forget and re-scan.
+    await tester.tap(find.byKey(const ValueKey('reconnect-heartRate')));
+    await tester.pumpAndSettle();
+
+    expect(hrPlugin.connectedPorts, hasLength(1));
+    expect(
+      container.read(roleConnectionProvider)[SensorRole.heartRate],
+      RoleConnection.connected,
+    );
+    expect(find.text('TICKR'), findsOneWidget);
+    expect(find.byKey(const ValueKey('reconnect-heartRate')), findsNothing);
+  });
+
   testWidgets('forget clears the role slot, disconnects, and persists',
       (tester) async {
     final registry = PluginRegistry();

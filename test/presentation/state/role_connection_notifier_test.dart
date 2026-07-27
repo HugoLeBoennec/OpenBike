@@ -38,7 +38,9 @@ void main() {
   });
 
   group('roleConnectionStatusProvider', () {
-    test('has no entries before any TrainerEvent fires', () {
+    test(
+        'a paired role with no live port reads as notConnected, not connected',
+        () {
       final paired = const PairedDevices().withRole(
         SensorRole.trainer,
         const PairedDevice(
@@ -46,12 +48,49 @@ void main() {
       );
       final container = _makeContainer(eventBus, paired);
 
+      // Nothing observed yet…
       expect(container.read(roleConnectionStatusProvider), isEmpty);
-      expect(container.read(disconnectedPairedRolesProvider), isEmpty);
+      // …but a saved pairing alone must never imply a live connection.
+      expect(container.read(roleConnectionProvider)[SensorRole.trainer],
+          RoleConnection.notConnected);
+      expect(container.read(disconnectedPairedRolesProvider),
+          [SensorRole.trainer]);
     });
 
-    test('marks a role disconnected when its paired device disconnects',
-        () async {
+    test('markFailed records a failed connect attempt as notConnected', () {
+      final paired = const PairedDevices().withRole(
+        SensorRole.trainer,
+        const PairedDevice(
+            deviceId: 'trainer-1', name: 'Kickr', protocol: DeviceProtocol.bleFtms),
+      );
+      final container = _makeContainer(eventBus, paired);
+
+      container
+          .read(roleConnectionStatusProvider.notifier)
+          .markFailed(SensorRole.trainer);
+
+      expect(container.read(roleConnectionProvider)[SensorRole.trainer],
+          RoleConnection.notConnected);
+    });
+
+    test('markConnected then clearRole resets the role to unknown', () {
+      final paired = const PairedDevices().withRole(
+        SensorRole.trainer,
+        const PairedDevice(
+            deviceId: 'trainer-1', name: 'Kickr', protocol: DeviceProtocol.bleFtms),
+      );
+      final container = _makeContainer(eventBus, paired);
+      final notifier = container.read(roleConnectionStatusProvider.notifier);
+
+      notifier.markConnected(SensorRole.trainer);
+      expect(container.read(roleConnectionProvider)[SensorRole.trainer],
+          RoleConnection.connected);
+
+      notifier.clearRole(SensorRole.trainer);
+      expect(container.read(roleConnectionStatusProvider), isEmpty);
+    });
+
+    test('marks a role lost when its paired device disconnects', () async {
       final paired = const PairedDevices().withRole(
         SensorRole.trainer,
         const PairedDevice(
@@ -64,7 +103,7 @@ void main() {
       await pumpEventQueue(); // EventBus listeners fire asynchronously
 
       expect(container.read(roleConnectionStatusProvider)[SensorRole.trainer],
-          isFalse);
+          RoleConnection.lost);
       expect(container.read(disconnectedPairedRolesProvider),
           [SensorRole.trainer]);
     });
@@ -107,6 +146,13 @@ void main() {
               const PairedDevice(deviceId: 'hrm-1', name: 'TICKR', protocol: DeviceProtocol.bleHr));
       final container = _makeContainer(eventBus, paired);
       container.read(roleConnectionStatusProvider);
+
+      // Bring both roles up first, so a later drop is attributable to the
+      // one device rather than to "never connected".
+      eventBus.fire(const TrainerEvent.connected(_trainer));
+      eventBus.fire(const TrainerEvent.connected(_hrm));
+      await pumpEventQueue();
+      expect(container.read(disconnectedPairedRolesProvider), isEmpty);
 
       eventBus.fire(const TrainerEvent.disconnected('trainer-1'));
       await pumpEventQueue();
