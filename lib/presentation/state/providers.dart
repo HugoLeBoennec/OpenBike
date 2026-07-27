@@ -355,8 +355,11 @@ final _autoReconnectLog = Logger('AutoReconnectPairedRoles');
 /// A [Provider] body only runs once per [ProviderScope] lifetime — reading
 /// [pairedDevicesProvider] with `ref.read` (a snapshot, not a subscription)
 /// means this fires exactly once rather than on every future role change.
-/// Each role's reconnect is independent and best-effort: a failure is
-/// logged and skipped so one missing device doesn't block the others.
+///
+/// Roles are reconnected **concurrently**: a device that isn't powered on
+/// burns the full BLE connect timeout (15s), and connecting them in
+/// sequence made one absent device delay every other device behind it by
+/// that much — a trainer left off would stall a worn HR strap for 15s.
 final autoReconnectPairedRolesProvider = Provider<void>((ref) {
   if (ref.watch(devModeProvider)) return; // simulator builds skip real BLE
 
@@ -364,35 +367,45 @@ final autoReconnectPairedRolesProvider = Provider<void>((ref) {
   final service = ref.read(devicePairingServiceProvider);
 
   Future.microtask(() async {
-    for (final entry in paired.byRole.entries) {
-      final role = entry.key;
-      final saved = entry.value;
-      if (service.portForRole(role) != null) continue;
-
-      final device = TrainerDevice(
-        id: saved.deviceId,
-        name: saved.name,
-        protocol: saved.protocol,
-      );
-      try {
-        final port = await service.assign(role, device);
-        if (role == SensorRole.trainer) {
-          ref.read(trainerDeviceProvider.notifier).state = device;
-          ref.read(activeTrainerPortProvider.notifier).state = port;
-        }
-        ref.read(roleConnectionStatusProvider.notifier).markConnected(role);
-        _autoReconnectLog.info('Auto-reconnected $role → ${saved.name}');
-      } catch (e) {
-        // Record the failure rather than only logging it — otherwise the
-        // role keeps rendering as connected and the user gets a paired
-        // device that silently produces no data.
-        ref.read(roleConnectionStatusProvider.notifier).markFailed(role);
-        _autoReconnectLog.warning(
-            'Auto-reconnect failed for $role (${saved.name}): $e');
-      }
-    }
+    await Future.wait([
+      for (final entry in paired.byRole.entries)
+        _reconnectRole(ref, service, entry.key, entry.value),
+    ]);
   });
 });
+
+/// Reconnects one saved role, best-effort. Never throws — a failure is
+/// recorded and logged so it can't take down the other roles' attempts.
+Future<void> _reconnectRole(
+  Ref ref,
+  DevicePairingService service,
+  SensorRole role,
+  PairedDevice saved,
+) async {
+  if (service.portForRole(role) != null) return;
+
+  final device = TrainerDevice(
+    id: saved.deviceId,
+    name: saved.name,
+    protocol: saved.protocol,
+  );
+  try {
+    final port = await service.assign(role, device);
+    if (role == SensorRole.trainer) {
+      ref.read(trainerDeviceProvider.notifier).state = device;
+      ref.read(activeTrainerPortProvider.notifier).state = port;
+    }
+    ref.read(roleConnectionStatusProvider.notifier).markConnected(role);
+    _autoReconnectLog.info('Auto-reconnected $role → ${saved.name}');
+  } catch (e) {
+    // Record the failure rather than only logging it — otherwise the role
+    // keeps rendering as connected and the user gets a paired device that
+    // silently produces no data.
+    ref.read(roleConnectionStatusProvider.notifier).markFailed(role);
+    _autoReconnectLog.warning(
+        'Auto-reconnect failed for $role (${saved.name}): $e');
+  }
+}
 
 // ---------------------------------------------------------------------------
 // Dev mode + simulator

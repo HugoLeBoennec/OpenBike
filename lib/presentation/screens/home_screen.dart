@@ -132,16 +132,37 @@ class HomeScreen extends ConsumerWidget {
 class _DeviceStatusSection extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    final device = ref.watch(trainerDeviceProvider);
+    // Covers every paired role, not just the trainer — a connected HR strap
+    // used to read as "No device connected" here because this card only
+    // ever looked at trainerDeviceProvider.
+    final paired = ref.watch(pairedDevicesProvider);
+    final connection = ref.watch(roleConnectionProvider);
     final tokens = context.tokens;
+
+    final connectedNames = [
+      for (final entry in paired.byRole.entries)
+        if (connection[entry.key] == RoleConnection.connected) entry.value.name,
+    ];
+    final pairedCount = paired.byRole.length;
+    final anyConnected = connectedNames.isNotEmpty;
+
+    final String status;
+    if (pairedCount == 0) {
+      status = 'No device paired';
+    } else if (!anyConnected) {
+      status = 'Not connected — tap to reconnect';
+    } else if (connectedNames.length < pairedCount) {
+      status = '${connectedNames.join(', ')}  •  '
+          '${connectedNames.length}/$pairedCount connected';
+    } else {
+      status = connectedNames.join(', ');
+    }
 
     return InkWell(
       borderRadius: BorderRadius.circular(12),
       onTap: () => context.push('/scan'),
       child: Semantics(
-        label: device != null
-            ? 'Devices, connected to ${device.name}'
-            : 'Devices, no device connected',
+        label: 'Devices, $status',
         button: true,
         child: Container(
           padding: const EdgeInsets.all(12),
@@ -153,7 +174,7 @@ class _DeviceStatusSection extends ConsumerWidget {
             children: [
               Icon(
                 Icons.bluetooth,
-                color: device != null ? Colors.green : tokens.textDisabled,
+                color: anyConnected ? Colors.green : tokens.textDisabled,
                 size: 24,
               ),
               const SizedBox(width: 12),
@@ -166,16 +187,20 @@ class _DeviceStatusSection extends ConsumerWidget {
                             color: tokens.textPrimary,
                             fontWeight: FontWeight.w600)),
                     Text(
-                      device != null ? device.name : 'No device connected',
-                      style:
-                          TextStyle(color: tokens.textTertiary, fontSize: 12),
+                      status,
+                      style: TextStyle(
+                        color: pairedCount > 0 && !anyConnected
+                            ? Colors.orange
+                            : tokens.textTertiary,
+                        fontSize: 12,
+                      ),
                     ),
                   ],
                 ),
               ),
               Icon(
-                device != null ? Icons.circle : Icons.circle_outlined,
-                color: device != null
+                anyConnected ? Icons.circle : Icons.circle_outlined,
+                color: anyConnected
                     ? Colors.green
                     : Colors.red.withValues(alpha: 0.5),
                 size: 10,
