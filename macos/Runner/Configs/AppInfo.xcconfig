@@ -5,10 +5,13 @@
 // 'flutter create' template.
 
 // The application's name. By default this is also the title of the Flutter window.
-PRODUCT_NAME = open_bike
+// Info.plist maps CFBundleName to this, and macOS draws the application menu
+// from CFBundleName — so this must be the display name, not the pubspec
+// package name.
+PRODUCT_NAME = OpenBike
 
 // The application's bundle identifier
 PRODUCT_BUNDLE_IDENTIFIER = com.openbike.openBike
 
 // The copyright displayed in application information
-PRODUCT_COPYRIGHT = Copyright © 2026 com.openbike. All rights reserved.
+PRODUCT_COPYRIGHT = Copyright © 2026 Hugo Le Boennec and OpenBike contributors. Licensed under the Apache License, Version 2.0.

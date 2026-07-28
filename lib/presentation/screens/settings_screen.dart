@@ -17,6 +17,7 @@ class SettingsScreen extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final profile = ref.watch(userProfileProvider);
     final formatter = ref.watch(unitFormatterProvider);
+    final version = ref.watch(appVersionProvider);
 
     return Scaffold(
       appBar: AppBar(
@@ -119,8 +120,8 @@ class SettingsScreen extends ConsumerWidget {
           _SettingsTile(
             icon: Icons.info_outline,
             title: 'OpenBike',
-            value: 'v1.0.0',
-            onTap: () {},
+            value: version.isEmpty ? '' : 'v$version',
+            onTap: () => _showAbout(context, version),
           ),
           _SettingsTile(
             icon: Icons.description_outlined,
@@ -129,7 +130,7 @@ class SettingsScreen extends ConsumerWidget {
             onTap: () => showLicensePage(
               context: context,
               applicationName: 'OpenBike',
-              applicationVersion: '1.0.0',
+              applicationVersion: version,
             ),
           ),
           _SettingsTile(
@@ -288,6 +289,25 @@ class SettingsScreen extends ConsumerWidget {
 
   void _saveProfile(WidgetRef ref, UserProfile profile) {
     ref.read(storageProvider).saveProfile(profile);
+  }
+
+  /// Material's About dialog — carries the app identity, version, and
+  /// licence notice, and wires straight through to the same
+  /// [showLicensePage] the tile below the About tile opens.
+  void _showAbout(BuildContext context, String version) {
+    showAboutDialog(
+      context: context,
+      applicationName: 'OpenBike',
+      applicationVersion: version,
+      applicationIcon: const Icon(
+        Icons.pedal_bike,
+        size: 48,
+        color: Colors.deepOrange,
+      ),
+      applicationLegalese:
+          'Copyright © 2026 Hugo Le Boennec and OpenBike contributors.\n'
+          'Licensed under the Apache License, Version 2.0.',
+    );
   }
 }
 
