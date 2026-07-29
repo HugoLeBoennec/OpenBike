@@ -71,6 +71,13 @@ dependencies:
   # Preferences
   shared_preferences: ^2.3.4
 
+  # App version/build number for the About dialog — read from the platform
+  # bundle so it always matches pubspec's `version:` instead of being
+  # hand-synced string literals (see docs/release/checklist.md §1).
+  # Already resolved transitively via sentry_flutter; pinned directly
+  # since we call into it too.
+  package_info_plus: ^9.0.0
+
   # Screen wakelock
   wakelock_plus: ^1.2.8
 

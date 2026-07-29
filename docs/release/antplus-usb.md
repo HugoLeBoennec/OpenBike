@@ -52,7 +52,7 @@ app to be open source, but the license text must ship alongside the binary.
 2. **macOS**: add the `.dylib` under `macos/Runner/` and wire it into
    `macos/Runner.xcodeproj` as an embedded framework/library (a "Copy
    Files" build phase, `Frameworks` destination) so it lands in
-   `open_bike.app/Contents/Frameworks/` — same mechanism the `quick_usb`
+   `OpenBike.app/Contents/Frameworks/` — same mechanism the `quick_usb`
    pub package uses for its own bundled `libusb-1.0.dylib`
    (`s.vendored_libraries` in a podspec is the CocoaPods equivalent if this
    ever moves to a plugin package instead of an app-local binary).

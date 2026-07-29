@@ -146,12 +146,12 @@ jobs:
           codesign --deep --force --options runtime \
             --entitlements macos/Runner/Release.entitlements \
             --sign "$MACOS_SIGNING_IDENTITY" \
-            "build/macos/Build/Products/Release/open_bike.app"
+            "build/macos/Build/Products/Release/OpenBike.app"
       - name: Package DMG
         run: |
           brew install create-dmg
           create-dmg --overwrite --dmg-title OpenBike OpenBike.dmg \
-            "build/macos/Build/Products/Release/open_bike.app"
+            "build/macos/Build/Products/Release/OpenBike.app"
       - name: Notarize
         if: ${{ secrets.MACOS_CERTIFICATE_P12 != '' }}
         env:
@@ -213,7 +213,7 @@ jobs:
       - name: Install Linux build dependencies
         run: |
           sudo apt-get update
-          sudo apt-get install -y ninja-build libgtk-3-dev libsecret-1-dev libjsoncpp-dev
+          sudo apt-get install -y ninja-build libgtk-3-dev libsecret-1-dev libjsoncpp-dev libcurl4-openssl-dev
       - uses: subosito/flutter-action@v2
         with:
           flutter-version: ${{ env.FLUTTER_VERSION }}

@@ -3,6 +3,7 @@ import 'dart:io' show Platform;
 
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:logging/logging.dart';
+import 'package:package_info_plus/package_info_plus.dart';
 
 import '../../core/domain/entities/entities.dart';
 import '../../core/domain/ports/storage_port.dart';
@@ -44,6 +45,28 @@ final pluginRegistryProvider = Provider<PluginRegistry>((ref) {
   final registry = PluginRegistry();
   ref.onDispose(registry.disposeAll);
   return registry;
+});
+
+// ---------------------------------------------------------------------------
+// App metadata
+// ---------------------------------------------------------------------------
+
+/// Version and build number read from the platform bundle, so the About
+/// screen always reflects `pubspec.yaml`'s `version:` (and the store build
+/// number derived from it) rather than a hand-synced string literal.
+final packageInfoProvider = FutureProvider<PackageInfo>((ref) {
+  return PackageInfo.fromPlatform();
+});
+
+/// Display form of [packageInfoProvider] — `1.0.0 (1)`. Empty while the
+/// platform channel call is still in flight, and on the error path: a
+/// version string is decoration on the About screen, never worth an error
+/// state in the UI.
+final appVersionProvider = Provider<String>((ref) {
+  return ref.watch(packageInfoProvider).maybeWhen(
+        data: (info) => '${info.version} (${info.buildNumber})',
+        orElse: () => '',
+      );
 });
 
 // ---------------------------------------------------------------------------

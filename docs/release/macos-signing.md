@@ -51,7 +51,7 @@ pattern as `STRAVA_CLIENT_ID`/`STRAVA_CLIENT_SECRET` (see
 
 ## What the release job does (tag-triggered, `macos` job in `.github/workflows/release.yml`)
 
-1. `flutter build macos --release` — produces `build/macos/Build/Products/Release/open_bike.app`.
+1. `flutter build macos --release` — produces `build/macos/Build/Products/Release/OpenBike.app`.
 2. If `MACOS_CERTIFICATE_P12` is set: import the cert into a temporary
    keychain, `codesign --deep --force --options runtime --entitlements
    macos/Runner/Release.entitlements --sign "$MACOS_SIGNING_IDENTITY"` the
