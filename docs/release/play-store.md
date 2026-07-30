@@ -2,11 +2,18 @@
 
 ## App identity
 
-- Package name: `com.openbike.open_bike` (`android/app/build.gradle.kts`)
-- `compileSdk 36`, `targetSdk 35`, `minSdk 23` (Android 6.0+) — targetSdk
-  meets Play's "target API level" requirement as of this writing; bump it
-  each year Play raises the bar (usually alongside a Flutter SDK bump in
-  `.github/workflows/ci.yml`'s `FLUTTER_VERSION`).
+- Package name: `com.openbike.open_bike` (`android/app/build.gradle.kts`) —
+  permanent once the first bundle is uploaded to Play; it can never be
+  changed for this listing.
+- `compileSdk 36`, `targetSdk 36`, `minSdk` inherited from
+  `flutter.minSdkVersion` (24 / Android 7.0+ on Flutter 3.41).
+- **Play target-API deadline: 2026-08-31.** From that date new apps *and*
+  updates must target API 36 or Play Console rejects the upload; an
+  extension to 2026-11-01 can be requested. `targetSdk` is already 36, so
+  this is satisfied — bump it again each year Play raises the bar (usually
+  alongside a Flutter SDK bump in `.github/workflows/ci.yml`'s
+  `FLUTTER_VERSION`). See
+  <https://support.google.com/googleplay/android-developer/answer/11926878>.
 - Category: **Health & Fitness** (or **Sports**, whichever a maintainer
   prefers at listing time — both fit).
 

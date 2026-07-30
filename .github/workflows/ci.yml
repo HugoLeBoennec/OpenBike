@@ -8,7 +8,7 @@ on:
 
 env:
   # pubspec.lock was generated with dart >=3.10 / flutter >=3.38 — keep in sync.
-  FLUTTER_VERSION: '3.38.x'
+  FLUTTER_VERSION: '3.41.x'
 
 jobs:
   analyze:
