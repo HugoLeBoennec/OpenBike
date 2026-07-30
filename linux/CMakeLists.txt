@@ -131,6 +131,15 @@ install(CODE "
 install(DIRECTORY "${PROJECT_BUILD_DIR}/${FLUTTER_ASSET_DIR_NAME}"
   DESTINATION "${INSTALL_BUNDLE_DATA_DIR}" COMPONENT Runtime)
 
+# Ship the hicolor icon theme and desktop entry inside the bundle. The runner
+# reads the icons from here at startup to set its own window icon (see
+# my_application.cc), and distro packaging can install both trees into
+# /usr/share as-is.
+install(DIRECTORY "${CMAKE_CURRENT_SOURCE_DIR}/icons"
+  DESTINATION "${INSTALL_BUNDLE_DATA_DIR}" COMPONENT Runtime)
+install(FILES "${CMAKE_CURRENT_SOURCE_DIR}/${APPLICATION_ID}.desktop"
+  DESTINATION "${INSTALL_BUNDLE_DATA_DIR}/applications" COMPONENT Runtime)
+
 # Install the AOT library on non-Debug builds only.
 if(NOT CMAKE_BUILD_TYPE MATCHES "Debug")
   install(FILES "${AOT_LIBRARY}" DESTINATION "${INSTALL_BUNDLE_LIB_DIR}"

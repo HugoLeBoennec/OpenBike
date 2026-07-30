@@ -1,0 +1,14 @@
+[Desktop Entry]
+Type=Application
+Name=OpenBike
+GenericName=Indoor Cycling
+Comment=Smart trainer control, structured workouts, and route simulation
+Exec=open_bike
+Icon=com.openbike.open_bike
+Terminal=false
+Categories=Utility;Sports;
+Keywords=cycling;trainer;workout;bike;fitness;ftms;ant+;
+# GTK derives WM_CLASS from the program name (BINARY_NAME in CMakeLists.txt),
+# not from the application id, so this must stay in sync with the executable
+# name or the shell will not match a running window to this entry.
+StartupWMClass=open_bike
