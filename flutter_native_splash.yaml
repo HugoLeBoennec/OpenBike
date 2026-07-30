@@ -1,6 +1,8 @@
 flutter_native_splash:
   color: "#000000"
   image: "assets/icon/app_icon.png"
+  # Web is out of scope for now — leave web/ untouched.
+  web: false
   android_12:
     color: "#000000"
     image: "assets/icon/app_icon.png"

@@ -14,6 +14,42 @@ struct _MyApplication {
 
 G_DEFINE_TYPE(MyApplication, my_application, GTK_TYPE_APPLICATION)
 
+// Applies the bundled application icon to the window.
+//
+// A desktop-file install lets the shell resolve the icon by application id, but
+// the release artifact is a relocatable tarball (see .github/workflows/
+// release.yml) that is extracted and run in place, with nothing registered in
+// the system icon theme. So resolve the bundled hicolor theme relative to the
+// executable and set the icon on the window directly, which covers both cases.
+static void my_application_set_window_icon(GtkWindow* window) {
+  g_autofree gchar* exe_path = g_file_read_link("/proc/self/exe", nullptr);
+  if (exe_path == nullptr) {
+    return;
+  }
+  g_autofree gchar* exe_dir = g_path_get_dirname(exe_path);
+
+  // Offer every size and let the window manager pick the closest match, rather
+  // than making it rescale a single bitmap.
+  const int icon_sizes[] = {16, 24, 32, 48, 64, 128, 256, 512};
+  GList* icons = nullptr;
+  for (gsize i = 0; i < G_N_ELEMENTS(icon_sizes); i++) {
+    g_autofree gchar* size_dir =
+        g_strdup_printf("%dx%d", icon_sizes[i], icon_sizes[i]);
+    g_autofree gchar* icon_path =
+        g_build_filename(exe_dir, "data", "icons", "hicolor", size_dir, "apps",
+                         APPLICATION_ID ".png", nullptr);
+    GdkPixbuf* icon = gdk_pixbuf_new_from_file(icon_path, nullptr);
+    if (icon != nullptr) {
+      icons = g_list_prepend(icons, icon);
+    }
+  }
+
+  if (icons != nullptr) {
+    gtk_window_set_icon_list(window, icons);
+    g_list_free_full(icons, g_object_unref);
+  }
+}
+
 // Implements GApplication::activate.
 static void my_application_activate(GApplication* application) {
   MyApplication* self = MY_APPLICATION(application);
@@ -46,6 +82,8 @@ static void my_application_activate(GApplication* application) {
   } else {
     gtk_window_set_title(window, "OpenBike");
   }
+
+  my_application_set_window_icon(window);
 
   gtk_window_set_default_size(window, 1280, 720);
   gtk_widget_show(GTK_WIDGET(window));
