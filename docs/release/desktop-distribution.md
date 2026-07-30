@@ -89,7 +89,7 @@ is publishing through a distro/store that builds and signs on its own infra.
 The `linux` job tars up `build/linux/x64/release/bundle`. That works, but the
 user must already have the runtime libraries installed — `libgtk-3-0`,
 `libsecret-1-0`, `libjsoncpp`, `libcurl`, plus a running BlueZ — and
-`linux/com.openbike.open_bike.desktop` isn't installed anywhere, so there's no
+`linux/run.records.openbike.desktop` isn't installed anywhere, so there's no
 menu entry or icon.
 
 ### Options

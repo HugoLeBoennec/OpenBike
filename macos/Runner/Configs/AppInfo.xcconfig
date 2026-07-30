@@ -11,7 +11,7 @@
 PRODUCT_NAME = OpenBike
 
 // The application's bundle identifier
-PRODUCT_BUNDLE_IDENTIFIER = com.openbike.openBike
+PRODUCT_BUNDLE_IDENTIFIER = run.records.openbike
 
 // The copyright displayed in application information
 PRODUCT_COPYRIGHT = Copyright © 2026 Hugo Le Boennec and OpenBike contributors. Licensed under the Apache License, Version 2.0.

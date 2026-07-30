@@ -12,20 +12,24 @@ that dominates the whole schedule.
 
 | Decision | Current value | Can it change later? |
 |---|---|---|
-| iOS/macOS bundle ID | `com.openbike.openBike` | **No**, once uploaded to App Store Connect |
-| Android package name | `com.openbike.open_bike` | **No**, once uploaded to Play |
+| iOS/macOS bundle ID | `run.records.openbike` | **No**, once uploaded to App Store Connect |
+| Android package name | `run.records.openbike` | **No**, once uploaded to Play |
 | App Store app name | `OpenBike` | Renamable, but must be globally unique at creation |
 | Play developer account type | *undecided* | **No** — see §2, this is the big one |
 | Apple account type | *undecided* | Switching individual → organization means re-enrolling |
 
-The iOS and Android identifiers differ (`openBike` vs `open_bike`). That is
-harmless — Apple and Google are separate namespaces and neither cares what the
-other uses — but check both are actually free before enrolling, because you
-only find out at creation time.
+The same identifier is used on both platforms — Apple and Google are separate
+namespaces, so this is allowed and keeps things simple. Check it is actually
+free on both before enrolling; you only find out at creation time.
 
-`com.openbike.*` is reverse-DNS for a domain you may not own. Neither store
-verifies this, so it is fine in practice; only revisit if you later acquire a
-domain you'd rather key the identity to.
+`run.records.openbike` is reverse-DNS for `records.run`, a domain the
+maintainer owns, which is the convention. Note this permanently files the
+project under the Records namespace — it is visible in the Play listing URL
+(`play.google.com/store/apps/details?id=run.records.openbike`) and in Android's
+app info screen, and cannot follow OpenBike if it ever moves to its own domain.
+
+The `com.openbike.format.*` ids in `lib/infrastructure/files/` are **file-format
+plugin identifiers, not app identifiers** — leave them alone.
 
 ## 1. Apple — $99/year, 1–2 days
 
@@ -43,7 +47,7 @@ One membership covers iOS, macOS, TestFlight and notarization.
 ### 1b. Register the App ID
 
 <https://developer.apple.com/account/resources/identifiers/list> → `+` →
-App IDs → App → Bundle ID `com.openbike.openBike` (explicit, not wildcard).
+App IDs → App → Bundle ID `run.records.openbike` (explicit, not wildcard).
 
 OpenBike needs **no** extra capabilities enabled here. Its Bluetooth usage,
 background mode and `openbike://` URL scheme are all declared in
@@ -118,7 +122,7 @@ base64 -i OpenBike_AppStore.mobileprovision | pbcopy   # → IOS_PROVISIONING_PR
   <true/>
   <key>provisioningProfiles</key>
   <dict>
-    <key>com.openbike.openBike</key>
+    <key>run.records.openbike</key>
     <string>OpenBike App Store</string>
   </dict>
 </dict>

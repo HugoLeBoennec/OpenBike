@@ -2,7 +2,7 @@
 
 ## App identity
 
-- Package name: `com.openbike.open_bike` (`android/app/build.gradle.kts`) —
+- Package name: `run.records.openbike` (`android/app/build.gradle.kts`) —
   permanent once the first bundle is uploaded to Play; it can never be
   changed for this listing.
 - `compileSdk 36`, `targetSdk 36`, `minSdk` inherited from
