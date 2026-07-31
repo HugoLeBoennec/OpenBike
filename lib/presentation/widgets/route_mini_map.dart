@@ -62,7 +62,11 @@ class RouteMiniMap extends StatelessWidget {
       children: [
         TileLayer(
           urlTemplate: 'https://tile.openstreetmap.org/{z}/{x}/{y}.png',
-          userAgentPackageName: 'org.openbike.app',
+          // Must stay in sync with the app id in android/app/build.gradle.kts
+          // and the Xcode bundle id: OSM's tile usage policy requires a valid
+          // identifying User-Agent and blocks traffic that doesn't have one.
+          // https://operations.osmfoundation.org/policies/tiles/
+          userAgentPackageName: 'run.records.openbike',
         ),
         PolylineLayer(
           polylines: [
