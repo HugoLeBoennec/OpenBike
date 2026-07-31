@@ -10,8 +10,11 @@ leaves your device.
 
 - **Your ride, workout, and profile data stays on your device** in a local
   SQLite database. OpenBike has no backend server and no account system.
-- **Nothing is uploaded unless you explicitly connect a third-party
+- **No ride data is uploaded unless you explicitly connect a third-party
   service** (e.g. Strava) and choose to export a ride to it.
+- The one automatic exception is **map tiles**: viewing a route map fetches
+  map images from OpenStreetMap, which necessarily reveals the map area
+  you're viewing. See "Maps" below.
 - **Crash reporting is off by default** and, if you opt in, never includes
   ride data, location, or personal information.
 - OpenBike does not use analytics, advertising SDKs, or any form of
@@ -27,6 +30,7 @@ leaves your device.
 | Bluetooth sensor data (power, cadence, heart rate, speed) | Processed in memory, persisted locally as part of a ride recording | No |
 | Strava OAuth token (if connected) | Device secure storage (`flutter_secure_storage` — OS keychain/keystore) | Sent to Strava's API only when you upload a ride or disconnect |
 | Crash reports (if opted in) | N/A — sent directly to Sentry | Stack traces and basic app/OS version only; see below |
+| Map tile requests (when a route map is on screen) | Not stored | Map area being viewed + your IP go to OpenStreetMap; see "Maps" |
 
 ## Bluetooth
 
@@ -45,6 +49,22 @@ to that service when you tap "upload" (or enable auto-upload) for a
 specific ride. Disconnecting revokes and deletes the locally stored token.
 See each service's own privacy policy for how they handle data you send
 them (e.g. [Strava's privacy policy](https://www.strava.com/legal/privacy)).
+
+## Maps
+
+When a screen shows a route on a map, OpenBike downloads map tile images
+from the OpenStreetMap Foundation's public tile servers
+(`tile.openstreetmap.org`). Those requests necessarily tell OpenStreetMap
+which map area is being displayed — which corresponds to the area of the
+route you're viewing — along with your IP address, as with any web request.
+
+This is the only network request the app makes without you asking for it,
+and it happens only while a map is actually on screen. No ride data,
+timing, power or heart-rate information is included. See the
+[OpenStreetMap Foundation privacy policy](https://osmfoundation.org/wiki/Privacy_Policy).
+
+Note that OpenBike does not use GPS or track your live location at all —
+routes come from GPX files you import.
 
 ## Crash reporting (opt-in, default off)
 
@@ -88,8 +108,23 @@ Open an issue on the [OpenBike GitHub repository](https://github.com/HugoLeBoenn
 
 ---
 
-**Hosting note (maintainer TODO):** both app stores require this policy at
-a stable, publicly reachable URL. The simplest option is GitHub Pages
-(Settings → Pages → serve `/docs`) pointing at this file, or any static
-host — publish it and record the final URL in `docs/release/play-store.md`
-and `docs/release/app-store.md` before submitting either listing.
+**Hosting note (maintainer).** Both stores require this policy at a stable,
+publicly reachable URL — no login, no redirect wall — and Play will reject
+the listing without one. The plan is to serve it from `records.run`
+alongside the download page.
+
+Whichever host you use, do this before submitting:
+
+1. Publish this document at a permanent path, e.g.
+   `https://records.run/openbike/privacy`. Avoid a URL that encodes a
+   version or date; the same link has to keep working for the life of the
+   listing.
+2. Record that URL in `docs/release/play-store.md` and
+   `docs/release/app-store.md`, replacing the placeholders there.
+3. Apple additionally requires a **Support URL** in App Store Connect —
+   `https://records.run/openbike/support` or equivalent. Plan for it now
+   even though only Play is in scope for the first release.
+
+GitHub Pages (Settings → Pages → serve `/docs`) works as a fallback and
+costs nothing, but note it would serve this file's raw Markdown filename
+under a `github.io` domain unless configured with a custom domain.

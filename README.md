@@ -2,7 +2,7 @@
 
 Open-source indoor cycling app — smart trainer control, structured workouts, route simulation.
 
-Runs on **Android, iOS, macOS, Linux, Windows, and Web**.
+Runs on **Android, iOS, macOS and Windows**, with best-effort **Linux** support.
 
 ## Architecture
 
@@ -77,8 +77,13 @@ flutter run
 ### Platform-specific setup
 
 - **Android / iOS / macOS**: BLE permissions are required. See `flutter_blue_plus` docs.
-- **Linux / Windows**: ANT+ USB dongle support is planned.
-- **Web**: BLE is not available; the app runs in simulation mode.
+- **Windows**: BLE is supported. ANT+ USB dongle support is optional — see
+  [docs/release/antplus-usb.md](docs/release/antplus-usb.md).
+- **Linux**: builds and runs, but BLE goes through BlueZ and has not been
+  verified against real trainer hardware (`docs/roadmap/P8-desktop.md`).
+  Treat it as best-effort.
+- **Web**: not supported. BLE is unavailable in the browser for the profiles
+  this app needs, so there is no web build target.
 
 ## License
 

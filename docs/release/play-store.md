@@ -22,9 +22,25 @@
 Answer the Play Console Data Safety questionnaire based on
 `docs/privacy-policy.md`. Key answers:
 
-- **Location**: not collected. Bluetooth scanning uses the
-  `neverForLocation` flag (`android/app/src/main/AndroidManifest.xml`), so
-  Android itself doesn't treat this app's BLE usage as location access.
+- **Location**: not collected. The app never requests location permission,
+  never uses GPS, and does not track live position — routes come from GPX
+  files the user imports. Bluetooth scanning uses the `neverForLocation`
+  flag (`android/app/src/main/AndroidManifest.xml`), so Android itself
+  doesn't treat this app's BLE usage as location access.
+
+  One nuance to answer knowingly rather than reflexively: rendering a route
+  map fetches tiles from `tile.openstreetmap.org`, which reveals the map
+  area on screen (plus the IP, as with any request) to the OpenStreetMap
+  Foundation. That area reflects an imported route, not a device position,
+  and no ride data accompanies it — which is why "not collected" is the
+  defensible answer here. It is disclosed in `docs/privacy-policy.md`
+  under "Maps" regardless, because the store form is a floor, not a
+  ceiling. If the app ever gains live GPS tracking, this answer changes.
+
+- **Encrypted in transit**: yes. Every remote endpoint is HTTPS (Strava
+  API/OAuth, OpenStreetMap tiles, Sentry). There are no cleartext requests,
+  no `usesCleartextTraffic`, and no ATS exceptions. Use the `https://`
+  Sentry DSN if crash reporting is configured.
 - **Health & fitness data** (heart rate, power, workout history): collected,
   but stored only on-device (SQLite) — not shared with any third party
   unless the user explicitly connects and uploads to Strava (or a future
