@@ -1,8 +1,10 @@
 flutter_native_splash:
-  color: "#000000"
+  # Ink — matches the icon's own field, so the splash image blends into the
+  # background instead of showing as a lighter square on black.
+  color: "#0E1216"
   image: "assets/icon/app_icon.png"
   # Web is out of scope for now — leave web/ untouched.
   web: false
   android_12:
-    color: "#000000"
+    color: "#0E1216"
     image: "assets/icon/app_icon.png"

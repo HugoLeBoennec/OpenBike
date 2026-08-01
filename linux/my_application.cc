@@ -29,8 +29,10 @@ static void my_application_set_window_icon(GtkWindow* window) {
   g_autofree gchar* exe_dir = g_path_get_dirname(exe_path);
 
   // Offer every size and let the window manager pick the closest match, rather
-  // than making it rescale a single bitmap.
-  const int icon_sizes[] = {16, 24, 32, 48, 64, 128, 256, 512};
+  // than making it rescale a single bitmap. Keep this in sync with the sizes
+  // shipped under linux/icons/hicolor/; a size listed here but not installed is
+  // skipped harmlessly, but the reverse means an installed icon never loads.
+  const int icon_sizes[] = {16, 32, 48, 64, 128, 256, 512};
   GList* icons = nullptr;
   for (gsize i = 0; i < G_N_ELEMENTS(icon_sizes); i++) {
     g_autofree gchar* size_dir =
