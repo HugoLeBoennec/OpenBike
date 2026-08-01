@@ -2,5 +2,5 @@
 # Do NOT commit key.properties to version control.
 storePassword=changeme
 keyPassword=changeme
-keyAlias=upload
-storeFile=../upload-keystore.jks
+keyAlias=openbike-upload
+storeFile=/Users/<you>/openbike-upload.jks

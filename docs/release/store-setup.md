@@ -169,8 +169,8 @@ foreground-service justification, privacy policy URL).
 Generate an upload keystore per `docs/release/android-signing.md`:
 
 ```bash
-keytool -genkey -v -keystore ~/openbike-release.jks \
-  -keyalg RSA -keysize 2048 -validity 10000 -alias openbike
+keytool -genkeypair -v -keystore ~/openbike-upload.jks \
+  -keyalg RSA -keysize 2048 -validity 10000 -alias openbike-upload
 ```
 
 Enrol in **Play App Signing** (default for new apps): Google holds the real app
@@ -221,7 +221,7 @@ optional; each job degrades to an unsigned artifact when its secret is absent
 
 | Secret | Platform | Source |
 |---|---|---|
-| `ANDROID_KEYSTORE_BASE64` | Android | §2c, `base64 -i openbike-release.jks` |
+| `ANDROID_KEYSTORE_BASE64` | Android | §2c, `base64 -i ~/openbike-upload.jks` |
 | `ANDROID_KEYSTORE_PASSWORD` / `ANDROID_KEY_PASSWORD` / `ANDROID_KEY_ALIAS` | Android | §2c |
 | `IOS_DIST_CERTIFICATE_P12` / `IOS_DIST_CERTIFICATE_PASSWORD` | iOS | §1e |
 | `IOS_PROVISIONING_PROFILE_BASE64` | iOS | §1e |
