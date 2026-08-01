@@ -238,10 +238,17 @@ jobs:
         run: |
           cd build/linux/x64/release/bundle
           tar czf ../../../../../OpenBike-linux-x64.tar.gz .
+      # Linux has no OS-level code signing to satisfy, so a published checksum
+      # is the whole integrity story for a direct download — see
+      # docs/release/desktop-distribution.md ("If you stay on direct downloads").
+      - name: Checksum the tarball
+        run: sha256sum OpenBike-linux-x64.tar.gz > SHA256SUMS
       - uses: actions/upload-artifact@v4
         with:
           name: OpenBike-linux
-          path: OpenBike-linux-x64.tar.gz
+          path: |
+            OpenBike-linux-x64.tar.gz
+            SHA256SUMS
           if-no-files-found: error
 
   # ---------------------------------------------------------------------------
@@ -262,7 +269,8 @@ jobs:
         run: |
           mkdir -p release-assets
           find artifacts -type f \( -name '*.aab' -o -name '*.ipa' -o -name '*.dmg' \
-            -o -name '*.msix' -o -name '*.tar.gz' \) -exec cp {} release-assets/ \;
+            -o -name '*.msix' -o -name '*.tar.gz' -o -name 'SHA256SUMS' \) \
+            -exec cp {} release-assets/ \;
           ls -la release-assets
       - uses: softprops/action-gh-release@v2
         with:
