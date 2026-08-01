@@ -38,9 +38,15 @@ The per-platform PNGs are the handoff/reference set. Every platform except Linux
 by `flutter_launcher_icons` from the masters rather than copied from here, so editing a PNG in
 this directory changes nothing on its own.
 
-Two notes on the package as delivered: `ios/*.png` do carry an alpha channel despite the note
-above claiming otherwise, and `store/play-512.png` is 1024×1024, not 512. Neither matters for
-the build — `remove_alpha_ios` strips alpha from the generated iOS icons regardless.
+One note on the package as delivered: `ios/*.png` do carry an alpha channel despite the note
+above claiming otherwise. This doesn't matter for the build — `remove_alpha_ios` strips alpha
+from the generated iOS icons regardless.
+
+`store/` also shipped both files at 1024×1024 regardless of the sizes in their names. They have
+since been resampled to the sizes they claim (Lanczos, from the 1024 original), because unlike
+everything else here these are uploaded by hand and Play requires the app icon to be exactly
+512×512. If you re-cut them from the master, resize explicitly — don't assume the export honours
+the filename.
 
 ## Regenerating _(repo)_
 
@@ -66,8 +72,10 @@ dart run flutter_native_splash:create
 ```
 
 Both are configured to skip web. Linux is covered by neither tool: refresh
-`linux/icons/hicolor/<size>x<size>/apps/com.openbike.open_bike.png` from `linux/openbike-<size>.png`
-by hand, and keep the size list in `linux/my_application.cc` in sync with what ships here.
+`linux/icons/hicolor/<size>x<size>/apps/run.records.openbike.png` from `linux/openbike-<size>.png`
+by hand, and keep the size list in `linux/my_application.cc` in sync with what ships here. Note
+the repo ships no 24×24 — `icon_sizes[]` in `my_application.cc` omits it — even though
+`linux/openbike-24.png` does not exist here either; don't add one without adding both.
 
 ## Monochrome / tinted mode
 
