@@ -160,11 +160,21 @@ jobs:
             --entitlements macos/Runner/Release.entitlements \
             --sign "$MACOS_SIGNING_IDENTITY" \
             "build/macos/Build/Products/Release/OpenBike.app"
+      # Built with hdiutil rather than create-dmg. `--overwrite`/`--dmg-title`
+      # are the npm create-dmg's flags, but `brew install create-dmg` gets
+      # andreyvit's shell script, which rejects them ("Unknown option:
+      # --dmg-title"). Its equivalent flags exist, but it drives Finder over
+      # AppleScript to lay the window out, which is flaky on a headless
+      # runner — and with no background artwork to place there is no layout
+      # to preserve. hdiutil ships with macOS and needs no window server.
       - name: Package DMG
         run: |
-          brew install create-dmg
-          create-dmg --overwrite --dmg-title OpenBike OpenBike.dmg \
-            "build/macos/Build/Products/Release/OpenBike.app"
+          mkdir -p dmg-staging
+          cp -R "build/macos/Build/Products/Release/OpenBike.app" dmg-staging/
+          ln -s /Applications dmg-staging/Applications
+          hdiutil create -volname OpenBike -srcfolder dmg-staging \
+            -ov -format UDZO OpenBike.dmg
+          hdiutil verify OpenBike.dmg
       - name: Notarize
         if: env.MACOS_CERTIFICATE_P12 != ''
         run: |
