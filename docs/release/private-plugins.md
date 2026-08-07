@@ -79,7 +79,19 @@ there, not here).
 
 ## Wiring it into a release build
 
-Release CI (P9) does two things a public/dev build never does:
+> **Status: designed, not implemented.** `.github/workflows/release.yml`
+> contains none of the steps below — no deploy key, no `dependency_overrides`
+> injection, no file swap — and `pubspec.yaml` has no `dependency_overrides`
+> block. Every build produced today, release builds included, compiles
+> against the stub and ships with no private plugins.
+>
+> This is deliberate: `openbike_private_plugins` does not exist yet, and
+> wiring a swap that has nothing to swap in would mean its first real
+> execution happened during an actual release build. Implement this section
+> together with the private repo, when there is something to test it
+> against. Until then, treat what follows as the intended design.
+
+The swap needs two things a public/dev build never does:
 
 1. **Adds the git dependency** to `pubspec.yaml` for that build only, via
    an SSH deploy key scoped read-only to `openbike_private_plugins`:
