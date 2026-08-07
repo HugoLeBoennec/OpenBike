@@ -1,6 +1,18 @@
-# OpenBike
+<p align="center">
+  <img src="branding/app_icon.png" alt="" width="128" height="128">
+</p>
 
-Open-source indoor cycling app — smart trainer control, structured workouts, route simulation.
+<h1 align="center">OpenBike</h1>
+
+<p align="center">
+  Open-source indoor cycling app — smart trainer control, structured workouts, route simulation.
+</p>
+
+<p align="center">
+  <a href="https://github.com/HugoLeBoennec/OpenBike/actions/workflows/ci.yml"><img src="https://github.com/HugoLeBoennec/OpenBike/actions/workflows/ci.yml/badge.svg" alt="CI"></a>
+  <a href="LICENSE"><img src="https://img.shields.io/badge/license-Apache--2.0-blue.svg" alt="License: Apache 2.0"></a>
+  <img src="https://img.shields.io/badge/platforms-Android%20%7C%20iOS%20%7C%20macOS%20%7C%20Windows%20%7C%20Linux-lightgrey" alt="Platforms">
+</p>
 
 Runs on **Android, iOS, macOS and Windows**, with best-effort **Linux** support.
 
