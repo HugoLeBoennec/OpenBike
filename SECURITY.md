@@ -8,7 +8,7 @@ Report privately through GitHub's
 [Report a vulnerability](https://github.com/HugoLeBoennec/OpenBike/security/advisories/new)
 form, which opens a draft advisory visible only to the maintainers.
 
-If that form is unavailable to you, email **hugo@leboennec.com** with
+If that form is unavailable to you, email **hugo.leboennec@proton.me** with
 `OpenBike security` in the subject.
 
 Please include:
