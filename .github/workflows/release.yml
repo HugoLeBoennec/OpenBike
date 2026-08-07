@@ -262,12 +262,19 @@ jobs:
       # docs/release/desktop-distribution.md ("If you stay on direct downloads").
       - name: Checksum the tarball
         run: sha256sum OpenBike-linux-x64.tar.gz > SHA256SUMS
+      # Published as a release asset so the documented one-liner resolves:
+      #   curl -fsSL .../releases/latest/download/install.sh | sh
+      # It rides along with this job's artifact because publish-release only
+      # downloads artifacts — it never checks the repository out.
+      - name: Stage the install script
+        run: cp scripts/install-linux.sh install.sh
       - uses: actions/upload-artifact@v4
         with:
           name: OpenBike-linux
           path: |
             OpenBike-linux-x64.tar.gz
             SHA256SUMS
+            install.sh
           if-no-files-found: error
 
   # ---------------------------------------------------------------------------
@@ -288,8 +295,13 @@ jobs:
         run: |
           mkdir -p release-assets
           find artifacts -type f \( -name '*.aab' -o -name '*.ipa' -o -name '*.dmg' \
-            -o -name '*.msix' -o -name '*.tar.gz' -o -name 'SHA256SUMS' \) \
+            -o -name '*.msix' -o -name '*.tar.gz' -o -name 'SHA256SUMS' \
+            -o -name 'install.sh' \) \
             -exec cp {} release-assets/ \;
+          # upload-artifact does not preserve the executable bit, but the
+          # documented install path pipes the script into sh, which does not
+          # need one. Restore it anyway for anyone who downloads it directly.
+          chmod +x release-assets/install.sh 2>/dev/null || true
           ls -la release-assets
       - uses: softprops/action-gh-release@v2
         with:

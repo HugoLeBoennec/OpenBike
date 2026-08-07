@@ -88,9 +88,20 @@ is publishing through a distro/store that builds and signs on its own infra.
 
 The `linux` job tars up `build/linux/x64/release/bundle`. That works, but the
 user must already have the runtime libraries installed — `libgtk-3-0`,
-`libsecret-1-0`, `libjsoncpp`, `libcurl`, plus a running BlueZ — and
-`linux/run.records.openbike.desktop` isn't installed anywhere, so there's no
-menu entry or icon.
+`libsecret-1-0`, `libjsoncpp`, `libcurl`, plus a running BlueZ.
+
+The desktop entry and icons are **not** missing from the tarball, which is easy
+to assume: the `install()` rules at the end of `linux/CMakeLists.txt` put a
+full hicolor theme and the `.desktop` file inside the bundle, at
+`data/icons/hicolor/*/apps/run.records.openbike.png` and
+`data/applications/run.records.openbike.desktop`. What is missing is
+**registration** — nothing copies those two trees into the XDG directories the
+desktop environment actually searches, so extracting the tarball gives you a
+working binary with no menu entry.
+
+That distinction is why `scripts/install-linux.sh` exists (see *Command-line
+install* below) rather than a repackaging format: the payload is already
+correct, it just needs to land in the right place.
 
 ### Options
 
@@ -98,16 +109,18 @@ menu entry or icon.
 |---|---|---|---|
 | **Flathub** | free | the de facto Linux app store; surfaces in GNOME Software & KDE Discover | manifest PR to `flathub/flathub`, bundles its own deps |
 | Snap | free | Ubuntu default | `snapcraft.yaml`; BlueZ needs a manual interface connection |
-| AppImage | free | universal single file | easiest to automate; no discovery, no updates |
+| AppImage | free | universal single file | glibc floor + FUSE dependency, and still no menu entry — see *Why not AppImage* |
 | `.deb` / `.rpm` | free | distro-native | per-distro maintenance |
-| `tar.gz` *(current)* | free | none | already done; keep as fallback |
+| `tar.gz` + `install.sh` *(current)* | free | direct download | already done; one-command install, see *Command-line install* |
 
 **Recommendation: keep the `tar.gz`, and target Flathub as the real channel —
 but not yet.** `docs/roadmap/P8-desktop.md` still lists Linux BLE as
 unverified (the `flutter_blue_plus` BlueZ backend has had no hardware QA). A
 store listing sets an expectation a best-effort tarball doesn't, so confirm a
-real trainer connects on Linux first. AppImage is a reasonable intermediate
-step if you want a better download without committing to a listing.
+real trainer connects on Linux first. In the meantime `scripts/install-linux.sh`
+gives the tarball a one-command install without committing to a listing;
+AppImage is *not* the intermediate step it first looks like — see *Why not
+AppImage* below.
 
 ### Flatpak sandbox permissions — the part that's easy to get wrong
 
@@ -135,3 +148,62 @@ later with a note pointing at `docs/release/antplus-usb.md`.
 Publish a `SHA256SUMS` file alongside the tarball, and optionally sign it with
 GPG. That is the normal integrity story for Linux downloads — there is no
 OS-level trust prompt to satisfy.
+
+### Command-line install
+
+`scripts/install-linux.sh` is published as a release asset by the `linux` job,
+so the documented one-liner is:
+
+```bash
+curl -fsSL https://github.com/HugoLeBoennec/OpenBike/releases/latest/download/install.sh | sh
+```
+
+It downloads the tarball, **verifies it against `SHA256SUMS` and aborts on a
+mismatch** (which is what makes publishing that file worth anything), then
+installs entirely under `$HOME` — no root:
+
+| Path | Contents |
+|---|---|
+| `$XDG_DATA_HOME/openbike/` | the unpacked bundle |
+| `~/.local/bin/openbike` | symlink to the binary |
+| `$XDG_DATA_HOME/applications/` | the `.desktop` entry |
+| `$XDG_DATA_HOME/icons/hicolor/` | the per-size app icons |
+
+Two details worth knowing before editing it:
+
+- It **rewrites `Exec=`** to an absolute path. The shipped entry has a bare
+  `Exec=open_bike`, which only resolves when `~/.local/bin` is on `PATH` —
+  frequently untrue for the environment a desktop launcher starts from.
+- It copies **only** `run.records.openbike.png` out of the icon theme rather
+  than the `hicolor` directory wholesale, so it cannot clobber a user's
+  `index.theme`.
+
+`--uninstall` reverses all of it; `--version vX.Y.Z` pins a release.
+
+### Why not AppImage
+
+AppImage's one real benefit is bundling dependencies, and OpenBike's are
+`libgtk-3`, `libsecret-1`, `libjsoncpp` and `libcurl` — present on essentially
+every desktop Linux install. So it bundles libraries the user already has,
+while adding:
+
+- **A glibc floor.** AppImage does not bundle glibc, so the image only runs on
+  glibc ≥ the build host's. Built on `ubuntu-latest` it will not start on
+  Ubuntu 22.04 or Debian 12, presented to users as "your AppImage is broken."
+  (This applies to the tarball too — see the note in `release.yml`'s `linux`
+  job if it gets pinned to an older runner.)
+- **A FUSE dependency.** Type-2 AppImages need `libfuse2`, which Ubuntu has not
+  installed by default since 22.04, producing a cryptic
+  `error loading libfuse.so.2`.
+- **No desktop integration anyway.** The `.desktop` file inside an AppImage is
+  not registered by anything; the user needs `appimaged`, Gear Lever or
+  AppImageLauncher. A bare AppImage gives *worse* menu/icon integration than
+  the tarball plus the install script above.
+
+Bundling GTK properly is also the fiddly part — `gdk-pixbuf` loader caches,
+GIO modules and GSettings schema compilation all need handling, and none of it
+is testable in CI without real distro images.
+
+Flatpak solves the same problem with discovery, sandboxing, auto-updates and a
+build farm, so effort is better spent on the Flathub manifest when Linux is
+ready for it. AppImage is a detour rather than a step toward that.

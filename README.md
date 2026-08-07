@@ -81,7 +81,15 @@ flutter run
   [docs/release/antplus-usb.md](docs/release/antplus-usb.md).
 - **Linux**: builds and runs, but BLE goes through BlueZ and has not been
   verified against real trainer hardware (`docs/roadmap/P8-desktop.md`).
-  Treat it as best-effort.
+  Treat it as best-effort. Install from a release with:
+
+  ```bash
+  curl -fsSL https://github.com/HugoLeBoennec/OpenBike/releases/latest/download/install.sh | sh
+  ```
+
+  It verifies the download against `SHA256SUMS` and installs under `$HOME`
+  with no root; `sh -s -- --uninstall` reverses it. See
+  [docs/release/desktop-distribution.md](docs/release/desktop-distribution.md).
 - **Web**: not supported. BLE is unavailable in the browser for the profiles
   this app needs, so there is no web build target.
 
