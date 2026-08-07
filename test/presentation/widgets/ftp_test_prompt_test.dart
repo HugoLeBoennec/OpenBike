@@ -3,6 +3,8 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 
+import 'package:open_bike/core/application/services/ftp_test_planner.dart';
+import 'package:open_bike/core/domain/entities/ftp_history_entry.dart';
 import 'package:open_bike/core/domain/entities/ride.dart';
 import 'package:open_bike/core/domain/entities/sensor_reading.dart';
 import 'package:open_bike/core/domain/value_objects/value_objects.dart';
@@ -39,7 +41,7 @@ void main() {
 
     final container = ProviderContainer(overrides: [
       storageProvider.overrideWithValue(storage),
-      activeFtpTestProvider.overrideWith((ref) => FtpTestType.ramp),
+      activeFtpTestProvider.overrideWith((ref) => FtpTestProtocol.ramp),
       rideDetailProvider(ride.id).overrideWith((ref) async => ride),
     ]);
     addTearDown(container.dispose);
@@ -61,6 +63,12 @@ void main() {
     expect(container.read(userProfileProvider)?.ftp.value, 225);
     final saved = await storage.getProfile();
     expect(saved?.ftp.value, 225);
+
+    // Tagged as a measured ramp test, which is what resets the retest clock
+    // and adds a point to the progression chart.
+    final history = await storage.getFtpHistory();
+    expect(history.last.source, FtpSource.rampTest);
+    expect(history.last.ftp.value, 225);
 
     // Consumed exactly once — cleared so it won't fire again on rebuild.
     expect(container.read(activeFtpTestProvider), isNull);

@@ -242,8 +242,11 @@ class DriftStorage implements StoragePort {
   // -------------------------------------------------------------------------
 
   @override
-  Future<void> saveProfile(UserProfile profile) async {
-    await _recordFtpChangeIfNeeded(profile.ftp);
+  Future<void> saveProfile(
+    UserProfile profile, {
+    FtpSource ftpSource = FtpSource.manual,
+  }) async {
+    await _recordFtpChangeIfNeeded(profile.ftp, ftpSource);
     await _db.into(_db.userProfiles).insertOnConflictUpdate(
           UserProfilesCompanion.insert(
             id: 'default',
@@ -274,17 +277,23 @@ class DriftStorage implements StoragePort {
   /// Appends a dated FTP history entry when [ftp] differs from the last
   /// recorded value (or none has been recorded yet), so PMC calculations can
   /// later look up the FTP that was actually in effect on any given date.
-  Future<void> _recordFtpChangeIfNeeded(Watts ftp) async {
+  ///
+  /// A measured [source] always writes an entry, even when the result matches
+  /// the FTP already on file: "you tested and confirmed the same number" is a
+  /// real event, and dropping it would leave the retest reminder pointing at
+  /// the previous test forever.
+  Future<void> _recordFtpChangeIfNeeded(Watts ftp, FtpSource source) async {
     final last = await (_db.select(_db.ftpHistory)
           ..orderBy([(t) => OrderingTerm.desc(t.effectiveDate)])
           ..limit(1))
         .getSingleOrNull();
-    if (last != null && last.ftp == ftp.value) return;
+    if (!source.isTest && last != null && last.ftp == ftp.value) return;
 
     await _db.into(_db.ftpHistory).insert(
           FtpHistoryCompanion.insert(
             effectiveDate: DateTime.now().millisecondsSinceEpoch,
             ftp: ftp.value,
+            source: Value(source.name),
           ),
         );
   }
@@ -395,7 +404,17 @@ class DriftStorage implements StoragePort {
         .map((r) => FtpHistoryEntry(
               effectiveDate: DateTime.fromMillisecondsSinceEpoch(r.effectiveDate),
               ftp: Watts(r.ftp),
+              source: _ftpSourceFromName(r.source),
             ))
         .toList();
+  }
+
+  /// Pre-v6 rows (and anything unrecognised) read back as
+  /// [FtpSource.manual] — see the `source` column docs on `FtpHistory`.
+  static FtpSource _ftpSourceFromName(String? name) {
+    return FtpSource.values.firstWhere(
+      (s) => s.name == name,
+      orElse: () => FtpSource.manual,
+    );
   }
 }

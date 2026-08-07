@@ -71,6 +71,15 @@ void main() {
   testWidgets(
       'completing onboarding with imperial units shows mi on Home',
       (tester) async {
+    // This test lands on Home and asserts on the recent-ride distance, which
+    // sits below the action cards — the default 800x600 surface never builds
+    // it. Give the viewport room rather than tying the assertion to how many
+    // cards the dashboard currently has.
+    tester.view.physicalSize = const Size(1000, 2000);
+    tester.view.devicePixelRatio = 1.0;
+    addTearDown(tester.view.resetPhysicalSize);
+    addTearDown(tester.view.resetDevicePixelRatio);
+
     await tester.pumpWidget(_wrap(storage, appPrefs));
     await tester.pumpAndSettle();
 

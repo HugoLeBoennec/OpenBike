@@ -4906,8 +4906,17 @@ class $FtpHistoryTable extends FtpHistory
     type: DriftSqlType.double,
     requiredDuringInsert: true,
   );
+  static const VerificationMeta _sourceMeta = const VerificationMeta('source');
   @override
-  List<GeneratedColumn> get $columns => [id, effectiveDate, ftp];
+  late final GeneratedColumn<String> source = GeneratedColumn<String>(
+    'source',
+    aliasedName,
+    true,
+    type: DriftSqlType.string,
+    requiredDuringInsert: false,
+  );
+  @override
+  List<GeneratedColumn> get $columns => [id, effectiveDate, ftp, source];
   @override
   String get aliasedName => _alias ?? actualTableName;
   @override
@@ -4942,6 +4951,12 @@ class $FtpHistoryTable extends FtpHistory
     } else if (isInserting) {
       context.missing(_ftpMeta);
     }
+    if (data.containsKey('source')) {
+      context.handle(
+        _sourceMeta,
+        source.isAcceptableOrUnknown(data['source']!, _sourceMeta),
+      );
+    }
     return context;
   }
 
@@ -4963,6 +4978,10 @@ class $FtpHistoryTable extends FtpHistory
         DriftSqlType.double,
         data['${effectivePrefix}ftp'],
       )!,
+      source: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}source'],
+      ),
     );
   }
 
@@ -4976,10 +4995,18 @@ class FtpHistoryRow extends DataClass implements Insertable<FtpHistoryRow> {
   final int id;
   final int effectiveDate;
   final double ftp;
+
+  /// [FtpSource] name. Nullable because rows written before schema v6 have no
+  /// recorded provenance — those read back as [FtpSource.manual], which is the
+  /// conservative reading (they never count as a test for retest reminders).
+  /// Stored as text rather than a drift `textEnum` so an unrecognised value
+  /// from a future version degrades to `manual` instead of throwing on read.
+  final String? source;
   const FtpHistoryRow({
     required this.id,
     required this.effectiveDate,
     required this.ftp,
+    this.source,
   });
   @override
   Map<String, Expression> toColumns(bool nullToAbsent) {
@@ -4987,6 +5014,9 @@ class FtpHistoryRow extends DataClass implements Insertable<FtpHistoryRow> {
     map['id'] = Variable<int>(id);
     map['effective_date'] = Variable<int>(effectiveDate);
     map['ftp'] = Variable<double>(ftp);
+    if (!nullToAbsent || source != null) {
+      map['source'] = Variable<String>(source);
+    }
     return map;
   }
 
@@ -4995,6 +5025,9 @@ class FtpHistoryRow extends DataClass implements Insertable<FtpHistoryRow> {
       id: Value(id),
       effectiveDate: Value(effectiveDate),
       ftp: Value(ftp),
+      source: source == null && nullToAbsent
+          ? const Value.absent()
+          : Value(source),
     );
   }
 
@@ -5007,6 +5040,7 @@ class FtpHistoryRow extends DataClass implements Insertable<FtpHistoryRow> {
       id: serializer.fromJson<int>(json['id']),
       effectiveDate: serializer.fromJson<int>(json['effectiveDate']),
       ftp: serializer.fromJson<double>(json['ftp']),
+      source: serializer.fromJson<String?>(json['source']),
     );
   }
   @override
@@ -5016,15 +5050,21 @@ class FtpHistoryRow extends DataClass implements Insertable<FtpHistoryRow> {
       'id': serializer.toJson<int>(id),
       'effectiveDate': serializer.toJson<int>(effectiveDate),
       'ftp': serializer.toJson<double>(ftp),
+      'source': serializer.toJson<String?>(source),
     };
   }
 
-  FtpHistoryRow copyWith({int? id, int? effectiveDate, double? ftp}) =>
-      FtpHistoryRow(
-        id: id ?? this.id,
-        effectiveDate: effectiveDate ?? this.effectiveDate,
-        ftp: ftp ?? this.ftp,
-      );
+  FtpHistoryRow copyWith({
+    int? id,
+    int? effectiveDate,
+    double? ftp,
+    Value<String?> source = const Value.absent(),
+  }) => FtpHistoryRow(
+    id: id ?? this.id,
+    effectiveDate: effectiveDate ?? this.effectiveDate,
+    ftp: ftp ?? this.ftp,
+    source: source.present ? source.value : this.source,
+  );
   FtpHistoryRow copyWithCompanion(FtpHistoryCompanion data) {
     return FtpHistoryRow(
       id: data.id.present ? data.id.value : this.id,
@@ -5032,6 +5072,7 @@ class FtpHistoryRow extends DataClass implements Insertable<FtpHistoryRow> {
           ? data.effectiveDate.value
           : this.effectiveDate,
       ftp: data.ftp.present ? data.ftp.value : this.ftp,
+      source: data.source.present ? data.source.value : this.source,
     );
   }
 
@@ -5040,46 +5081,53 @@ class FtpHistoryRow extends DataClass implements Insertable<FtpHistoryRow> {
     return (StringBuffer('FtpHistoryRow(')
           ..write('id: $id, ')
           ..write('effectiveDate: $effectiveDate, ')
-          ..write('ftp: $ftp')
+          ..write('ftp: $ftp, ')
+          ..write('source: $source')
           ..write(')'))
         .toString();
   }
 
   @override
-  int get hashCode => Object.hash(id, effectiveDate, ftp);
+  int get hashCode => Object.hash(id, effectiveDate, ftp, source);
   @override
   bool operator ==(Object other) =>
       identical(this, other) ||
       (other is FtpHistoryRow &&
           other.id == this.id &&
           other.effectiveDate == this.effectiveDate &&
-          other.ftp == this.ftp);
+          other.ftp == this.ftp &&
+          other.source == this.source);
 }
 
 class FtpHistoryCompanion extends UpdateCompanion<FtpHistoryRow> {
   final Value<int> id;
   final Value<int> effectiveDate;
   final Value<double> ftp;
+  final Value<String?> source;
   const FtpHistoryCompanion({
     this.id = const Value.absent(),
     this.effectiveDate = const Value.absent(),
     this.ftp = const Value.absent(),
+    this.source = const Value.absent(),
   });
   FtpHistoryCompanion.insert({
     this.id = const Value.absent(),
     required int effectiveDate,
     required double ftp,
+    this.source = const Value.absent(),
   }) : effectiveDate = Value(effectiveDate),
        ftp = Value(ftp);
   static Insertable<FtpHistoryRow> custom({
     Expression<int>? id,
     Expression<int>? effectiveDate,
     Expression<double>? ftp,
+    Expression<String>? source,
   }) {
     return RawValuesInsertable({
       if (id != null) 'id': id,
       if (effectiveDate != null) 'effective_date': effectiveDate,
       if (ftp != null) 'ftp': ftp,
+      if (source != null) 'source': source,
     });
   }
 
@@ -5087,11 +5135,13 @@ class FtpHistoryCompanion extends UpdateCompanion<FtpHistoryRow> {
     Value<int>? id,
     Value<int>? effectiveDate,
     Value<double>? ftp,
+    Value<String?>? source,
   }) {
     return FtpHistoryCompanion(
       id: id ?? this.id,
       effectiveDate: effectiveDate ?? this.effectiveDate,
       ftp: ftp ?? this.ftp,
+      source: source ?? this.source,
     );
   }
 
@@ -5107,6 +5157,9 @@ class FtpHistoryCompanion extends UpdateCompanion<FtpHistoryRow> {
     if (ftp.present) {
       map['ftp'] = Variable<double>(ftp.value);
     }
+    if (source.present) {
+      map['source'] = Variable<String>(source.value);
+    }
     return map;
   }
 
@@ -5115,7 +5168,8 @@ class FtpHistoryCompanion extends UpdateCompanion<FtpHistoryRow> {
     return (StringBuffer('FtpHistoryCompanion(')
           ..write('id: $id, ')
           ..write('effectiveDate: $effectiveDate, ')
-          ..write('ftp: $ftp')
+          ..write('ftp: $ftp, ')
+          ..write('source: $source')
           ..write(')'))
         .toString();
   }
@@ -9101,12 +9155,14 @@ typedef $$FtpHistoryTableCreateCompanionBuilder =
       Value<int> id,
       required int effectiveDate,
       required double ftp,
+      Value<String?> source,
     });
 typedef $$FtpHistoryTableUpdateCompanionBuilder =
     FtpHistoryCompanion Function({
       Value<int> id,
       Value<int> effectiveDate,
       Value<double> ftp,
+      Value<String?> source,
     });
 
 class $$FtpHistoryTableFilterComposer
@@ -9130,6 +9186,11 @@ class $$FtpHistoryTableFilterComposer
 
   ColumnFilters<double> get ftp => $composableBuilder(
     column: $table.ftp,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get source => $composableBuilder(
+    column: $table.source,
     builder: (column) => ColumnFilters(column),
   );
 }
@@ -9157,6 +9218,11 @@ class $$FtpHistoryTableOrderingComposer
     column: $table.ftp,
     builder: (column) => ColumnOrderings(column),
   );
+
+  ColumnOrderings<String> get source => $composableBuilder(
+    column: $table.source,
+    builder: (column) => ColumnOrderings(column),
+  );
 }
 
 class $$FtpHistoryTableAnnotationComposer
@@ -9178,6 +9244,9 @@ class $$FtpHistoryTableAnnotationComposer
 
   GeneratedColumn<double> get ftp =>
       $composableBuilder(column: $table.ftp, builder: (column) => column);
+
+  GeneratedColumn<String> get source =>
+      $composableBuilder(column: $table.source, builder: (column) => column);
 }
 
 class $$FtpHistoryTableTableManager
@@ -9214,20 +9283,24 @@ class $$FtpHistoryTableTableManager
                 Value<int> id = const Value.absent(),
                 Value<int> effectiveDate = const Value.absent(),
                 Value<double> ftp = const Value.absent(),
+                Value<String?> source = const Value.absent(),
               }) => FtpHistoryCompanion(
                 id: id,
                 effectiveDate: effectiveDate,
                 ftp: ftp,
+                source: source,
               ),
           createCompanionCallback:
               ({
                 Value<int> id = const Value.absent(),
                 required int effectiveDate,
                 required double ftp,
+                Value<String?> source = const Value.absent(),
               }) => FtpHistoryCompanion.insert(
                 id: id,
                 effectiveDate: effectiveDate,
                 ftp: ftp,
+                source: source,
               ),
           withReferenceMapper: (p0) => p0
               .map((e) => (e.readTable(table), BaseReferences(db, table, e)))

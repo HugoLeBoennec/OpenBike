@@ -10,6 +10,8 @@ import 'package:open_bike/infrastructure/persistence/generated_migrations/schema
     as v3;
 import 'package:open_bike/infrastructure/persistence/generated_migrations/schema_v4.dart'
     as v4;
+import 'package:open_bike/infrastructure/persistence/generated_migrations/schema_v5.dart'
+    as v5;
 
 void main() {
   final verifier = SchemaVerifier(GeneratedHelper());
@@ -109,6 +111,44 @@ void main() {
         await (db.select(db.rides)..where((t) => t.id.equals('ride-pre-v5')))
             .getSingle();
     expect(updated.elevationGainM, 123.4);
+
+    await db.close();
+  });
+
+  test('v5 -> v6 migration adds ftp_history.source and preserves entries',
+      () async {
+    // Start with a real v5 database and insert an FTP history row directly,
+    // bypassing the current (v6) AppDatabase so we know it pre-dates the
+    // migration and therefore has no recorded source.
+    final schema = await verifier.schemaAt(5);
+    final oldDb = v5.DatabaseAtV5(schema.newConnection());
+    await oldDb.into(oldDb.ftpHistory).insert(v5.FtpHistoryCompanion.insert(
+          effectiveDate: 5000,
+          ftp: 240,
+        ));
+    await oldDb.close();
+
+    final db = AppDatabase(schema.newConnection());
+    await verifier.migrateAndValidate(db, 6);
+
+    final entries = await db.select(db.ftpHistory).get();
+    expect(entries, hasLength(1));
+    expect(entries.single.ftp, 240);
+    // Pre-v6 rows carry no provenance — the storage layer reads these back as
+    // FtpSource.manual so they never reset the retest clock.
+    expect(entries.single.source, isNull);
+
+    // The new column is usable going forward.
+    await db.into(db.ftpHistory).insert(FtpHistoryCompanion.insert(
+          effectiveDate: 6000,
+          ftp: 255,
+          source: const Value('rampTest'),
+        ));
+    final latest = await (db.select(db.ftpHistory)
+          ..orderBy([(t) => OrderingTerm.desc(t.effectiveDate)])
+          ..limit(1))
+        .getSingle();
+    expect(latest.source, 'rampTest');
 
     await db.close();
   });

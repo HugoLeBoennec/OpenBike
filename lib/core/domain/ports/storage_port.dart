@@ -40,7 +40,14 @@ abstract class StoragePort {
   /// Saving a profile whose FTP differs from the last recorded value (or
   /// when no FTP history exists yet) also appends a dated entry to the FTP
   /// history so past rides keep scoring against the FTP in effect back then.
-  Future<void> saveProfile(UserProfile profile);
+  ///
+  /// [ftpSource] tags that history entry with where the number came from; it
+  /// defaults to [FtpSource.manual], so only callers that actually measured
+  /// an FTP (the post-test prompt) reset the retest clock.
+  Future<void> saveProfile(
+    UserProfile profile, {
+    FtpSource ftpSource = FtpSource.manual,
+  });
   Future<UserProfile?> getProfile();
 
   // --- Scheduled workouts (training calendar) ---

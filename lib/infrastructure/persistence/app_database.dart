@@ -184,6 +184,13 @@ class FtpHistory extends Table {
   IntColumn get id => integer().autoIncrement()();
   IntColumn get effectiveDate => integer()(); // epoch ms
   RealColumn get ftp => real()();
+
+  /// [FtpSource] name. Nullable because rows written before schema v6 have no
+  /// recorded provenance — those read back as [FtpSource.manual], which is the
+  /// conservative reading (they never count as a test for retest reminders).
+  /// Stored as text rather than a drift `textEnum` so an unrecognised value
+  /// from a future version degrades to `manual` instead of throwing on read.
+  TextColumn get source => text().nullable()();
 }
 
 // ---------------------------------------------------------------------------
@@ -206,7 +213,7 @@ class AppDatabase extends _$AppDatabase {
   AppDatabase(super.e);
 
   @override
-  int get schemaVersion => 5;
+  int get schemaVersion => 6;
 
   @override
   MigrationStrategy get migration => MigrationStrategy(
@@ -236,6 +243,9 @@ class AppDatabase extends _$AppDatabase {
                 await m.addColumn(schema.rides, schema.rides.elevationGainM);
                 await m.addColumn(
                     schema.exportQueue, schema.exportQueue.resultPath);
+              },
+              from5To6: (m, schema) async {
+                await m.addColumn(schema.ftpHistory, schema.ftpHistory.source);
               },
             )(m, from, to);
           }

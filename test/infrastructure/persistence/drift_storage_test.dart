@@ -409,6 +409,67 @@ void main() {
       expect(history, hasLength(2));
       expect(history.last.ftp.value, 230);
     });
+
+    test('defaults the recorded source to manual', () async {
+      await storage.saveProfile(const UserProfile(
+        name: 'A',
+        ftp: Watts(200),
+        maxHr: HeartRate(180),
+        restingHr: HeartRate(60),
+        weight: 70,
+        height: 1.75,
+      ));
+
+      expect((await storage.getFtpHistory()).single.source, FtpSource.manual);
+    });
+
+    test('round-trips the test protocol that produced an FTP', () async {
+      const base = UserProfile(
+        name: 'A',
+        ftp: Watts(200),
+        maxHr: HeartRate(180),
+        restingHr: HeartRate(60),
+        weight: 70,
+        height: 1.75,
+      );
+      await storage.saveProfile(base);
+      await storage.saveProfile(
+        base.copyWith(ftp: const Watts(245)),
+        ftpSource: FtpSource.rampTest,
+      );
+      await storage.saveProfile(
+        base.copyWith(ftp: const Watts(260)),
+        ftpSource: FtpSource.twentyMinuteTest,
+      );
+
+      final history = await storage.getFtpHistory();
+      expect(history.map((e) => e.source), [
+        FtpSource.manual,
+        FtpSource.rampTest,
+        FtpSource.twentyMinuteTest,
+      ]);
+    });
+
+    test('records a test that confirms the current FTP unchanged', () async {
+      // The dedupe that suppresses no-op manual saves must not swallow a real
+      // test result, or the retest clock would never reset for a rider whose
+      // fitness held steady.
+      const base = UserProfile(
+        name: 'A',
+        ftp: Watts(200),
+        maxHr: HeartRate(180),
+        restingHr: HeartRate(60),
+        weight: 70,
+        height: 1.75,
+      );
+      await storage.saveProfile(base);
+      await storage.saveProfile(base, ftpSource: FtpSource.rampTest);
+
+      final history = await storage.getFtpHistory();
+      expect(history, hasLength(2));
+      expect(history.last.source, FtpSource.rampTest);
+      expect(history.last.ftp.value, 200);
+    });
   });
 
   // ===========================================================================

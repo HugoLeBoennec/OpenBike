@@ -2,6 +2,7 @@ import 'dart:convert';
 
 import 'package:shared_preferences/shared_preferences.dart';
 
+import '../../core/application/services/ftp_test_planner.dart';
 import '../../core/domain/entities/paired_devices.dart';
 import '../../core/domain/entities/trainer_device.dart';
 
@@ -33,6 +34,7 @@ class AppPreferences {
   static const _kLastErgWatts = 'last_erg_watts';
   static const _kLastResistanceLevel = 'last_resistance_level';
   static const _kTrainerDifficulty = 'trainer_difficulty';
+  static const _kFtpRetestIntervalDays = 'ftp_retest_interval_days';
 
   // -------------------------------------------------------------------------
   // Onboarding
@@ -229,4 +231,22 @@ class AppPreferences {
 
   Future<void> setTrainerDifficulty(double value) =>
       _prefs.setDouble(_kTrainerDifficulty, value.clamp(0.0, 1.0));
+
+  // -------------------------------------------------------------------------
+  // FTP retest reminder interval
+  // -------------------------------------------------------------------------
+
+  /// How many days after a measured FTP test the app starts nudging for
+  /// another (default six weeks — see [FtpTestPlanner]).
+  int get ftpRetestIntervalDays =>
+      (_prefs.getInt(_kFtpRetestIntervalDays) ?? FtpTestPlanner.defaultIntervalDays)
+          .clamp(FtpTestPlanner.minIntervalDays, FtpTestPlanner.maxIntervalDays);
+
+  Future<void> setFtpRetestIntervalDays(int value) => _prefs.setInt(
+        _kFtpRetestIntervalDays,
+        value.clamp(
+          FtpTestPlanner.minIntervalDays,
+          FtpTestPlanner.maxIntervalDays,
+        ),
+      );
 }
