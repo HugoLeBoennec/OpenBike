@@ -135,6 +135,6 @@ flutter:
 msix_config:
   display_name: OpenBike
   publisher_display_name: OpenBike
-  identity_name: com.openbike.openBike
+  identity_name: run.records.openbike
   logo_path: assets/icon/app_icon.png
   capabilities: internetClient, bluetooth

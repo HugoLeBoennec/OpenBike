@@ -1,8 +1,20 @@
-# OpenBike
+<p align="center">
+  <img src="branding/app_icon.png" alt="" width="128" height="128">
+</p>
 
-Open-source indoor cycling app — smart trainer control, structured workouts, route simulation.
+<h1 align="center">OpenBike</h1>
 
-Runs on **Android, iOS, macOS, Linux, Windows, and Web**.
+<p align="center">
+  Open-source indoor cycling app — smart trainer control, structured workouts, route simulation.
+</p>
+
+<p align="center">
+  <a href="https://github.com/HugoLeBoennec/OpenBike/actions/workflows/ci.yml"><img src="https://github.com/HugoLeBoennec/OpenBike/actions/workflows/ci.yml/badge.svg" alt="CI"></a>
+  <a href="LICENSE"><img src="https://img.shields.io/badge/license-Apache--2.0-blue.svg" alt="License: Apache 2.0"></a>
+  <img src="https://img.shields.io/badge/platforms-Android%20%7C%20iOS%20%7C%20macOS%20%7C%20Windows%20%7C%20Linux-lightgrey" alt="Platforms">
+</p>
+
+Runs on **Android, iOS, macOS and Windows**, with best-effort **Linux** support.
 
 ## Architecture
 
@@ -77,8 +89,21 @@ flutter run
 ### Platform-specific setup
 
 - **Android / iOS / macOS**: BLE permissions are required. See `flutter_blue_plus` docs.
-- **Linux / Windows**: ANT+ USB dongle support is planned.
-- **Web**: BLE is not available; the app runs in simulation mode.
+- **Windows**: BLE is supported. ANT+ USB dongle support is optional — see
+  [docs/release/antplus-usb.md](docs/release/antplus-usb.md).
+- **Linux**: builds and runs, but BLE goes through BlueZ and has not been
+  verified against real trainer hardware (`docs/roadmap/P8-desktop.md`).
+  Treat it as best-effort. Install from a release with:
+
+  ```bash
+  curl -fsSL https://github.com/HugoLeBoennec/OpenBike/releases/latest/download/install.sh | sh
+  ```
+
+  It verifies the download against `SHA256SUMS` and installs under `$HOME`
+  with no root; `sh -s -- --uninstall` reverses it. See
+  [docs/release/desktop-distribution.md](docs/release/desktop-distribution.md).
+- **Web**: not supported. BLE is unavailable in the browser for the profiles
+  this app needs, so there is no web build target.
 
 ## License
 

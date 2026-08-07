@@ -8,9 +8,39 @@ on:
 
 env:
   # pubspec.lock was generated with dart >=3.10 / flutter >=3.38 — keep in sync.
-  FLUTTER_VERSION: '3.38.x'
+  FLUTTER_VERSION: '3.41.x'
 
 jobs:
+  # The open-core seam (docs/release/private-plugins.md) keeps the Records and
+  # OpenCoach integrations in a separate private package. Nothing about either
+  # service may land here. This runs on every push and PR because the failure
+  # mode — a private endpoint or credential committed to a public repo — is not
+  # something a later revert undoes.
+  private-leak-guard:
+    name: No private-service code in the public repo
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      # Scoped to lib/ deliberately. test/ legitimately names both services —
+      # private_plugins_test.dart and connections_section_test.dart use fakes
+      # like FakeOpenCoachDevicePlugin to prove the seam registers whatever the
+      # hooks return, which is exactly the mechanism this guard protects.
+      - name: Assert no private integration details in lib/
+        run: |
+          if grep -rniE 'opencoach|records_api' lib/; then
+            echo "::error::Private integration details found above. Records and OpenCoach live in openbike_private_plugins — see docs/release/private-plugins.md."
+            exit 1
+          fi
+
+      # Matches an actual import/export directive, not a mention: the stub's own
+      # doc comment names the package when explaining what release builds swap in.
+      - name: Assert the private-plugin stub has not been swapped in
+        run: |
+          if grep -nE "^\s*(import|export)\s+'package:openbike_private_plugins" lib/plugins/private_registration.dart; then
+            echo "::error::lib/plugins/private_registration.dart pulls in the private package. That swap is a release-build-only step and must never be committed — see docs/release/private-plugins.md."
+            exit 1
+          fi
+
   analyze:
     name: Analyze
     runs-on: ubuntu-latest

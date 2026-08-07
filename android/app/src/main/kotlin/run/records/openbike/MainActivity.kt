@@ -1,4 +1,4 @@
-package com.openbike.open_bike
+package run.records.openbike
 
 import io.flutter.embedding.android.FlutterActivity
 

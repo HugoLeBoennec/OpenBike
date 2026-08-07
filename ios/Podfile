@@ -3,11 +3,6 @@ platform :ios, '13.0'
 # CocoaPods analytics sends network stats synchronously affecting flutter build latency.
 ENV['COCOAPODS_DISABLE_STATS'] = 'true'
 
-# Some Swift pods (sqlite3_flutter_libs -> sqlite3, DKPhotoGallery -> SDWebImage)
-# don't define Clang modules, which static-library integration requires when
-# importing them from Swift.
-use_modular_headers!
-
 project 'Runner', {
   'Debug' => :debug,
   'Profile' => :release,
@@ -32,6 +27,16 @@ require File.expand_path(File.join('packages', 'flutter_tools', 'bin', 'podhelpe
 flutter_ios_podfile_setup
 
 target 'Runner' do
+  # Mirrors macos/Podfile. `use_frameworks!` is required by mixed
+  # Objective-C/Swift pods — Sentry defines `SentrySDK` in Swift, and under
+  # plain static-library integration sentry_flutter's `@_spi(Private) import
+  # Sentry` only sees the Objective-C half, failing with "Type 'SentrySDK' has
+  # no member 'configureScope'". `use_modular_headers!` additionally covers the
+  # Swift pods that define no Clang module of their own
+  # (sqlite3_flutter_libs -> sqlite3, DKPhotoGallery -> SDWebImage).
+  use_frameworks!
+  use_modular_headers!
+
   flutter_install_all_ios_pods File.dirname(File.realpath(__FILE__))
 end
 

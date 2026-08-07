@@ -20,7 +20,7 @@ if (hasReleaseKeystore) {
 }
 
 android {
-    namespace = "com.openbike.open_bike"
+    namespace = "run.records.openbike"
     compileSdk = 36
     ndkVersion = flutter.ndkVersion
 
@@ -34,9 +34,12 @@ android {
     }
 
     defaultConfig {
-        applicationId = "com.openbike.open_bike"
-        minSdk = 23
-        targetSdk = 35
+        applicationId = "run.records.openbike"
+        minSdk = flutter.minSdkVersion
+        // Play requires new apps and updates to target API 36 from 2026-08-31
+        // (see docs/release/play-store.md). Bumped ahead of the deadline so the
+        // first submission doesn't need a re-target mid-review.
+        targetSdk = 36
         versionCode = flutter.versionCode
         versionName = flutter.versionName
     }

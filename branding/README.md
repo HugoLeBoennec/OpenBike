@@ -31,16 +31,45 @@ macos/      16 → 1024
 windows/    ico/icon-*.png
 linux/      16 → 512 — the source for linux/icons/hicolor/ (repo)
 web/        favicons, PWA icon-192/512, maskable variants — not wired up, web is out of scope (repo)
-store/      Play listing + GitHub avatar — uploaded by hand, not part of any build (repo)
+store/      Play listing, GitHub avatar, repo social preview — uploaded by hand, not part of any build (repo)
 ```
 
 The per-platform PNGs are the handoff/reference set. Every platform except Linux is generated
 by `flutter_launcher_icons` from the masters rather than copied from here, so editing a PNG in
 this directory changes nothing on its own.
 
-Two notes on the package as delivered: `ios/*.png` do carry an alpha channel despite the note
-above claiming otherwise, and `store/play-512.png` is 1024×1024, not 512. Neither matters for
-the build — `remove_alpha_ios` strips alpha from the generated iOS icons regardless.
+One note on the package as delivered: `ios/*.png` do carry an alpha channel despite the note
+above claiming otherwise. This doesn't matter for the build — `remove_alpha_ios` strips alpha
+from the generated iOS icons regardless.
+
+`store/` also shipped both files at 1024×1024 regardless of the sizes in their names. They have
+since been resampled to the sizes they claim (Lanczos, from the 1024 original), because unlike
+everything else here these are uploaded by hand and Play requires the app icon to be exactly
+512×512. If you re-cut them from the master, resize explicitly — don't assume the export honours
+the filename.
+
+### Where each `store/` file goes _(repo)_
+
+None of these are referenced by the repo — they're pasted into web consoles by hand.
+
+| File | Destination |
+|---|---|
+| `play-512.png` | Play Console → Store listing → App icon (must be exactly 512×512) |
+| `github-avatar-460.png` | The **account** avatar — github.com/settings/profile, or the org's settings. Repositories have no avatar of their own; they inherit the owner's. |
+| `github-social-preview-1280x640.png` | **Per repository**: Settings → General → Social preview. This is the card that renders when the repo link is shared — without it, a shared link shows a generic grey placeholder. |
+
+The social preview is the one asset here that isn't just a resized icon, so its
+recipe is worth recording. Same headless-Chrome approach as *Regenerating*
+below, on a 1280×640 ink field: the mark from `vector/mark_transparent.svg` at
+348px, `OpenBike` in Archivo 700 at 136px, the tagline in Archivo 600 at 38px
+on 62% paper, and a 100×7 accent rule. Archivo isn't installed here — fetch the
+latin subset from Google Fonts and inline it as a base64 `@font-face` before
+rendering, since a remote font can lose the race with the screenshot. Render at
+`--force-device-scale-factor=2` and downsample to 1280×640 for clean edges.
+
+This is a lockup, not *the* wordmark — see *Not included* at the bottom. The
+designed wordmark lives in `Icon Directions.dc.html` (2e, 2f) and is not in
+this repo, so if it ever gets cut, re-make this card from it.
 
 ## Regenerating _(repo)_
 
@@ -66,8 +95,10 @@ dart run flutter_native_splash:create
 ```
 
 Both are configured to skip web. Linux is covered by neither tool: refresh
-`linux/icons/hicolor/<size>x<size>/apps/com.openbike.open_bike.png` from `linux/openbike-<size>.png`
-by hand, and keep the size list in `linux/my_application.cc` in sync with what ships here.
+`linux/icons/hicolor/<size>x<size>/apps/run.records.openbike.png` from `linux/openbike-<size>.png`
+by hand, and keep the size list in `linux/my_application.cc` in sync with what ships here. Note
+the repo ships no 24×24 — `icon_sizes[]` in `my_application.cc` omits it — even though
+`linux/openbike-24.png` does not exist here either; don't add one without adding both.
 
 ## Monochrome / tinted mode
 

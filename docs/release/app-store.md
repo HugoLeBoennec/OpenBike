@@ -74,11 +74,13 @@ behavior, not a bug.
 
 ## Microsoft Store (Windows)
 
-Not pursued for v1.0 — default distribution for Windows is a signed
-`.msix` attached directly to GitHub Releases
-(`.github/workflows/release.yml`'s `windows` job), matching
-`docs/roadmap/README.md`'s "PC" platform priority without the overhead of
-a separate store listing. Revisit a Microsoft Store submission
-post-launch if user demand or auto-update convenience justifies it — the
-same signed `.msix` artifact is the one that would be submitted, no
-separate packaging path needed.
+Moved to `docs/release/desktop-distribution.md`, which also covers Linux.
+
+Note the assumption that used to live here — "a signed `.msix` attached
+directly to GitHub Releases" — was wrong: the release workflow has no
+code-signing certificate configured, so `msix:create` self-signs with a
+generated test certificate, and Windows will not install an MSIX signed by an
+untrusted certificate. That artifact is sideload-only. See
+`docs/release/desktop-distribution.md` for the actual options (the Microsoft
+Store is now free for individual *and* company accounts, and signs the package
+for you).

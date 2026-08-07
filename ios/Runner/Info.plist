@@ -28,13 +28,21 @@
 		<array>
 			<dict>
 				<key>CFBundleURLName</key>
-				<string>com.openbike.open_bike.oauth</string>
+				<string>run.records.openbike.oauth</string>
 				<key>CFBundleURLSchemes</key>
 				<array>
 					<string>openbike</string>
 				</array>
 			</dict>
 		</array>
+		<!-- Export compliance: OpenBike's only cryptography is HTTPS to the
+		     Strava API and (opt-in) Sentry, plus Apple's own Keychain via
+		     flutter_secure_storage. That is all "standard" encryption exempt
+		     under the US EAR, so declaring it here answers App Store Connect's
+		     export-compliance question once instead of on every upload. Revisit
+		     if OpenBike ever ships its own/proprietary crypto. -->
+		<key>ITSAppUsesNonExemptEncryption</key>
+		<false/>
 		<key>LSRequiresIPhoneOS</key>
 		<true/>
 		<key>NSBluetoothAlwaysUsageDescription</key>

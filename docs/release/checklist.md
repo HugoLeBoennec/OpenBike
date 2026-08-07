@@ -4,6 +4,16 @@ Steps to cut a new OpenBike release, from a green `main` to store submission.
 See also: `docs/release/beta.md` (beta gate that must pass first) and
 `CHANGELOG.md` (Keep a Changelog format).
 
+## 0. One-time, before the first ever release
+
+- [ ] Store accounts, app records and signing certificates exist —
+      `docs/release/store-setup.md`. Apple and Google both have lead times;
+      a new **personal** Play account additionally needs 12 testers opted in
+      for 14 continuous days before it can reach production, which dominates
+      the schedule.
+- [ ] Windows and Linux distribution channels chosen —
+      `docs/release/desktop-distribution.md`.
+
 ## 1. Pre-flight (on `main`)
 
 - [ ] `flutter analyze && flutter test` pass locally.
