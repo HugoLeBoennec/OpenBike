@@ -212,7 +212,16 @@ jobs:
             --dart-define=STRAVA_CLIENT_ID=${{ secrets.STRAVA_CLIENT_ID }} `
             --dart-define=STRAVA_CLIENT_SECRET=${{ secrets.STRAVA_CLIENT_SECRET }} `
             --dart-define=SENTRY_DSN=${{ secrets.SENTRY_DSN }}
-      - run: dart run msix:create --build-windows false
+      # `--install-certificate false` is required in CI. With no certificate
+      # configured the tool self-signs with a generated test_certificate.pfx
+      # and then asks, interactively, whether to install it into the local
+      # trust store. On a runner stdin is not a TTY, so the prompt resolves
+      # null and the tool dies with "type 'Null' is not a subtype of type
+      # 'FutureOr<String>'". Trusting a throwaway cert on a disposable runner
+      # would be pointless anyway — the artifact is for sideloading, and the
+      # Store path (--store) is signed by Microsoft. See
+      # docs/release/desktop-distribution.md.
+      - run: dart run msix:create --build-windows false --install-certificate false
       - uses: actions/upload-artifact@v4
         with:
           name: OpenBike-windows
