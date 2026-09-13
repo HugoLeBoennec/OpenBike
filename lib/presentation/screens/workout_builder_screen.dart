@@ -1,3 +1,4 @@
+import 'dart:convert';
 import 'dart:io' show File;
 
 import 'package:file_picker/file_picker.dart';
@@ -97,14 +98,24 @@ class WorkoutBuilderScreen extends ConsumerWidget {
     final result = await FilePicker.platform.pickFiles(
       type: FileType.custom,
       allowedExtensions: ['zwo', 'erg', 'mrc'],
+      // Guarantees `bytes` alongside `path` — on Android/iOS a file coming
+      // from a cloud-backed provider (Google Drive, "Files" on-demand
+      // downloads, etc.) isn't materialized on local disk, so `path` comes
+      // back null and bytes are the only way to read it.
+      withData: true,
     );
     if (result == null || result.files.isEmpty) return;
 
     final file = result.files.first;
-    if (file.path == null) return;
-
-    final content = await _readFile(file.path!);
-    if (content == null) return;
+    final content = await _readFile(file);
+    if (content == null) {
+      if (context.mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('Could not read the selected file')),
+        );
+      }
+      return;
+    }
 
     final ext = '.${file.extension?.toLowerCase() ?? ''}';
     final registry = ref.read(pluginRegistryProvider);
@@ -138,9 +149,13 @@ class WorkoutBuilderScreen extends ConsumerWidget {
     }
   }
 
-  Future<String?> _readFile(String path) async {
+  Future<String?> _readFile(PlatformFile file) async {
     try {
-      return await File(path).readAsString();
+      final path = file.path;
+      if (path != null) return await File(path).readAsString();
+      final bytes = file.bytes;
+      if (bytes != null) return utf8.decode(bytes);
+      return null;
     } catch (_) {
       return null;
     }

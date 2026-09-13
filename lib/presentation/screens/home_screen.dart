@@ -1,3 +1,4 @@
+import 'dart:convert';
 import 'dart:io';
 
 import 'package:file_picker/file_picker.dart';
@@ -114,16 +115,39 @@ class HomeScreen extends ConsumerWidget {
     final result = await FilePicker.platform.pickFiles(
       type: FileType.custom,
       allowedExtensions: ['gpx'],
+      // Guarantees `bytes` alongside `path` — on Android/iOS a file coming
+      // from a cloud-backed provider (Google Drive, "Files" on-demand
+      // downloads, etc.) isn't materialized on local disk, so `path` comes
+      // back null and bytes are the only way to read it.
+      withData: true,
     );
     if (result == null || result.files.isEmpty) return;
 
-    final path = result.files.single.path;
-    if (path == null) return;
+    final gpxContent = await _readPickedFile(result.files.single);
+    if (gpxContent == null) {
+      if (context.mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('Could not read the selected file')),
+        );
+      }
+      return;
+    }
 
-    final gpxContent = await File(path).readAsString();
     final route = GpxRouteParser().parse(gpxContent);
     if (context.mounted) {
       context.go('/ride', extra: RideExtra(route: route));
+    }
+  }
+
+  Future<String?> _readPickedFile(PlatformFile file) async {
+    try {
+      final path = file.path;
+      if (path != null) return await File(path).readAsString();
+      final bytes = file.bytes;
+      if (bytes != null) return utf8.decode(bytes);
+      return null;
+    } catch (_) {
+      return null;
     }
   }
 }
