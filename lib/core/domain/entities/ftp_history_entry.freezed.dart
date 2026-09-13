@@ -20,6 +20,11 @@ mixin _$FtpHistoryEntry {
   DateTime get effectiveDate => throw _privateConstructorUsedError;
   Watts get ftp => throw _privateConstructorUsedError;
 
+  /// Defaults to [FtpSource.manual] so rows written before the source
+  /// column existed (schema < 6) keep their existing meaning: a number
+  /// that changed, with no evidence a test produced it.
+  FtpSource get source => throw _privateConstructorUsedError;
+
   /// Create a copy of FtpHistoryEntry
   /// with the given fields replaced by the non-null parameter values.
   @JsonKey(includeFromJson: false, includeToJson: false)
@@ -34,7 +39,7 @@ abstract class $FtpHistoryEntryCopyWith<$Res> {
     $Res Function(FtpHistoryEntry) then,
   ) = _$FtpHistoryEntryCopyWithImpl<$Res, FtpHistoryEntry>;
   @useResult
-  $Res call({DateTime effectiveDate, Watts ftp});
+  $Res call({DateTime effectiveDate, Watts ftp, FtpSource source});
 
   $WattsCopyWith<$Res> get ftp;
 }
@@ -53,7 +58,11 @@ class _$FtpHistoryEntryCopyWithImpl<$Res, $Val extends FtpHistoryEntry>
   /// with the given fields replaced by the non-null parameter values.
   @pragma('vm:prefer-inline')
   @override
-  $Res call({Object? effectiveDate = null, Object? ftp = null}) {
+  $Res call({
+    Object? effectiveDate = null,
+    Object? ftp = null,
+    Object? source = null,
+  }) {
     return _then(
       _value.copyWith(
             effectiveDate: null == effectiveDate
@@ -64,6 +73,10 @@ class _$FtpHistoryEntryCopyWithImpl<$Res, $Val extends FtpHistoryEntry>
                 ? _value.ftp
                 : ftp // ignore: cast_nullable_to_non_nullable
                       as Watts,
+            source: null == source
+                ? _value.source
+                : source // ignore: cast_nullable_to_non_nullable
+                      as FtpSource,
           )
           as $Val,
     );
@@ -89,7 +102,7 @@ abstract class _$$FtpHistoryEntryImplCopyWith<$Res>
   ) = __$$FtpHistoryEntryImplCopyWithImpl<$Res>;
   @override
   @useResult
-  $Res call({DateTime effectiveDate, Watts ftp});
+  $Res call({DateTime effectiveDate, Watts ftp, FtpSource source});
 
   @override
   $WattsCopyWith<$Res> get ftp;
@@ -108,7 +121,11 @@ class __$$FtpHistoryEntryImplCopyWithImpl<$Res>
   /// with the given fields replaced by the non-null parameter values.
   @pragma('vm:prefer-inline')
   @override
-  $Res call({Object? effectiveDate = null, Object? ftp = null}) {
+  $Res call({
+    Object? effectiveDate = null,
+    Object? ftp = null,
+    Object? source = null,
+  }) {
     return _then(
       _$FtpHistoryEntryImpl(
         effectiveDate: null == effectiveDate
@@ -119,6 +136,10 @@ class __$$FtpHistoryEntryImplCopyWithImpl<$Res>
             ? _value.ftp
             : ftp // ignore: cast_nullable_to_non_nullable
                   as Watts,
+        source: null == source
+            ? _value.source
+            : source // ignore: cast_nullable_to_non_nullable
+                  as FtpSource,
       ),
     );
   }
@@ -127,16 +148,27 @@ class __$$FtpHistoryEntryImplCopyWithImpl<$Res>
 /// @nodoc
 
 class _$FtpHistoryEntryImpl implements _FtpHistoryEntry {
-  const _$FtpHistoryEntryImpl({required this.effectiveDate, required this.ftp});
+  const _$FtpHistoryEntryImpl({
+    required this.effectiveDate,
+    required this.ftp,
+    this.source = FtpSource.manual,
+  });
 
   @override
   final DateTime effectiveDate;
   @override
   final Watts ftp;
 
+  /// Defaults to [FtpSource.manual] so rows written before the source
+  /// column existed (schema < 6) keep their existing meaning: a number
+  /// that changed, with no evidence a test produced it.
+  @override
+  @JsonKey()
+  final FtpSource source;
+
   @override
   String toString() {
-    return 'FtpHistoryEntry(effectiveDate: $effectiveDate, ftp: $ftp)';
+    return 'FtpHistoryEntry(effectiveDate: $effectiveDate, ftp: $ftp, source: $source)';
   }
 
   @override
@@ -146,11 +178,12 @@ class _$FtpHistoryEntryImpl implements _FtpHistoryEntry {
             other is _$FtpHistoryEntryImpl &&
             (identical(other.effectiveDate, effectiveDate) ||
                 other.effectiveDate == effectiveDate) &&
-            (identical(other.ftp, ftp) || other.ftp == ftp));
+            (identical(other.ftp, ftp) || other.ftp == ftp) &&
+            (identical(other.source, source) || other.source == source));
   }
 
   @override
-  int get hashCode => Object.hash(runtimeType, effectiveDate, ftp);
+  int get hashCode => Object.hash(runtimeType, effectiveDate, ftp, source);
 
   /// Create a copy of FtpHistoryEntry
   /// with the given fields replaced by the non-null parameter values.
@@ -168,12 +201,19 @@ abstract class _FtpHistoryEntry implements FtpHistoryEntry {
   const factory _FtpHistoryEntry({
     required final DateTime effectiveDate,
     required final Watts ftp,
+    final FtpSource source,
   }) = _$FtpHistoryEntryImpl;
 
   @override
   DateTime get effectiveDate;
   @override
   Watts get ftp;
+
+  /// Defaults to [FtpSource.manual] so rows written before the source
+  /// column existed (schema < 6) keep their existing meaning: a number
+  /// that changed, with no evidence a test produced it.
+  @override
+  FtpSource get source;
 
   /// Create a copy of FtpHistoryEntry
   /// with the given fields replaced by the non-null parameter values.

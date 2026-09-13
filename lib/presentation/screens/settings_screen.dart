@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
+import '../../core/application/services/ftp_test_planner.dart';
 import '../../core/domain/entities/user_profile.dart';
 import '../../core/domain/value_objects/value_objects.dart';
 import '../state/providers.dart';
@@ -64,6 +65,12 @@ class SettingsScreen extends ConsumerWidget {
                 ? '${profile!.maxHr.bpm} bpm'
                 : 'Not set',
             onTap: () => _editMaxHr(context, ref, profile),
+          ),
+          _SettingsTile(
+            icon: Icons.event_repeat,
+            title: 'FTP retest reminder',
+            value: _weeksLabel(ref.watch(ftpRetestIntervalProvider)),
+            onTap: () => _editRetestInterval(context, ref),
           ),
 
           const SizedBox(height: 8),
@@ -214,6 +221,65 @@ class SettingsScreen extends ConsumerWidget {
     final updated = current.copyWith(ftp: Watts(value));
     ref.read(userProfileProvider.notifier).state = updated;
     _saveProfile(ref, updated);
+    // Typing a value writes a `manual` history entry, which the progression
+    // chart shows but the retest clock ignores — refresh so both agree.
+    ref.invalidate(ftpHistoryProvider);
+  }
+
+  static String _weeksLabel(int days) {
+    final weeks = (days / 7).round();
+    return 'Every $weeks weeks';
+  }
+
+  /// Offered as whole weeks across the range coaches actually recommend: four
+  /// weeks for riders on short blocks, six as the default, and longer options
+  /// for those who train by feel and only want an occasional check.
+  Future<void> _editRetestInterval(BuildContext context, WidgetRef ref) async {
+    const choices = [28, 42, 56, 84, 112];
+    final current = ref.read(ftpRetestIntervalProvider);
+
+    final picked = await showDialog<int>(
+      context: context,
+      builder: (ctx) => SimpleDialog(
+        title: const Text('Remind me to retest'),
+        children: [
+          for (final days in choices)
+            SimpleDialogOption(
+              key: Key('retestInterval-$days'),
+              onPressed: () => Navigator.of(ctx).pop(days),
+              child: Row(
+                children: [
+                  Icon(
+                    days == current
+                        ? Icons.radio_button_checked
+                        : Icons.radio_button_unchecked,
+                    size: 20,
+                    color: days == current
+                        ? Colors.deepOrange
+                        : context.tokens.textTertiary,
+                  ),
+                  const SizedBox(width: 12),
+                  Text(_weeksLabel(days)),
+                  if (days == FtpTestPlanner.defaultIntervalDays) ...[
+                    const SizedBox(width: 8),
+                    Text(
+                      '(recommended)',
+                      style: TextStyle(
+                        color: context.tokens.textTertiary,
+                        fontSize: 12,
+                      ),
+                    ),
+                  ],
+                ],
+              ),
+            ),
+        ],
+      ),
+    );
+    if (picked == null) return;
+
+    ref.read(ftpRetestIntervalProvider.notifier).state = picked;
+    await ref.read(appPreferencesProvider).setFtpRetestIntervalDays(picked);
   }
 
   Future<void> _editWeight(

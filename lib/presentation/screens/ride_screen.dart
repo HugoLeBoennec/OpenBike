@@ -7,6 +7,7 @@ import 'package:wakelock_plus/wakelock_plus.dart';
 
 import '../../core/application/services/auto_pause_detector.dart';
 import '../../core/application/services/bundled_workouts.dart';
+import '../../core/application/services/ftp_test_planner.dart';
 import '../../core/application/services/recording_engine.dart';
 import '../../core/events/app_event.dart';
 import '../models/data_field_type.dart';
@@ -57,8 +58,8 @@ class _RideScreenState extends ConsumerState<RideScreen> {
         final workout = widget.extra!.workout!;
         ref.read(currentWorkoutProvider.notifier).state = workout;
         ref.read(activeFtpTestProvider.notifier).state = switch (workout.id) {
-          BundledWorkouts.rampTestId => FtpTestType.ramp,
-          BundledWorkouts.twentyMinTestId => FtpTestType.twentyMinute,
+          BundledWorkouts.rampTestId => FtpTestProtocol.ramp,
+          BundledWorkouts.twentyMinTestId => FtpTestProtocol.twentyMinute,
           _ => null,
         };
         final ftp = ref.read(ftpProvider);

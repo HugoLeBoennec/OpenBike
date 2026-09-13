@@ -10,6 +10,14 @@ and this project adheres to [Semantic Versioning](https://semver.org/).
 ### Added
 - Manual trainer control (ERG target, resistance level, SIM difficulty)
   available during free rides; TCX file export.
+- **Guided FTP test** (`/ftp-test`, reachable from a Home dashboard card):
+  explains what FTP is, recommends a protocol (ramp for the first two tests,
+  then the 20-minute test), lists preparation guidance, and launches the test
+  ride. Results are charted over time, and FTP history now records whether a
+  value was measured or typed by hand.
+- **FTP retest reminder** — the Home card flags a retest once the interval
+  since the last measured test has elapsed. Defaults to six weeks, adjustable
+  from four to sixteen in Settings.
 
 ## [1.0.0] - 2026-07-10
 

@@ -672,9 +672,30 @@ final workoutProgressProvider = StreamProvider<WorkoutProgress>((ref) {
 /// of [BundledWorkouts.rampTestId] / [BundledWorkouts.twentyMinTestId];
 /// consumed once by `FtpTestPrompt` on the ride-summary screen, which
 /// clears it back to null after showing the update-profile prompt.
-enum FtpTestType { ramp, twentyMinute }
+final activeFtpTestProvider = StateProvider<FtpTestProtocol?>((ref) => null);
 
-final activeFtpTestProvider = StateProvider<FtpTestType?>((ref) => null);
+/// Every dated FTP value on record, oldest first — the raw material for the
+/// FTP test screen's progression chart and retest reminder.
+final ftpHistoryProvider = FutureProvider<List<FtpHistoryEntry>>((ref) async {
+  return ref.watch(storageProvider).getFtpHistory();
+});
+
+/// Days between FTP tests before the app nudges for another (see Settings).
+final ftpRetestIntervalProvider = StateProvider<int>((ref) {
+  return ref.read(appPreferencesProvider).ftpRetestIntervalDays;
+});
+
+/// When the rider last tested, whether another test is due, and which
+/// protocol to steer them toward. Null while the history is still loading.
+final ftpTestPlanProvider = Provider<FtpTestPlan?>((ref) {
+  final history = ref.watch(ftpHistoryProvider).valueOrNull;
+  if (history == null) return null;
+  return FtpTestPlanner.plan(
+    ftpHistory: history,
+    now: DateTime.now(),
+    intervalDays: ref.watch(ftpRetestIntervalProvider),
+  );
+});
 
 // ---------------------------------------------------------------------------
 // User profile & zones

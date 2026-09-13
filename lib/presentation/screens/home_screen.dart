@@ -6,6 +6,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
+import '../../core/application/services/ftp_test_planner.dart';
 import '../../core/domain/entities/entities.dart';
 import '../../core/domain/value_objects/value_objects.dart';
 import '../../infrastructure/files/gpx_parser.dart';
@@ -73,6 +74,8 @@ class HomeScreen extends ConsumerWidget {
             color: Colors.green,
             onTap: () => _pickRoute(context, ref),
           ),
+          const SizedBox(height: 8),
+          const _FtpTestCard(),
           const SizedBox(height: 24),
 
           // Recent activities
@@ -122,6 +125,74 @@ class HomeScreen extends ConsumerWidget {
     if (context.mounted) {
       context.go('/ride', extra: RideExtra(route: route));
     }
+  }
+}
+
+// ---------------------------------------------------------------------------
+// FTP test
+// ---------------------------------------------------------------------------
+
+/// Action card for the guided FTP test, doubling as the retest reminder.
+///
+/// The subtitle carries the nudge rather than a separate banner: a rider who
+/// has never tested is training against the 200 W default, and one who tested
+/// three months ago has zones that no longer match them — both need the same
+/// destination, so this reads as one card whose urgency changes.
+class _FtpTestCard extends ConsumerWidget {
+  const _FtpTestCard();
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final plan = ref.watch(ftpTestPlanProvider);
+    final highlight = plan?.shouldPrompt ?? false;
+    final color = highlight ? Colors.amber : Colors.purple;
+
+    return Stack(
+      children: [
+        _ActionCard(
+          icon: Icons.speed,
+          title: 'FTP Test',
+          subtitle: _subtitle(plan),
+          color: color,
+          onTap: () => context.go('/ftp-test'),
+        ),
+        if (highlight)
+          Positioned(
+            top: 12,
+            right: 12,
+            child: Container(
+              padding: const EdgeInsets.symmetric(horizontal: 7, vertical: 2),
+              decoration: BoxDecoration(
+                color: color.withValues(alpha: 0.25),
+                borderRadius: BorderRadius.circular(4),
+              ),
+              child: Text(
+                plan?.hasTested ?? false ? 'DUE' : 'START HERE',
+                style: TextStyle(
+                  color: color,
+                  fontSize: 9,
+                  fontWeight: FontWeight.bold,
+                  letterSpacing: 0.5,
+                ),
+              ),
+            ),
+          ),
+      ],
+    );
+  }
+
+  String _subtitle(FtpTestPlan? plan) {
+    if (plan == null) return 'Measure your threshold power';
+    return switch (plan.status) {
+      FtpTestStatus.neverTested =>
+        'Set your training zones from a real measurement',
+      FtpTestStatus.due => 'Last tested ${plan.daysSinceLastTest} days ago '
+          '— time to retest',
+      FtpTestStatus.dueSoon => 'Due in ${plan.daysUntilDue} '
+          '${plan.daysUntilDue == 1 ? 'day' : 'days'}',
+      FtpTestStatus.upToDate =>
+        'Next test in ${plan.daysUntilDue} days',
+    };
   }
 }
 

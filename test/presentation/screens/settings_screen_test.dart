@@ -23,6 +23,24 @@ Widget _wrap(DriftStorage storage, AppPreferences appPrefs, ThemeData theme) {
   );
 }
 
+/// Pumps Settings on a viewport tall enough to build every section. The
+/// default 800x600 surface only reaches partway down the list, so assertions
+/// on the lower sections would break whenever a tile is added above them.
+Future<void> _pumpSettings(
+  WidgetTester tester,
+  DriftStorage storage,
+  AppPreferences appPrefs,
+  ThemeData theme,
+) async {
+  tester.view.physicalSize = const Size(1000, 2000);
+  tester.view.devicePixelRatio = 1.0;
+  addTearDown(tester.view.resetPhysicalSize);
+  addTearDown(tester.view.resetDevicePixelRatio);
+
+  await tester.pumpWidget(_wrap(storage, appPrefs, theme));
+  await tester.pumpAndSettle();
+}
+
 void main() {
   group('SettingsScreen widget — both themes', () {
     late AppDatabase db;
@@ -41,8 +59,7 @@ void main() {
     });
 
     testWidgets('renders in dark theme', (tester) async {
-      await tester.pumpWidget(_wrap(storage, appPrefs, AppTheme.dark));
-      await tester.pumpAndSettle();
+      await _pumpSettings(tester, storage, appPrefs, AppTheme.dark);
 
       expect(find.text('Settings'), findsOneWidget);
       expect(find.text('FTP'), findsOneWidget);
@@ -53,8 +70,7 @@ void main() {
     });
 
     testWidgets('renders in light theme', (tester) async {
-      await tester.pumpWidget(_wrap(storage, appPrefs, AppTheme.light));
-      await tester.pumpAndSettle();
+      await _pumpSettings(tester, storage, appPrefs, AppTheme.light);
 
       expect(find.text('Settings'), findsOneWidget);
       expect(find.text('FTP'), findsOneWidget);
@@ -63,8 +79,7 @@ void main() {
 
     testWidgets('tapping Theme cycles Dark -> Light -> System -> Dark',
         (tester) async {
-      await tester.pumpWidget(_wrap(storage, appPrefs, AppTheme.dark));
-      await tester.pumpAndSettle();
+      await _pumpSettings(tester, storage, appPrefs, AppTheme.dark);
 
       expect(find.text('Dark'), findsOneWidget);
       await tester.tap(find.text('Theme'));
@@ -80,10 +95,25 @@ void main() {
       expect(find.text('Dark'), findsOneWidget);
     });
 
+    testWidgets('FTP retest reminder defaults to six weeks and persists a pick',
+        (tester) async {
+      await _pumpSettings(tester, storage, appPrefs, AppTheme.dark);
+
+      expect(find.text('FTP retest reminder'), findsOneWidget);
+      expect(find.text('Every 6 weeks'), findsOneWidget);
+
+      await tester.tap(find.text('FTP retest reminder'));
+      await tester.pumpAndSettle();
+      await tester.tap(find.byKey(const Key('retestInterval-28')));
+      await tester.pumpAndSettle();
+
+      expect(find.text('Every 4 weeks'), findsOneWidget);
+      expect(appPrefs.ftpRetestIntervalDays, 28);
+    });
+
     testWidgets('crash reporting toggle defaults off and flips on tap',
         (tester) async {
-      await tester.pumpWidget(_wrap(storage, appPrefs, AppTheme.dark));
-      await tester.pumpAndSettle();
+      await _pumpSettings(tester, storage, appPrefs, AppTheme.dark);
 
       // The About section is below the fold — scroll it into view.
       await tester.scrollUntilVisible(find.text('Crash reporting'), 200);
@@ -108,8 +138,7 @@ void main() {
 
     testWidgets('open-source licenses tile opens the license page',
         (tester) async {
-      await tester.pumpWidget(_wrap(storage, appPrefs, AppTheme.dark));
-      await tester.pumpAndSettle();
+      await _pumpSettings(tester, storage, appPrefs, AppTheme.dark);
 
       await tester.scrollUntilVisible(find.text('Open-source licenses'), 200);
       await tester.pumpAndSettle();

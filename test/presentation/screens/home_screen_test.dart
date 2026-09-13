@@ -34,6 +34,25 @@ Widget _wrap(DriftStorage storage, AppPreferences appPrefs, ThemeData theme) {
   );
 }
 
+/// Pumps Home on a viewport tall enough to build the whole dashboard. The
+/// default 800x600 surface cuts off the recent-activities section below the
+/// action cards, so assertions on it would depend on how many cards the
+/// dashboard happens to have.
+Future<void> _pumpHome(
+  WidgetTester tester,
+  DriftStorage storage,
+  AppPreferences appPrefs,
+  ThemeData theme,
+) async {
+  tester.view.physicalSize = const Size(1000, 2000);
+  tester.view.devicePixelRatio = 1.0;
+  addTearDown(tester.view.resetPhysicalSize);
+  addTearDown(tester.view.resetDevicePixelRatio);
+
+  await tester.pumpWidget(_wrap(storage, appPrefs, theme));
+  await tester.pumpAndSettle();
+}
+
 void main() {
   late AppDatabase db;
   late DriftStorage storage;
@@ -51,8 +70,7 @@ void main() {
   });
 
   testWidgets('renders in dark theme with no rides yet', (tester) async {
-    await tester.pumpWidget(_wrap(storage, appPrefs, AppTheme.dark));
-    await tester.pumpAndSettle();
+    await _pumpHome(tester, storage, appPrefs, AppTheme.dark);
 
     expect(find.text('OpenBike'), findsOneWidget);
     expect(find.text('Free Ride'), findsOneWidget);
@@ -61,13 +79,25 @@ void main() {
   });
 
   testWidgets('renders in light theme with no rides yet', (tester) async {
-    await tester.pumpWidget(_wrap(storage, appPrefs, AppTheme.light));
-    await tester.pumpAndSettle();
+    await _pumpHome(tester, storage, appPrefs, AppTheme.light);
 
     expect(find.text('OpenBike'), findsOneWidget);
     expect(find.text('Free Ride'), findsOneWidget);
     expect(find.text('No rides yet.'), findsOneWidget);
     expect(tester.takeException(), isNull);
+  });
+
+  testWidgets('surfaces the FTP test as a first step for an untested rider',
+      (tester) async {
+    await _pumpHome(tester, storage, appPrefs, AppTheme.dark);
+
+    expect(find.text('FTP Test'), findsOneWidget);
+    // No FTP history at all — the card nudges rather than reporting a date.
+    expect(find.text('START HERE'), findsOneWidget);
+    expect(
+      find.text('Set your training zones from a real measurement'),
+      findsOneWidget,
+    );
   });
 
   testWidgets('tapping settings icon navigates to settings', (tester) async {

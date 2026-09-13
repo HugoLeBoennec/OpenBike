@@ -1,5 +1,7 @@
 export 'auto_pause_detector.dart';
 export 'fitness_calculator.dart';
+export 'ftp_estimator.dart';
+export 'ftp_test_planner.dart';
 export 'personal_records_calculator.dart';
 export 'personal_records_backfill.dart';
 export 'physics_engine.dart';

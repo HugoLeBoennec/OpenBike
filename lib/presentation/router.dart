@@ -90,6 +90,10 @@ GoRouter createAppRouter({required bool hasCompletedOnboarding}) {
             builder: (_, __) => const TrendsScreen(),
           ),
           GoRoute(
+            path: '/ftp-test',
+            builder: (_, __) => const FtpTestScreen(),
+          ),
+          GoRoute(
             path: '/history/:id',
             builder: (_, state) {
               final id = state.pathParameters['id'] ?? '';

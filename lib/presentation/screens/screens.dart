@@ -1,6 +1,7 @@
 export 'calendar_screen.dart';
 export 'dev_tools_screen.dart';
 export 'device_scan_screen.dart';
+export 'ftp_test_screen.dart';
 export 'history_screen.dart';
 export 'home_screen.dart';
 export 'onboarding_screen.dart';
