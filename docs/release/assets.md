@@ -1,9 +1,10 @@
 # Store screenshots & assets checklist
 
-Screenshots aren't produced by this repo automatically — they're captured
-from the P7-polished UI on real devices/simulators once a release build is
-available. This is a checklist for whoever does that capture, plus where
-the results go.
+Apple screenshots (iPhone, iPad, Mac) are produced by
+`tool/screenshots/take_screenshots.sh` into `docs/store/screenshots/` — see
+`tool/screenshots/README.md`. Google Play screenshots are still captured by
+hand. This is a checklist for whoever does that capture, plus where the
+results go.
 
 ## Where assets live
 
@@ -38,18 +39,21 @@ v1.0.
 
 ### Apple App Store
 
-- 6.9" (iPhone 16 Pro Max class) and 6.5" screenshots — required.
-- 13" iPad screenshots — required only if the app is marketed as
-  iPad-compatible (it is, per the responsive layouts).
+- 6.9" iPhone (1320×2868, iPhone 17 Pro Max class) — required; App Store
+  Connect scales it down for smaller iPhones. 6.3" (1206×2622) is optional.
+- 13" iPad (2064×2752) — required, since the iOS target supports iPad
+  (`TARGETED_DEVICE_FAMILY = "1,2"`).
+- Mac (2880×1800) — required for the Mac App Store listing.
 - App icon: 1024×1024 PNG, no alpha channel (export from
   `assets/icon/app_icon.png`, flattened).
 
 ## How to capture
 
 ```bash
-# iOS Simulator
-flutter build ios --release --no-codesign
-# then run in Simulator via Xcode, Cmd+S to screenshot each screen
+# Apple (one target at a time; ~20 min each, see tool/screenshots/README.md)
+tool/screenshots/take_screenshots.sh ios-6.9
+tool/screenshots/take_screenshots.sh ipad-13
+tool/screenshots/take_screenshots.sh macos
 
 # Android Emulator
 flutter build apk --release
