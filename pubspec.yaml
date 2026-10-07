@@ -117,7 +117,7 @@ dev_dependencies:
 
   # App icon & splash
   flutter_launcher_icons: ^0.14.3
-  flutter_native_splash: ^2.4.8
+  flutter_native_splash: ^2.4.4
 
   # Windows MSIX packaging (release CI job — see P8-desktop.md)
   msix: ^3.16.9
