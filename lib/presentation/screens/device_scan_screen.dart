@@ -446,75 +446,80 @@ class _RoleSlotTile extends StatelessWidget {
             ? Border.all(color: Colors.amber.withValues(alpha: 0.4))
             : null,
       ),
-      child: ListTile(
-        leading: Icon(
-          roleIcon(role),
-          color: live ? Colors.green : tokens.textDisabled,
-        ),
-        title: Text(
-          roleLabel(role),
-          style: TextStyle(color: tokens.textPrimary, fontWeight: FontWeight.w600),
-        ),
-        subtitle: Text(
-          switch ((assigned, live, isConnecting)) {
-            (false, _, _) => 'Tap to assign',
-            (_, _, true) => 'Connecting to ${device!.name}…',
-            (_, true, _) => device!.name,
-            _ => '${device!.name} — not connected, tap to reconnect',
-          },
-          style: TextStyle(
-            color: live
-                ? tokens.textSecondary
-                : assigned && !isConnecting
-                    ? Colors.orange
-                    : tokens.textDisabled,
-            fontSize: 12,
+      // Transparent Material so ListTile's ink draws above this
+      // container's background instead of being hidden by it.
+      child: Material(
+        type: MaterialType.transparency,
+        child: ListTile(
+          leading: Icon(
+            roleIcon(role),
+            color: live ? Colors.green : tokens.textDisabled,
           ),
-        ),
-        trailing: isConnecting
-            ? const SizedBox(
-                width: 20,
-                height: 20,
-                child: CircularProgressIndicator(strokeWidth: 2),
-              )
-            : Row(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  if (assigned) ...[
-                    if (!live)
+          title: Text(
+            roleLabel(role),
+            style: TextStyle(color: tokens.textPrimary, fontWeight: FontWeight.w600),
+          ),
+          subtitle: Text(
+            switch ((assigned, live, isConnecting)) {
+              (false, _, _) => 'Tap to assign',
+              (_, _, true) => 'Connecting to ${device!.name}…',
+              (_, true, _) => device!.name,
+              _ => '${device!.name} — not connected, tap to reconnect',
+            },
+            style: TextStyle(
+              color: live
+                  ? tokens.textSecondary
+                  : assigned && !isConnecting
+                      ? Colors.orange
+                      : tokens.textDisabled,
+              fontSize: 12,
+            ),
+          ),
+          trailing: isConnecting
+              ? const SizedBox(
+                  width: 20,
+                  height: 20,
+                  child: CircularProgressIndicator(strokeWidth: 2),
+                )
+              : Row(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    if (assigned) ...[
+                      if (!live)
+                        IconButton(
+                          key: ValueKey('reconnect-${role.name}'),
+                          tooltip: 'Reconnect',
+                          icon: const Icon(Icons.refresh,
+                              color: Colors.orange, size: 20),
+                          onPressed: onReconnect,
+                        ),
                       IconButton(
-                        key: ValueKey('reconnect-${role.name}'),
-                        tooltip: 'Reconnect',
-                        icon: const Icon(Icons.refresh,
-                            color: Colors.orange, size: 20),
-                        onPressed: onReconnect,
+                        key: ValueKey('rename-${role.name}'),
+                        icon: Icon(Icons.edit, color: tokens.textDisabled, size: 20),
+                        onPressed: () => _showRenameDialog(context),
                       ),
-                    IconButton(
-                      key: ValueKey('rename-${role.name}'),
-                      icon: Icon(Icons.edit, color: tokens.textDisabled, size: 20),
-                      onPressed: () => _showRenameDialog(context),
-                    ),
-                    IconButton(
-                      key: ValueKey('forget-${role.name}'),
-                      icon: Icon(Icons.link_off, color: tokens.textTertiary, size: 20),
-                      onPressed: onForget,
-                    ),
-                  ] else
-                    Icon(
-                      isAssigning ? Icons.radio_button_checked : Icons.add,
-                      color: isAssigning ? Colors.amber : tokens.textDisabled,
-                    ),
-                ],
-              ),
-        // An assigned-but-disconnected slot retries the connection; an empty
-        // slot starts the assign flow. A live one has nothing to do.
-        onTap: isConnecting
-            ? null
-            : !assigned
-                ? onTapAssign
-                : live
-                    ? null
-                    : onReconnect,
+                      IconButton(
+                        key: ValueKey('forget-${role.name}'),
+                        icon: Icon(Icons.link_off, color: tokens.textTertiary, size: 20),
+                        onPressed: onForget,
+                      ),
+                    ] else
+                      Icon(
+                        isAssigning ? Icons.radio_button_checked : Icons.add,
+                        color: isAssigning ? Colors.amber : tokens.textDisabled,
+                      ),
+                  ],
+                ),
+          // An assigned-but-disconnected slot retries the connection; an empty
+          // slot starts the assign flow. A live one has nothing to do.
+          onTap: isConnecting
+              ? null
+              : !assigned
+                  ? onTapAssign
+                  : live
+                      ? null
+                      : onReconnect,
+        ),
       ),
     );
   }
@@ -616,23 +621,28 @@ class _SimulatorDeviceTile extends StatelessWidget {
         color: Colors.deepPurple.withValues(alpha: 0.1),
         borderRadius: BorderRadius.circular(12),
       ),
-      child: ListTile(
-        leading: const Icon(Icons.computer, color: Colors.deepPurple),
-        title: Text(
-          device.name,
-          style: TextStyle(color: tokens.textPrimary),
+      // Transparent Material so ListTile's ink draws above this
+      // container's background instead of being hidden by it.
+      child: Material(
+        type: MaterialType.transparency,
+        child: ListTile(
+          leading: const Icon(Icons.computer, color: Colors.deepPurple),
+          title: Text(
+            device.name,
+            style: TextStyle(color: tokens.textPrimary),
+          ),
+          subtitle: Row(
+            children: [
+              _ProtocolBadge(device.protocol.name),
+              const SizedBox(width: 8),
+              if (device.isControllable)
+                Text('Controllable',
+                    style: TextStyle(color: tokens.textDisabled, fontSize: 10)),
+            ],
+          ),
+          trailing: Icon(Icons.chevron_right, color: tokens.textDisabled),
+          onTap: onTap,
         ),
-        subtitle: Row(
-          children: [
-            _ProtocolBadge(device.protocol.name),
-            const SizedBox(width: 8),
-            if (device.isControllable)
-              Text('Controllable',
-                  style: TextStyle(color: tokens.textDisabled, fontSize: 10)),
-          ],
-        ),
-        trailing: Icon(Icons.chevron_right, color: tokens.textDisabled),
-        onTap: onTap,
       ),
     );
   }
@@ -691,24 +701,29 @@ class _ScannedDeviceTile extends StatelessWidget {
         color: tokens.surfaceTier2,
         borderRadius: BorderRadius.circular(12),
       ),
-      child: ListTile(
-        leading: Icon(
-          _deviceIcon(scanned.device.protocol.name),
-          color: tokens.textSecondary,
+      // Transparent Material so ListTile's ink draws above this
+      // container's background instead of being hidden by it.
+      child: Material(
+        type: MaterialType.transparency,
+        child: ListTile(
+          leading: Icon(
+            _deviceIcon(scanned.device.protocol.name),
+            color: tokens.textSecondary,
+          ),
+          title: Text(
+            name,
+            style: TextStyle(color: tokens.textPrimary),
+          ),
+          subtitle: Row(
+            children: [
+              _ProtocolBadge(scanned.device.protocol.name),
+              const SizedBox(width: 8),
+              _RssiIndicator(rssi: scanned.rssi),
+            ],
+          ),
+          trailing: Icon(Icons.chevron_right, color: tokens.textDisabled),
+          onTap: onTap,
         ),
-        title: Text(
-          name,
-          style: TextStyle(color: tokens.textPrimary),
-        ),
-        subtitle: Row(
-          children: [
-            _ProtocolBadge(scanned.device.protocol.name),
-            const SizedBox(width: 8),
-            _RssiIndicator(rssi: scanned.rssi),
-          ],
-        ),
-        trailing: Icon(Icons.chevron_right, color: tokens.textDisabled),
-        onTap: onTap,
       ),
     );
   }

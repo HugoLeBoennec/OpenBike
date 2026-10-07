@@ -211,33 +211,36 @@ class _WorkoutTile extends StatelessWidget {
     final minutes = workout.totalDuration.inMinutes;
     final stepCount = workout.steps.length;
 
-    return Container(
-      margin: const EdgeInsets.symmetric(horizontal: 12, vertical: 3),
-      decoration: BoxDecoration(
+    return Padding(
+      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 3),
+      // Material (not a coloured Container) so ListTile's ink splashes draw
+      // on top of the background instead of being hidden behind it.
+      child: Material(
         color: context.tokens.surfaceTier2,
         borderRadius: BorderRadius.circular(12),
-      ),
-      child: ListTile(
-        contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
-        leading: SizedBox(
-          width: 48,
-          height: 32,
-          child: WorkoutMiniProfile(steps: workout.steps),
-        ),
-        title: Text(
-          workout.name,
-          style: TextStyle(
-            color: context.tokens.textPrimary,
-            fontWeight: FontWeight.w600,
+        clipBehavior: Clip.antiAlias,
+        child: ListTile(
+          contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
+          leading: SizedBox(
+            width: 48,
+            height: 32,
+            child: WorkoutMiniProfile(steps: workout.steps),
           ),
+          title: Text(
+            workout.name,
+            style: TextStyle(
+              color: context.tokens.textPrimary,
+              fontWeight: FontWeight.w600,
+            ),
+          ),
+          subtitle: Text(
+            '$stepCount steps • $minutes min',
+            style: TextStyle(color: context.tokens.textTertiary, fontSize: 12),
+          ),
+          trailing: Icon(Icons.chevron_right, color: context.tokens.textDisabled),
+          onTap: onTap,
+          onLongPress: onLongPress,
         ),
-        subtitle: Text(
-          '$stepCount steps • $minutes min',
-          style: TextStyle(color: context.tokens.textTertiary, fontSize: 12),
-        ),
-        trailing: Icon(Icons.chevron_right, color: context.tokens.textDisabled),
-        onTap: onTap,
-        onLongPress: onLongPress,
       ),
     );
   }

@@ -66,6 +66,9 @@ void main() {
     // Totals reflect the single interval step: 2 x (5min + 1min) = 12 min.
     expect(find.text('12 min'), findsOneWidget);
 
+    // One drag handle per step (no extra default handle on desktop).
+    expect(find.byIcon(Icons.drag_handle), findsOneWidget);
+
     // --- Hand-computed TSS (duration-weighted 4th-power average of the
     // on/off segments across both repeats, independent of the estimator
     // implementation under test) ---
