@@ -2,8 +2,9 @@
 
 ## App identity
 
-- Bundle ID: `$(PRODUCT_BUNDLE_IDENTIFIER)` (set per Xcode signing config —
-  see `docs/release/checklist.md`/CI secrets, not committed).
+- Bundle ID: `run.records.openbike` (committed in the Xcode project).
+- Version: the app reports `1.0.0` (`pubspec.yaml`'s `1.0.0+N`), so the App
+  Store Connect version record must be named **1.0.0**, not "1.0".
 - URL scheme `openbike://` registered for the Strava OAuth callback
   (`ios/Runner/Info.plist`'s `CFBundleURLTypes`, see
   `docs/roadmap/P6-integrations.md`).
@@ -19,9 +20,19 @@ Answer App Store Connect's "App Privacy" questionnaire based on
   — it's stored locally and only leaves the device if the user explicitly
   connects and uploads to Strava. Declare the Strava export path as "used
   for App Functionality" (user-initiated export), not analytics.
-- **Diagnostics** (crash data): declare as collected only if the user opts
-  in (Settings → About → Crash reporting, off by default) — "used for App
-  Functionality", not linked to identity, not used for tracking.
+- **Diagnostics → Crash Data**: collected only if the user opts in
+  (Settings → About → Crash reporting, off by default) — "used for App
+  Functionality", not linked to identity, not used for tracking. Sentry is
+  never initialised for opted-out users, and for opted-in users it runs
+  Dart-side only, with no user ID and no device hash on any event (see
+  `docs/release/analytics.md`). Don't declare Device ID. If the native
+  crash handler is ever re-enabled, add Identifiers → Device ID (not linked,
+  App Functionality) and update the privacy policy.
+- **Network request not covered by a data type:** route maps fetch tiles
+  from `tile.openstreetmap.org` (the requester's IP and the map area leave
+  the device). Off by default; the user turns the map on in the ride's route pane; see
+  `lib/presentation/widgets/route_mini_map.dart` and the default in
+  `lib/presentation/state/providers.dart`. No ride data is included.
 - **Identifiers / Location / Contact Info / Usage Data**: none collected.
   No `NSLocationWhenInUseUsageDescription` or any location entitlement is
   present in `ios/Runner/Info.plist` — OpenBike never requests location.
@@ -41,6 +52,15 @@ Answer App Store Connect's "App Privacy" questionnaire based on
 Review this string reads naturally in the review build's actual usage
 flow (device scan screen) before submitting — Apple rejects purpose
 strings that don't match observed behavior.
+
+`NSPhotoLibraryUsageDescription` and `NSAppleMusicUsageDescription` are also
+set, but never prompted: file_picker's Swift package always links its photo
+and music pickers, and App Store Connect rejects an upload (ITMS-90683) that
+links those APIs without purpose strings.
+
+The Bluetooth prompt itself depends on `PERMISSION_BLUETOOTH=1` in
+`ios/Podfile`'s `post_install` — without it permission_handler reports
+Bluetooth as permanently denied and scanning never starts.
 
 ## Background modes (already in place)
 
@@ -84,3 +104,18 @@ untrusted certificate. That artifact is sideload-only. See
 `docs/release/desktop-distribution.md` for the actual options (the Microsoft
 Store is now free for individual *and* company accounts, and signs the package
 for you).
+
+## macOS (Mac App Store)
+
+- Category: `LSApplicationCategoryType` is
+  `public.app-category.healthcare-fitness` in `macos/Runner/Info.plist`
+  (App Store Connect rejects Mac uploads without it, ITMS-90242).
+- Export compliance: `ITSAppUsesNonExemptEncryption` is `false` there too,
+  for the same reasons as iOS.
+- Sandbox entitlements (`macos/Runner/Release.entitlements`): app sandbox,
+  `network.client`, `network.server` (the Strava sign-in listens on a
+  loopback port to catch the OAuth redirect), `files.user-selected.read-write`,
+  `device.bluetooth`, `device.usb` (ANT+ dongle).
+- Privacy manifest: `macos/Runner/PrivacyInfo.xcprivacy`, same content as
+  `ios/Runner/PrivacyInfo.xcprivacy` (declares required-reason APIs used by
+  SQLite and the plugins, plus opt-in crash data).

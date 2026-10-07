@@ -1,6 +1,6 @@
 # OpenBike Privacy Policy
 
-_Last updated: 2026-07-10_
+_Last updated: 2026-10-07_
 
 OpenBike is a local-first indoor cycling app. This policy describes what
 data the app collects, where it lives, and what — if anything — ever
@@ -12,9 +12,9 @@ leaves your device.
   SQLite database. OpenBike has no backend server and no account system.
 - **No ride data is uploaded unless you explicitly connect a third-party
   service** (e.g. Strava) and choose to export a ride to it.
-- The one automatic exception is **map tiles**: viewing a route map fetches
-  map images from OpenStreetMap, which necessarily reveals the map area
-  you're viewing. See "Maps" below.
+- The one other exception is **map tiles**: if you switch on the route map,
+  it fetches map images from OpenStreetMap, which necessarily reveals the
+  map area you're viewing. The map is off by default. See "Maps" below.
 - **Crash reporting is off by default** and, if you opt in, never includes
   ride data, location, or personal information.
 - OpenBike does not use analytics, advertising SDKs, or any form of
@@ -29,7 +29,7 @@ leaves your device.
 | Paired device IDs, app settings | Local device preferences | No |
 | Bluetooth sensor data (power, cadence, heart rate, speed) | Processed in memory, persisted locally as part of a ride recording | No |
 | Strava OAuth token (if connected) | Device secure storage (`flutter_secure_storage` — OS keychain/keystore) | Sent to Strava's API only when you upload a ride or disconnect |
-| Crash reports (if opted in) | N/A — sent directly to Sentry | Stack traces and basic app/OS version only; see below |
+| Crash reports (if opted in) | N/A — sent directly to Sentry | Stack trace, app/OS version and device model only; no user or device ID; see below |
 | Map tile requests (when a route map is on screen) | Not stored | Map area being viewed + your IP go to OpenStreetMap; see "Maps" |
 
 ## Bluetooth
@@ -52,14 +52,15 @@ them (e.g. [Strava's privacy policy](https://www.strava.com/legal/privacy)).
 
 ## Maps
 
-When a screen shows a route on a map, OpenBike downloads map tile images
+The route map shown during a ride is **off by default** and only appears
+once you switch it on. When it is on, OpenBike downloads map tile images
 from the OpenStreetMap Foundation's public tile servers
 (`tile.openstreetmap.org`). Those requests necessarily tell OpenStreetMap
 which map area is being displayed — which corresponds to the area of the
 route you're viewing — along with your IP address, as with any web request.
 
-This is the only network request the app makes without you asking for it,
-and it happens only while a map is actually on screen. No ride data,
+This is the only network request the app makes on its own once you have
+switched the map on, and it happens only while a map is actually on screen. No ride data,
 timing, power or heart-rate information is included. See the
 [OpenStreetMap Foundation privacy policy](https://osmfoundation.org/wiki/Privacy_Policy).
 
@@ -72,11 +73,14 @@ See `docs/release/analytics.md` for the full technical design. In short:
 
 - Off by default; you're asked once after onboarding and can change this
   anytime in Settings → About → Crash reporting.
-- When on, crash/error reports (stack traces, app version, OS version) are
-  sent to Sentry. Ride data, breadcrumbs, and any user-identifying context
-  are stripped before an event is sent.
+- When on, crash/error reports are sent to Sentry. A report contains the
+  stack trace, the app version, the OS version and the device model. It
+  carries no user ID, no device identifier, no ride data and no
+  breadcrumbs; the app also turns off Sentry's session tracking, hang
+  tracking, screenshots and view-hierarchy capture.
 - When off (the default), or when a build has no crash-reporting DSN
-  configured at all, the app never contacts Sentry.
+  configured at all, Sentry is never started and the app never contacts it.
+  Turning it off in Settings stops Sentry immediately.
 
 ## No analytics, no ads
 
