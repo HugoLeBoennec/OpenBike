@@ -450,11 +450,12 @@ class _WhatIsFtpCard extends StatelessWidget {
   Widget build(BuildContext context) {
     final tokens = context.tokens;
 
-    return Container(
-      decoration: BoxDecoration(
-        color: tokens.surfaceTier2,
-        borderRadius: BorderRadius.circular(12),
-      ),
+    // Material (not a coloured Container) so the ExpansionTile's ListTile ink
+    // draws above the background instead of being hidden by it.
+    return Material(
+      color: tokens.surfaceTier2,
+      borderRadius: BorderRadius.circular(12),
+      clipBehavior: Clip.antiAlias,
       child: Theme(
         data: Theme.of(context).copyWith(dividerColor: Colors.transparent),
         child: ExpansionTile(

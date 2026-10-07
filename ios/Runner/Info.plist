@@ -49,6 +49,14 @@
 		<string>OpenBike uses Bluetooth to connect to your smart trainer, heart rate monitor, and cycling sensors.</string>
 		<key>NSBluetoothPeripheralUsageDescription</key>
 		<string>OpenBike uses Bluetooth to connect to your smart trainer, heart rate monitor, and cycling sensors.</string>
+		<!-- Never prompted: OpenBike only uses file_picker's document picker
+		     (FileType.custom). But file_picker's Swift package always compiles
+		     in its photo and music pickers, and App Store Connect rejects an
+		     upload (ITMS-90683) that links those APIs without purpose strings. -->
+		<key>NSPhotoLibraryUsageDescription</key>
+		<string>OpenBike can import workout and route files you choose.</string>
+		<key>NSAppleMusicUsageDescription</key>
+		<string>OpenBike can import workout and route files you choose.</string>
 		<key>UIBackgroundModes</key>
 		<array>
 			<string>bluetooth-central</string>

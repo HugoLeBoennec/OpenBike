@@ -5,6 +5,7 @@ import 'package:go_router/go_router.dart';
 import '../../core/application/services/ftp_test_planner.dart';
 import '../../core/domain/entities/user_profile.dart';
 import '../../core/domain/value_objects/value_objects.dart';
+import '../../infrastructure/observability/crash_reporting_service.dart';
 import '../state/providers.dart';
 import '../theme/app_theme.dart';
 import '../widgets/connections_section.dart';
@@ -150,6 +151,7 @@ class SettingsScreen extends ConsumerWidget {
               final next = !ref.read(crashReportingEnabledProvider);
               ref.read(crashReportingEnabledProvider.notifier).state = next;
               ref.read(appPreferencesProvider).setCrashReportingEnabled(next);
+              CrashReportingService.apply(enabled: next);
             },
           ),
 

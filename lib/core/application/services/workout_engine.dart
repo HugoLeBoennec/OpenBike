@@ -220,6 +220,7 @@ class WorkoutEngine {
     _ticker = null;
     _setState(WorkoutEngineState.idle);
     _currentWorkout = null;
+    _eventBus.fire(const WorkoutEvent.stopped());
     _log.info('Workout stopped by user');
   }
 

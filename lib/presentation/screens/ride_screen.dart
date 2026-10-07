@@ -9,6 +9,8 @@ import '../../core/application/services/auto_pause_detector.dart';
 import '../../core/application/services/bundled_workouts.dart';
 import '../../core/application/services/ftp_test_planner.dart';
 import '../../core/application/services/recording_engine.dart';
+import '../../core/application/services/route_simulator.dart';
+import '../../core/application/services/workout_engine.dart';
 import '../../core/events/app_event.dart';
 import '../models/data_field_type.dart';
 import '../models/ride_extra.dart';
@@ -63,7 +65,10 @@ class _RideScreenState extends ConsumerState<RideScreen> {
           _ => null,
         };
         final ftp = ref.read(ftpProvider);
-        ref.read(workoutEngineProvider).start(workout, ftp);
+        final engine = ref.read(workoutEngineProvider);
+        // A previous ride may have left the engine running or completed.
+        if (engine.state != WorkoutEngineState.idle) engine.stop();
+        engine.start(workout, ftp);
       });
     } else {
       Future.microtask(() {
@@ -82,7 +87,10 @@ class _RideScreenState extends ConsumerState<RideScreen> {
     // completion so we can prompt to stop & save.
     if (widget.extra?.route != null) {
       Future.microtask(() {
-        ref.read(routeSimulatorProvider).start(widget.extra!.route!);
+        final simulator = ref.read(routeSimulatorProvider);
+        // A previous ride may have left the simulator running or completed.
+        if (simulator.state != SimulationState.idle) simulator.stop();
+        simulator.start(widget.extra!.route!);
       });
       _simCompletionSub =
           ref.read(eventBusProvider).on<SimulationEvent>().listen((event) {
@@ -188,6 +196,7 @@ class _RideScreenState extends ConsumerState<RideScreen> {
     final engine = ref.read(recordingEngineProvider);
     final ftp = ref.read(ftpProvider);
     final ride = await engine.stop(ftp: ftp);
+    endRideSession(ref);
 
     WakelockPlus.disable();
     ref.invalidate(rideHistoryProvider);
@@ -228,6 +237,7 @@ class _RideScreenState extends ConsumerState<RideScreen> {
                 Expanded(
                   child: LayoutBuilder(
                     builder: (context, constraints) {
+                      _adaptConfigToWidth(constraints.maxWidth);
                       if (constraints.maxWidth >= 1200) {
                         return _buildDesktopLayout(context, ref, constraints);
                       } else if (constraints.maxWidth >= 600) {
@@ -246,6 +256,18 @@ class _RideScreenState extends ConsumerState<RideScreen> {
         ),
       ),
     );
+  }
+
+  /// Picks the data-field preset that matches the layout class chosen by
+  /// the [LayoutBuilder]. Deferred because providers can't change mid-build.
+  void _adaptConfigToWidth(double width) {
+    Future.microtask(() {
+      if (!mounted) return;
+      ref.read(rideScreenConfigProvider.notifier).adaptToLayout(
+            isLandscape: width >= 600,
+            isDesktop: width >= 1200,
+          );
+    });
   }
 
   // ─── Bottom pane — workout HUD / route profile / live chart ───────

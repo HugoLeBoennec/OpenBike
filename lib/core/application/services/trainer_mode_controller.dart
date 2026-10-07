@@ -104,6 +104,10 @@ class TrainerModeController extends StateNotifier<TrainerModeState> {
       },
       paused: () {},
       resumed: () {},
+      stopped: () {
+        _hasActiveWorkout = false;
+        _applyDefaultMode();
+      },
     );
   }
 
@@ -117,6 +121,10 @@ class TrainerModeController extends StateNotifier<TrainerModeState> {
       paused: () {},
       resumed: () {},
       completed: () {
+        _hasActiveRoute = false;
+        _applyDefaultMode();
+      },
+      stopped: () {
         _hasActiveRoute = false;
         _applyDefaultMode();
       },

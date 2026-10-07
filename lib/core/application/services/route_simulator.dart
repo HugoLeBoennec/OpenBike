@@ -166,6 +166,7 @@ class RouteSimulator {
     }
     _cleanup();
     _setState(SimulationState.idle);
+    _eventBus.fire(const SimulationEvent.stopped());
   }
 
   void dispose() {

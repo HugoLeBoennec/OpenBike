@@ -437,48 +437,53 @@ class _ScheduledTile extends StatelessWidget {
         color: context.tokens.surfaceTier2,
         borderRadius: BorderRadius.circular(12),
       ),
-      child: ListTile(
-        contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
-        leading: workout == null
-            ? Icon(Icons.fitness_center, color: context.tokens.textDisabled)
-            : SizedBox(
-                width: 40,
-                height: 28,
-                child: WorkoutMiniProfile(steps: workout!.steps),
-              ),
-        title: Text(
-          workout?.name ?? 'Unknown workout',
-          style: TextStyle(color: context.tokens.textPrimary, fontWeight: FontWeight.w600),
-        ),
-        subtitle: scheduled.notes != null
-            ? Text(scheduled.notes!,
-                style: TextStyle(color: context.tokens.textTertiary, fontSize: 12))
-            : null,
-        trailing: isDone
-            ? GestureDetector(
-                onTap: () =>
-                    context.push('/history/${scheduled.completedRideId}'),
-                child: const Icon(Icons.check_circle, color: Colors.green),
-              )
-            : Row(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  if (onStartNow != null)
-                    FilledButton(
-                      onPressed: onStartNow,
-                      style: FilledButton.styleFrom(
-                        backgroundColor: Colors.blue,
-                        minimumSize: const Size(0, 32),
-                        padding: const EdgeInsets.symmetric(horizontal: 12),
+      // Transparent Material so ListTile's ink draws above this
+      // container's background instead of being hidden by it.
+      child: Material(
+        type: MaterialType.transparency,
+        child: ListTile(
+          contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
+          leading: workout == null
+              ? Icon(Icons.fitness_center, color: context.tokens.textDisabled)
+              : SizedBox(
+                  width: 40,
+                  height: 28,
+                  child: WorkoutMiniProfile(steps: workout!.steps),
+                ),
+          title: Text(
+            workout?.name ?? 'Unknown workout',
+            style: TextStyle(color: context.tokens.textPrimary, fontWeight: FontWeight.w600),
+          ),
+          subtitle: scheduled.notes != null
+              ? Text(scheduled.notes!,
+                  style: TextStyle(color: context.tokens.textTertiary, fontSize: 12))
+              : null,
+          trailing: isDone
+              ? GestureDetector(
+                  onTap: () =>
+                      context.push('/history/${scheduled.completedRideId}'),
+                  child: const Icon(Icons.check_circle, color: Colors.green),
+                )
+              : Row(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    if (onStartNow != null)
+                      FilledButton(
+                        onPressed: onStartNow,
+                        style: FilledButton.styleFrom(
+                          backgroundColor: Colors.blue,
+                          minimumSize: const Size(0, 32),
+                          padding: const EdgeInsets.symmetric(horizontal: 12),
+                        ),
+                        child: const Text('Start', style: TextStyle(fontSize: 12)),
                       ),
-                      child: const Text('Start', style: TextStyle(fontSize: 12)),
+                    IconButton(
+                      icon: Icon(Icons.close, color: context.tokens.textDisabled, size: 18),
+                      onPressed: onDelete,
                     ),
-                  IconButton(
-                    icon: Icon(Icons.close, color: context.tokens.textDisabled, size: 18),
-                    onPressed: onDelete,
-                  ),
-                ],
-              ),
+                  ],
+                ),
+        ),
       ),
     );
   }

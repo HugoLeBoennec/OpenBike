@@ -87,6 +87,17 @@ void main() {
       expect(notifier.state.pages[0].length, 12);
     });
 
+    test('adaptToLayout twice with the same arguments notifies once', () {
+      final notifier = RideScreenConfigNotifier();
+      var notifications = 0;
+      notifier.addListener((_) => notifications++, fireImmediately: false);
+
+      notifier.adaptToLayout(isLandscape: true, isDesktop: false);
+      notifier.adaptToLayout(isLandscape: true, isDesktop: false);
+
+      expect(notifications, 1);
+    });
+
     test('adaptToLayout is ignored after user customization', () {
       final notifier = RideScreenConfigNotifier();
       notifier.setFieldAt(0, 0, DataFieldType.elevation);

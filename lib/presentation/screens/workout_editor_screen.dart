@@ -133,6 +133,9 @@ class _WorkoutEditorScreenState extends ConsumerState<WorkoutEditorScreen> {
             shrinkWrap: true,
             physics: const NeverScrollableScrollPhysics(),
             itemCount: _steps.length,
+            // Each tile has its own leading ReorderableDragStartListener;
+            // the default trailing handles would duplicate it on desktop.
+            buildDefaultDragHandles: false,
             onReorder: _onReorder,
             itemBuilder: (context, index) => _StepTile(
               key: ValueKey('step-$index-${_steps[index].hashCode}'),
@@ -274,28 +277,33 @@ class _StepTile extends StatelessWidget {
         color: context.tokens.surfaceTier2,
         borderRadius: BorderRadius.circular(8),
       ),
-      child: ListTile(
-        onTap: onTap,
-        leading: ReorderableDragStartListener(
-          index: index,
-          child: Icon(Icons.drag_handle, color: context.tokens.textDisabled),
-        ),
-        title: Text(_typeLabel(step.type), style: TextStyle(color: context.tokens.textPrimary)),
-        subtitle: Text(_subtitle(step), style: TextStyle(color: context.tokens.textTertiary, fontSize: 12)),
-        trailing: Row(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            IconButton(
-              key: Key('duplicateStepButton-$index'),
-              icon: Icon(Icons.copy, size: 18, color: context.tokens.textDisabled),
-              onPressed: onDuplicate,
-            ),
-            IconButton(
-              key: Key('deleteStepButton-$index'),
-              icon: const Icon(Icons.delete_outline, size: 18, color: Colors.redAccent),
-              onPressed: onDelete,
-            ),
-          ],
+      // Transparent Material so ListTile's ink draws above this
+      // container's background instead of being hidden by it.
+      child: Material(
+        type: MaterialType.transparency,
+        child: ListTile(
+          onTap: onTap,
+          leading: ReorderableDragStartListener(
+            index: index,
+            child: Icon(Icons.drag_handle, color: context.tokens.textDisabled),
+          ),
+          title: Text(_typeLabel(step.type), style: TextStyle(color: context.tokens.textPrimary)),
+          subtitle: Text(_subtitle(step), style: TextStyle(color: context.tokens.textTertiary, fontSize: 12)),
+          trailing: Row(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              IconButton(
+                key: Key('duplicateStepButton-$index'),
+                icon: Icon(Icons.copy, size: 18, color: context.tokens.textDisabled),
+                onPressed: onDuplicate,
+              ),
+              IconButton(
+                key: Key('deleteStepButton-$index'),
+                icon: const Icon(Icons.delete_outline, size: 18, color: Colors.redAccent),
+                onPressed: onDelete,
+              ),
+            ],
+          ),
         ),
       ),
     );

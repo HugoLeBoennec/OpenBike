@@ -76,6 +76,52 @@ void main() {
   });
 
   // =========================================================================
+  // discard
+  // =========================================================================
+
+  group('RecordingEngine — discard', () {
+    test('returns to idle, deletes the auto-saved ride, fires no RideStopped',
+        () async {
+      when(() => storage.deleteRide(any())).thenAnswer((_) async {});
+      final events = <RideEvent>[];
+      eventBus.on<RideEvent>().listen(events.add);
+
+      final ride = await engine.start();
+      await engine.discard();
+      await Future<void>.delayed(Duration.zero);
+
+      expect(engine.state, RecordingState.idle);
+      verify(() => storage.deleteRide(ride.id)).called(1);
+      expect(events.whereType<RideStopped>(), isEmpty);
+    });
+
+    test('allows starting a new ride afterwards', () async {
+      when(() => storage.deleteRide(any())).thenAnswer((_) async {});
+
+      await engine.start();
+      await engine.discard();
+      final next = await engine.start();
+
+      expect(engine.state, RecordingState.recording);
+      expect(next.id, isNotEmpty);
+    });
+
+    test('works while paused', () async {
+      when(() => storage.deleteRide(any())).thenAnswer((_) async {});
+
+      await engine.start();
+      engine.pause();
+      await engine.discard();
+
+      expect(engine.state, RecordingState.idle);
+    });
+
+    test('when idle throws', () {
+      expect(() => engine.discard(), throwsStateError);
+    });
+  });
+
+  // =========================================================================
   // State machine
   // =========================================================================
 

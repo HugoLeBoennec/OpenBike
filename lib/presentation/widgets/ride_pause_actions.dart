@@ -4,6 +4,7 @@ import 'package:go_router/go_router.dart';
 import 'package:wakelock_plus/wakelock_plus.dart';
 
 import '../../core/application/services/recording_engine.dart';
+import '../../core/application/services/route_simulator.dart';
 import '../../core/application/services/workout_engine.dart';
 import '../state/providers.dart';
 import '../theme/app_theme.dart';
@@ -26,6 +27,29 @@ void resumeRide(WidgetRef ref) {
     final engine = ref.read(workoutEngineProvider);
     if (engine.state == WorkoutEngineState.paused) engine.resume();
   }
+}
+
+/// Tears down everything a ride started besides the recording: the workout
+/// engine, the route simulator, the current workout and the live chart
+/// history. Without this, an ended ride leaves ERG targets running, a stale
+/// workout HUD, and engines that refuse to start the next ride.
+///
+/// Leaves `activeFtpTestProvider` alone — the ride summary's FTP prompt still
+/// needs it.
+void endRideSession(WidgetRef ref) {
+  // Both engine providers throw without a trainer, and without one nothing
+  // can have been started.
+  if (ref.read(activeTrainerPortProvider) != null) {
+    final workoutEngine = ref.read(workoutEngineProvider);
+    if (workoutEngine.state != WorkoutEngineState.idle) workoutEngine.stop();
+
+    final simulator = ref.read(routeSimulatorProvider);
+    if (simulator.state != SimulationState.idle) simulator.stop();
+  }
+  ref.read(currentWorkoutProvider.notifier).state = null;
+
+  ref.read(powerHistoryProvider.notifier).clear();
+  ref.read(hrHistoryProvider.notifier).clear();
 }
 
 /// Marks a lap on the active recording and shows a summary snackbar —
@@ -75,6 +99,7 @@ Future<void> confirmStopRide(BuildContext context, WidgetRef ref) async {
   final engine = ref.read(recordingEngineProvider);
   final ftp = ref.read(ftpProvider);
   final ride = await engine.stop(ftp: ftp);
+  endRideSession(ref);
 
   WakelockPlus.disable();
   ref.invalidate(rideHistoryProvider);
@@ -114,7 +139,11 @@ Future<void> leaveRide(BuildContext context, WidgetRef ref) async {
       ),
     );
     if (confirmed != true) return;
+    // Drop the partially auto-saved ride; otherwise the engine keeps
+    // sampling and saving it, and the next ride can't start.
+    await ref.read(recordingEngineProvider).discard();
   }
+  endRideSession(ref);
 
   // No need to disable the wakelock here — leaving disposes RideScreen,
   // whose dispose() already does it.

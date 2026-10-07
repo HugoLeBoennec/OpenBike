@@ -8,7 +8,8 @@ and uploads an **unsigned** `.app` / `.dmg` artifact so the pipeline works
 for every contributor; only the tag-triggered release job attempts signing.
 
 Entitlements (`macos/Runner/Release.entitlements`) are already in place —
-sandbox, network client, Bluetooth, and USB (ANT+ dongle, see
+sandbox, network client and server (the Strava sign-in listens on a
+loopback port), Bluetooth, and USB (ANT+ dongle, see
 `P8-desktop.md` §5) — from P1. This document only covers the
 certificate/notarization side.
 
@@ -69,3 +70,27 @@ Local manual signing follows the same three `codesign`/`create-dmg`/
 `notarytool` steps — run them directly against a local `flutter build macos
 --release` output using your own Developer ID cert loaded in your login
 keychain (no need to import a `.p12` when the cert is already there).
+
+## Mac App Store upload (manual)
+
+The CI job above only produces the Developer ID–signed DMG for direct
+download. The Mac App Store build is archived and uploaded by hand from Xcode
+for now:
+
+1. In the Apple Developer portal, make sure the team has an **Apple
+   Distribution** certificate, a **Mac Installer Distribution** certificate
+   and a **Mac App Store** provisioning profile for `run.records.openbike`
+   (Xcode's automatic signing creates all three once the team is selected on
+   the Runner target).
+2. `flutter build macos --release` (add `--build-name`/`--build-number` only
+   if they differ from `pubspec.yaml`), then open `macos/Runner.xcworkspace`.
+3. Product → Archive, then Distribute App → App Store Connect → Upload.
+4. In App Store Connect, attach the build to the macOS version record
+   (named `1.0.0`, matching `CFBundleShortVersionString`).
+
+`macos/Runner/Info.plist` already carries `LSApplicationCategoryType` and
+`ITSAppUsesNonExemptEncryption`, and `macos/Runner/PrivacyInfo.xcprivacy`
+is bundled, so the upload shouldn't fail on those. A CI job for this can be
+added later next to the DMG job; it would need the two distribution
+certificates and the provisioning profile as new secrets
+(`docs/release/secrets.md`).

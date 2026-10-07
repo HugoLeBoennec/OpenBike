@@ -84,7 +84,10 @@ class RideHeaderBar extends ConsumerWidget {
               onPressed: () => markLap(context, ref),
             ),
 
-            // Stop
+            // Stop — also the way to leave once a ride is running (with a
+            // save/discard confirm), so the close button below is hidden
+            // while active to keep this row from wrapping to two lines on
+            // narrow screens.
             IconButton(
               icon: const Icon(Icons.stop, color: Colors.redAccent, size: 28),
               onPressed: () => confirmStopRide(context, ref),
@@ -98,17 +101,17 @@ class RideHeaderBar extends ConsumerWidget {
                 ref.read(recordingEngineProvider).start();
               },
             ),
-          ],
 
-          // Close — leaves the ride (discards an in-progress ride after a
-          // confirm, exits immediately when idle). Kept on the far right so
-          // the timer stays put on the left.
-          const SizedBox(width: 4),
-          IconButton(
-            icon: Icon(Icons.close, color: context.tokens.textTertiary, size: 26),
-            tooltip: 'Leave ride',
-            onPressed: () => leaveRide(context, ref),
-          ),
+            // Close — only shown before the ride starts, since the stop
+            // button takes over as the way to leave once it's running.
+            const SizedBox(width: 4),
+            IconButton(
+              icon: Icon(Icons.close,
+                  color: context.tokens.textTertiary, size: 26),
+              tooltip: 'Leave ride',
+              onPressed: () => leaveRide(context, ref),
+            ),
+          ],
         ],
       ),
     );

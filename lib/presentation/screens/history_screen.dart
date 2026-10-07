@@ -140,46 +140,51 @@ class _RideTile extends ConsumerWidget {
           left: BorderSide(color: borderColor, width: 4),
         ),
       ),
-      child: ListTile(
-        contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-        title: Text(
-          date,
-          style: TextStyle(color: tokens.textPrimary, fontWeight: FontWeight.w600),
-        ),
-        subtitle: Padding(
-          padding: const EdgeInsets.only(top: 4),
-          child: Row(
-            children: [
-              _MiniStat(value: dur, label: ''),
-              const SizedBox(width: 12),
-              if (dist > 0) ...[
-                _MiniStat(
-                    value: dist.toStringAsFixed(1),
-                    label: formatter.distanceUnit),
+      // Transparent Material so ListTile's ink draws above this
+      // container's background instead of being hidden by it.
+      child: Material(
+        type: MaterialType.transparency,
+        child: ListTile(
+          contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+          title: Text(
+            date,
+            style: TextStyle(color: tokens.textPrimary, fontWeight: FontWeight.w600),
+          ),
+          subtitle: Padding(
+            padding: const EdgeInsets.only(top: 4),
+            child: Row(
+              children: [
+                _MiniStat(value: dur, label: ''),
                 const SizedBox(width: 12),
+                if (dist > 0) ...[
+                  _MiniStat(
+                      value: dist.toStringAsFixed(1),
+                      label: formatter.distanceUnit),
+                  const SizedBox(width: 12),
+                ],
+                _MiniStat(value: '$avgW', label: 'W'),
+                const SizedBox(width: 12),
+                _MiniStat(value: '$np', label: 'NP'),
               ],
-              _MiniStat(value: '$avgW', label: 'W'),
-              const SizedBox(width: 12),
-              _MiniStat(value: '$np', label: 'NP'),
+            ),
+          ),
+          trailing: Column(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              Text(
+                '$tss',
+                style: TextStyle(
+                  color: borderColor,
+                  fontSize: 18,
+                  fontWeight: FontWeight.w700,
+                ),
+              ),
+              Text('TSS',
+                  style: TextStyle(color: tokens.textDisabled, fontSize: 10)),
             ],
           ),
+          onTap: onTap,
         ),
-        trailing: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            Text(
-              '$tss',
-              style: TextStyle(
-                color: borderColor,
-                fontSize: 18,
-                fontWeight: FontWeight.w700,
-              ),
-            ),
-            Text('TSS',
-                style: TextStyle(color: tokens.textDisabled, fontSize: 10)),
-          ],
-        ),
-        onTap: onTap,
       ),
     );
   }
