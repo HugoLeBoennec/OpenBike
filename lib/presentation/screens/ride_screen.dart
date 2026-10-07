@@ -338,7 +338,7 @@ class _RideScreenState extends ConsumerState<RideScreen> {
         const ZoneBar(),
         const ManualTrainerControls(),
         Expanded(
-          flex: 4,
+          flex: 3,
           child: DataFieldGrid(
             fields: fields,
             columns: 3,
@@ -347,7 +347,7 @@ class _RideScreenState extends ConsumerState<RideScreen> {
           ),
         ),
         Expanded(
-          flex: 5,
+          flex: 2,
           child: Row(
             children: [
               Expanded(
