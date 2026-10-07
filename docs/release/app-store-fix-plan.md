@@ -58,7 +58,7 @@ in your summary.
 
 ## Task index
 
-Status as of `main` @ `6a2f5aa` (PR #21). Don't redo tasks marked done.
+Status as of the `android-agp-9` branch, stacked on `main` @ `6a2f5aa` (PR #21). Don't redo tasks marked done.
 
 | ID | Title | Kind | Blocks submission? | Status |
 |---|---|---|---|---|
@@ -79,15 +79,18 @@ Status as of `main` @ `6a2f5aa` (PR #21). Don't redo tasks marked done.
 | T15 | Verify Strava token storage on a signed Mac build | Manual check | Verify | Open (manual) |
 | T16 | Mac App Store build/upload path | CI/docs | Optional (D4) | Done: manual section in `macos-signing.md` |
 | T17 | Retake store screenshots | Assets | After T8–T13 | Done (`559efa3`) |
-| T18 | Live ride metrics never update; paused time counted as ride time | Code | **Yes**: wrong numbers in every tablet/desktop ride shot | Open |
-| T19 | Ride timer wraps onto two lines on small tablets | Code | Visible in 7" tablet shots | Open |
-| T20 | Portrait tablets: ride screen leaves most of the screen empty | Code | Visible in iPad/Android tablet shots | Open |
-| T21 | Flutter end-of-support warnings (Gradle/AGP, CocoaPods-only plugins) | Build/CI | Not today; will fail a future Flutter upgrade | Open (needs D5) |
-| T22 | Retake the ride screenshots affected by T18–T20 | Assets | After T18–T20 | Open |
+| T18 | Live ride metrics never update; paused time counted as ride time | Code | **Yes**: wrong numbers in every tablet/desktop ride shot | Done (`20c42a5`) |
+| T19 | Ride timer wraps onto two lines on small tablets | Code | Visible in 7" tablet shots | Done (`7a17405`) |
+| T20 | Portrait tablets: ride screen leaves most of the screen empty | Code | Visible in iPad/Android tablet shots | Done (`c9fc481`, `33d69e2`) |
+| T21 | Flutter end-of-support warnings (Gradle/AGP, CocoaPods-only plugins) | Build/CI | Not today; will fail a future Flutter upgrade | Android done (`53287ae`); six plugins still apply KGP, so built-in Kotlin stays off; iOS plugins still CocoaPods-only |
+| T22 | Retake the ride screenshots affected by T18–T20 | Assets | After T18–T20 | Done (macOS, Android 7"/10", iPad retaken) |
 
-Suggested order for what's left: T18 → T19 → T20 → T22 → (T14) → T15 →
-T21. T21 is independent: do it after D5, in its own branch, since it touches
-CI and the Android build.
+What's left: (T14) and T15. D5 was taken as (a): CI and `release.yml` now
+use Flutter 3.47.x. For T21, upgrade the six KGP plugins
+(`flutter_foreground_task`, `package_info_plus`, `sentry_flutter`,
+`share_plus`, `shared_preferences_android`, `wakelock_plus`) after the store
+release, then flip `android.builtInKotlin` and drop the `compileSdk`
+workaround in `android/build.gradle.kts` once `file_picker` is upgraded.
 
 ---
 
