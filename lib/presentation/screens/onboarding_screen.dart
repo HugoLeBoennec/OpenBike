@@ -7,6 +7,7 @@ import '../../core/domain/entities/trainer_device.dart';
 import '../../core/domain/entities/user_profile.dart';
 import '../../core/domain/value_objects/value_objects.dart';
 import '../../infrastructure/ble/ble_transport.dart';
+import '../../infrastructure/observability/crash_reporting_service.dart';
 import '../format/unit_formatter.dart';
 import '../state/providers.dart';
 import '../theme/app_theme.dart';
@@ -96,6 +97,7 @@ class _OnboardingScreenState extends ConsumerState<OnboardingScreen> {
     final enabled = await showCrashReportingConsentDialog(context);
     ref.read(crashReportingEnabledProvider.notifier).state = enabled;
     await appPrefs.setCrashReportingEnabled(enabled);
+    await CrashReportingService.apply(enabled: enabled);
     await appPrefs.setHasAskedCrashReportingConsent(true);
   }
 

@@ -42,26 +42,20 @@ final _log = Logger('main');
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
 
-  // ---- Crash reporting (opt-in, see docs/release/analytics.md) ----
-  // `appPrefs` isn't loaded until inside the wrapped runner below, so
-  // `isEnabled` reads through this mutable holder rather than a value
-  // captured at call time — it's re-evaluated on every event, which is also
-  // what lets the Settings toggle take effect without a restart.
-  AppPreferences? appPrefsHolder;
-  const sentryDsn = String.fromEnvironment('SENTRY_DSN');
+  // ---- Preferences ----
+  // Loaded first: whether Sentry starts at all depends on the user's choice.
+  final prefs = await SharedPreferences.getInstance();
+  final appPrefs = AppPreferences(prefs);
 
-  await CrashReportingService.run(
-    dsn: sentryDsn,
-    isEnabled: () => appPrefsHolder?.crashReportingEnabled ?? false,
-    appRunner: () async {
-      await _runApp(onPreferencesLoaded: (prefs) => appPrefsHolder = prefs);
-    },
-  );
+  // ---- Crash reporting (opt-in, see docs/release/analytics.md) ----
+  // Never initialised for opted-out users or builds without a DSN. Toggling
+  // it later goes through CrashReportingService.apply.
+  await CrashReportingService.apply(enabled: appPrefs.crashReportingEnabled);
+
+  await _runApp(appPrefs);
 }
 
-Future<void> _runApp({
-  required void Function(AppPreferences) onPreferencesLoaded,
-}) async {
+Future<void> _runApp(AppPreferences appPrefs) async {
   // ---- Database ----
   final dbDir = await getApplicationDocumentsDirectory();
   final dbFile = File(p.join(dbDir.path, 'open_bike.db'));
@@ -79,11 +73,6 @@ Future<void> _runApp({
       await plugin.restoreSession();
     }
   }
-
-  // ---- Preferences ----
-  final prefs = await SharedPreferences.getInstance();
-  final appPrefs = AppPreferences(prefs);
-  onPreferencesLoaded(appPrefs);
 
   // ---- Desktop window (macOS/Windows/Linux only — no-op elsewhere) ----
   await initializeDesktopWindow(appPrefs);
