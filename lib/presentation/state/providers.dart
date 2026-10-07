@@ -188,8 +188,14 @@ final connectionMonitorProvider = Provider<ConnectionMonitor>((ref) {
 // Ride state
 // ---------------------------------------------------------------------------
 
-final currentRideProvider = Provider<Ride?>((ref) {
-  return ref.watch(recordingEngineProvider).currentRide;
+/// The ride in progress with its samples so far, refreshed once per second.
+/// The engine instance never changes, so a plain `Provider` here would be
+/// read once and never update — which left avg power, NP, distance, TSS, IF
+/// and calories stuck at their empty values for the whole ride.
+final currentRideProvider = StreamProvider<Ride?>((ref) async* {
+  final engine = ref.watch(recordingEngineProvider);
+  yield engine.liveRide;
+  yield* Stream.periodic(const Duration(seconds: 1), (_) => engine.liveRide);
 });
 
 // ---------------------------------------------------------------------------
@@ -558,7 +564,7 @@ final threeSecondAvgPowerProvider = Provider<Watts>((ref) {
 final rideElapsedProvider = StreamProvider<Duration>((ref) {
   final engine = ref.watch(recordingEngineProvider);
   return Stream.periodic(const Duration(seconds: 1), (_) {
-    final ride = engine.currentRide;
+    final ride = engine.liveRide;
     if (ride == null) return Duration.zero;
     return ride.activeDuration;
   });

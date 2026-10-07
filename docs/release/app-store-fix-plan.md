@@ -4,25 +4,23 @@ Findings from the 2026-10-07 App Store readiness audit, written as tasks
 to fix one at a time. Each task stands alone: it says why the change
 is needed, where to make it, what "done" means, and how to check it.
 
-Every file:line below was checked against the working tree on branch
-`ftp-test-guidance` at commit `0c8a98b`, with uncommitted changes in place.
-If a line has moved, search for the quoted symbol.
+T1–T17: every file:line was checked against branch `ftp-test-guidance` at
+commit `0c8a98b` (most of these are now done; see the Status column).
+T18–T22 were added after the Google Play screenshot run and checked
+against `main` at `6a2f5aa`. If a line has moved, search for the quoted
+symbol.
 
 ---
 
 ## Ground rules (read before every task)
 
 1. **One task per session/commit.** Don't fold neighbouring fixes in.
-2. **The owner has uncommitted work that must not be reverted or staged by
-   accident:** `analysis_options.yaml`, `docs/release/app-store.md`,
-   `ios/Podfile`, `ios/Podfile.lock`, `ios/Runner.xcodeproj/project.pbxproj`,
-   `ios/Runner.xcodeproj/xcshareddata/xcschemes/Runner.xcscheme`,
-   `ios/Runner/Info.plist`, `pubspec.lock`, `pubspec.yaml`,
-   `devtools_options.yaml`, `ios/**/swiftpm/`, `docs/store/`,
-   `tool/screenshots/`, `docs/release/app-store-fix-plan.md`. If a task edits
-   one of these files, keep the owner's existing hunks intact. Stage
-   files by name. Never use `git add -A` or `git add .`, and never use
-   `git checkout --`/`git restore` on these files.
+2. **Leave other people's uncommitted work alone.** Run `git status`
+   before starting. Anything already modified or untracked that your task
+   doesn't need is the owner's. Don't stage it, revert it, or `git
+   checkout --`/`git restore` it. If your task has to edit one of those
+   files, keep the existing hunks intact. Stage files by name; never use
+   `git add -A` or `git add .`.
 3. **Flutter isn't on `PATH` in non-interactive shells.** Use
    `export PATH=/Users/hugo/Developer/flutter/bin:$PATH` (Flutter 3.47.4).
 4. After every code task, run `flutter analyze` and the tests named in the
@@ -30,11 +28,14 @@ If a line has moved, search for the quoted symbol.
 5. After changing a `@freezed` class, run codegen:
    `dart run build_runner build --delete-conflicting-outputs`.
 6. **Disk space is tight on this machine** (it has filled up during builds).
-   Before any `flutter build`/`flutter run` for iOS or macOS, run `df -h /`.
-   Don't start a build with less than 6 GB free. The first macOS
-   build downloads about 2 GB of Sentry binaries.
-7. **Don't build the macOS target in the repo except in T5.** The first
-   macOS build with Flutter 3.47 rewrites tracked project files (see T5).
+   Before any `flutter build`/`flutter run`, run `df -h /`. Don't start an
+   iOS, macOS or Android build with less than 6 GB free.
+   - The first macOS build downloads about 2 GB of Sentry binaries.
+   - An Android screenshot run takes about 4 GB including the emulator.
+7. **Check `git diff` after any build.** T5 already ran the one-time macOS
+   migration. Flutter can still rewrite tracked Xcode/Pod/Gradle files on
+   a build; don't commit such rewrites unless the task is about them (T21
+   is).
 8. Match the surrounding code: comment density, naming, Riverpod patterns,
    `context.tokens` theming.
 
@@ -51,34 +52,45 @@ in your summary.
 | D2 | How far to take crash-reporting privacy (T6) | (a) **Dart-only reporting**: turn off Sentry's native crash handler so every event passes through the Dart redaction. (b) Keep native crash reports and disclose "Device ID" in App Privacy. (c) Remove Sentry for v1.0. | (a) |
 | D3 | macOS App Store category (T1) | `public.app-category.healthcare-fitness` or `public.app-category.sports` | healthcare-fitness (matches `docs/release/app-store.md`) |
 | D4 | Mac App Store upload for v1.0 (T16) | Manual Xcode archive/upload, or a new CI job | Manual. T16 is optional. |
+| D5 | Flutter version on CI vs local, before T21 | (a) Move CI from `3.41.x` to the local `3.47.x`, then do the full AGP 9 + built-in Kotlin migration. (b) Keep CI on `3.41.x` and postpone T21 until CI moves; the full migration needs Flutter ≥ 3.47. | (a) |
 
 ---
 
 ## Task index
 
-| ID | Title | Kind | Blocks submission? |
-|---|---|---|---|
-| T1 | macOS Info.plist: category + export compliance | Config | **Yes** (ITMS-90242) |
-| T2 | macOS Release entitlements: allow the Strava sign-in server | Config | **Yes** (Strava broken on Mac) |
-| T3 | Add PrivacyInfo.xcprivacy (iOS + macOS) | Config | **Likely** (ITMS-91053) |
-| T4 | Version string alignment (D1) | Config/CI | **Yes** if D1=(b) |
-| T5 | macOS signing team + one-time Flutter SPM migration | Config | **Yes** for Mac |
-| T6 | Make crash reporting truly opt-in and anonymous | Code | **Yes** (App Privacy answers are wrong today) |
-| T7 | Bring privacy docs in line with T6 and the audit | Docs | Yes (policy must match behaviour) |
-| T8 | Ride session teardown (workout/route/recording) | Code | Functional bug |
-| T9 | ERG status banner shows the manual value during a workout | Code | Visible in hero screenshot |
-| T10 | iPad/Mac ride screen always uses the phone layout | Code | Visible in iPad/Mac screenshots |
-| T11 | Workout profile chart: ramps invisible, repeats drawn solid | Code | Visible in library/HUD |
-| T12 | ListTile debug assertion in the workout library | Code | Polish |
-| T13 | Duplicate drag handles in the workout editor (desktop) | Code | Polish |
-| T14 | FTP Test page highlights the "Home" tab | Code | Optional polish |
-| T15 | Verify Strava token storage on a signed Mac build | Manual check | Verify |
-| T16 | Mac App Store build/upload path | CI/docs | Optional (D4) |
-| T17 | Retake store screenshots | Assets | After T8–T13 |
+Status as of the `android-agp-9` branch, stacked on `main` @ `6a2f5aa` (PR #21). Don't redo tasks marked done.
 
-Suggested order: T1 → T2 → T3 → T5 → T6 → T7 → T8 → T9 → T10 → T11 → T12 → T13 →
-(T14) → T4 if needed → T15 → T17. T5 and T15 need a Mac build, so batch them
-when disk space allows.
+| ID | Title | Kind | Blocks submission? | Status |
+|---|---|---|---|---|
+| T1 | macOS Info.plist: category + export compliance | Config | **Yes** (ITMS-90242) | Done (`d88f1e8`) |
+| T2 | macOS Release entitlements: allow the Strava sign-in server | Config | **Yes** (Strava broken on Mac) | Done (`d88f1e8`) |
+| T3 | Add PrivacyInfo.xcprivacy (iOS + macOS) | Config | **Likely** (ITMS-91053) | Done (`d88f1e8`) |
+| T4 | Version string alignment (D1) | Config/CI | **Yes** if D1=(b) | No code under D1=(a); owner renames the App Store Connect version to 1.0.0 |
+| T5 | macOS signing team + one-time Flutter SPM migration | Config | **Yes** for Mac | Done (`d88f1e8`) |
+| T6 | Make crash reporting truly opt-in and anonymous | Code | **Yes** (App Privacy answers are wrong today) | Done (`0a3557f`) |
+| T7 | Bring privacy docs in line with T6 and the audit | Docs | Yes (policy must match behaviour) | Done (`c104a66`) |
+| T8 | Ride session teardown (workout/route/recording) | Code | Functional bug | Done (`425e6fd`) |
+| T9 | ERG status banner shows the manual value during a workout | Code | Visible in hero screenshot | Done (`a58c033`) |
+| T10 | iPad/Mac ride screen always uses the phone layout | Code | Visible in iPad/Mac screenshots | Done (`610fede`) |
+| T11 | Workout profile chart: ramps invisible, repeats drawn solid | Code | Visible in library/HUD | Done (`cbbd9c4`) |
+| T12 | ListTile debug assertion in the workout library | Code | Polish | Done (`14ad033`) |
+| T13 | Duplicate drag handles in the workout editor (desktop) | Code | Polish | Done (`14ad033`) |
+| T14 | FTP Test page highlights the "Home" tab | Code | Optional polish | Open |
+| T15 | Verify Strava token storage on a signed Mac build | Manual check | Verify | Open (manual) |
+| T16 | Mac App Store build/upload path | CI/docs | Optional (D4) | Done: manual section in `macos-signing.md` |
+| T17 | Retake store screenshots | Assets | After T8–T13 | Done (`559efa3`) |
+| T18 | Live ride metrics never update; paused time counted as ride time | Code | **Yes**: wrong numbers in every tablet/desktop ride shot | Done (`20c42a5`) |
+| T19 | Ride timer wraps onto two lines on small tablets | Code | Visible in 7" tablet shots | Done (`7a17405`) |
+| T20 | Portrait tablets: ride screen leaves most of the screen empty | Code | Visible in iPad/Android tablet shots | Done (`c9fc481`, `33d69e2`) |
+| T21 | Flutter end-of-support warnings (Gradle/AGP, CocoaPods-only plugins) | Build/CI | Not today; will fail a future Flutter upgrade | Android done (`53287ae`); six plugins still apply KGP, so built-in Kotlin stays off; iOS plugins still CocoaPods-only |
+| T22 | Retake the ride screenshots affected by T18–T20 | Assets | After T18–T20 | Done (macOS, Android 7"/10", iPad retaken) |
+
+What's left: (T14) and T15. D5 was taken as (a): CI and `release.yml` now
+use Flutter 3.47.x. For T21, upgrade the six KGP plugins
+(`flutter_foreground_task`, `package_info_plus`, `sentry_flutter`,
+`share_plus`, `shared_preferences_android`, `wakelock_plus`) after the store
+release, then flip `android.builtInKotlin` and drop the `compileSdk`
+workaround in `android/build.gradle.kts` once `file_picker` is upgraded.
 
 ---
 
@@ -753,3 +765,272 @@ tool/screenshots/take_screenshots.sh macos static,route,workout
   `static` and `workout` passes on all three targets.
 - The driver must never be imported from `lib/`. It's only ever built with
   `-t tool/screenshots/driver.dart --dart-define=DEV_MODE=true`.
+
+---
+
+## T18 — Live ride metrics never update; paused time counted as ride time
+
+**Why.** Two layers, both confirmed in code.
+
+1. `currentRideProvider` (`lib/presentation/state/providers.dart:191-193`) is
+   a plain `Provider` returning `ref.watch(recordingEngineProvider).currentRide`.
+   `recordingEngineProvider` never changes, so the value is computed once
+   (when first watched) and never again.
+2. A fresh read wouldn't help either. `RecordingEngine` keeps samples in its
+   private `_readings` list (`lib/core/application/services/recording_engine.dart:70`,
+   appended at `:380`). `_currentRide` is created once at start with no
+   readings (`:102-106`). Readings are only copied into a `Ride` by
+   `_autoSave` (`:394`) and `stop()` (`:270`).
+
+So the six fields that compute from `currentRideProvider`
+(`lib/presentation/models/data_field_type.dart:122-166`: avg power,
+normalized power, distance, calories, TSS, IF) stay at `--`/`0`/`0.00` for
+the whole ride. You can see it in the committed screenshots:
+
+| Screenshot | What's wrong |
+|---|---|
+| `docs/store/screenshots/macos/01-ride-workout.png` (11:40 in) | AVG POWER `--`, NP `--`, DISTANCE `0.00`, TSS `0`, IF `0.00`, CALORIES `0` |
+| `ipad-13/01`, `android-7in/01`, `android-10in/01` | DISTANCE `0.00` at 31 km/h |
+
+Phone riders see the same on the second data page.
+
+Same root cause: `_currentRide.pauseDuration` is never updated during a
+ride. Paused time only accumulates in `_totalPauseDuration`
+(`recording_engine.dart:167-180`). `rideElapsedProvider`
+(`providers.dart:558-565`) feeds both the header timer
+(`lib/presentation/widgets/ride_header_bar.dart:17`) and the TIME field
+(`data_field_type.dart:146`). It reads `currentRide.activeDuration`, so it
+keeps counting while paused and never subtracts pauses. This part comes
+from reading the code; prove it with the test below before fixing.
+
+**Change.**
+1. `RecordingEngine`: add a live snapshot getter, e.g. `Ride? get liveRide`.
+   It returns `_currentRide?.copyWith(...)` with:
+   - `readings: UnmodifiableListView(_readings)` and
+     `laps: UnmodifiableListView(_laps)`. These are views; `List.unmodifiable`
+     would copy every sample once a second.
+   - `pauseDuration:` `_totalPauseDuration`, plus `now - _pauseStartTime` while
+     paused.
+2. Make `currentRideProvider` tick the way `rideElapsedProvider` does: a
+   `StreamProvider<Ride?>` over `Stream.periodic(1 s)` reading
+   `engine.liveRide`, emitting once immediately. Update the six call sites in
+   `data_field_type.dart` to read `.valueOrNull`. Nothing else in `lib/` reads
+   `currentRideProvider` (`grep -rn currentRideProvider lib`).
+3. `rideElapsedProvider`: use `engine.liveRide?.activeDuration`, so the timer
+   freezes while paused and excludes pauses after resume.
+4. Keep it simple first. Average power, NP, TSS and IF each scan all
+   readings every second, which is fine for multi-hour rides (≈7k–15k
+   samples). If profiling shows otherwise, compute them once per tick in one
+   provider and have the fields read that.
+
+**Tests.**
+- `test/core/application/services/recording_engine_test.dart`:
+  - after N samples, `liveRide.readings.length == N`;
+  - `liveRide.totalDistance` equals the last sample's distance;
+  - after pause/resume, `liveRide.pauseDuration` includes the pause.
+- A data-field widget test: the distance and avg-power cells change after
+  the engine records more samples. Follow
+  `test/presentation/widgets/data_field_cell_test.dart` /
+  `data_field_grid_test.dart`.
+
+**Done when.**
+- During a ride, all six fields update every second.
+- The header timer stops while paused, and the paused time isn't counted
+  after resume.
+- `flutter analyze` and `flutter test` pass.
+
+---
+
+## T19 — Ride timer wraps onto two lines on small tablets
+
+**Why.** `RideHeaderBar` (`lib/presentation/widgets/ride_header_bar.dart:45-57`)
+puts the timer in an `Expanded` `Text` that is allowed to wrap. The timer is
+28 pt bold monospace with letter-spacing 2, next to the sensor dots and three
+28 pt buttons. In the ≥ 600 dp layouts the header only gets the left 3/5 of
+the screen (`_buildLandscapeLayout` in `ride_screen.dart`). On a 7" portrait
+tablet (617 dp wide) that's ~370 dp, and the timer breaks into "00:11:4" /
+"0" (`docs/store/screenshots/android-7in/01-ride-workout.png`).
+
+**Change.** Never wrap. Use `maxLines: 1, softWrap: false`, inside a
+`FittedBox(fit: BoxFit.scaleDown, alignment: Alignment.centerLeft)` within
+the `Expanded`, so it scales down only when it doesn't fit. Leave the size
+alone where it fits.
+
+**Tests.** A widget test that pumps `RideHeaderBar` at 360 dp wide with a
+recording in progress. The timer must render as one line (one `Text` line
+height) with no overflow exceptions. Also check at 1200 dp that the font
+size is unchanged.
+
+**Done when.** No wrap and no RenderFlex overflow from 320 to 1440 dp.
+
+---
+
+## T20 — Portrait tablets: ride screen leaves most of the screen empty
+
+**Why.** `RideScreen` chooses a layout by width only
+(`lib/presentation/screens/ride_screen.dart:238-249`: ≥ 1200 desktop, ≥ 600
+landscape, else portrait). Portrait tablets all get the side-by-side
+landscape layout:
+- 7" tablet: 617×1097 dp;
+- 10" tablet: 823×1463 dp;
+- iPad 13": 1032×1376 dp.
+
+The layout's two panes:
+- **Left:** header, zone bar, then `DataFieldGrid`
+  (`lib/presentation/widgets/data_field_grid.dart`, a `GridView` with a fixed
+  `childAspectRatio: 1.8`), so the six fields fill only two short rows
+(~70–90 dp each).
+- **Right:** the HUD/route profile (flex 3) above the power gauge (flex 2).
+
+On a tall screen, most of the left pane is blank and the workout HUD
+panel is mostly empty. The route elevation profile stretches to the full
+height. See `ipad-13/01`, `android-7in/01` and `android-10in/01`.
+
+**Change.**
+1. Add a portrait-tablet layout, used when
+   `constraints.maxWidth >= 600 && constraints.maxHeight > constraints.maxWidth`.
+   Landscape tablets (and anything ≥ 1200 dp wide in landscape) keep the
+   current side-by-side layouts.
+2. Arrangement, top to bottom: `RideHeaderBar`, `ZoneBar`,
+   `ManualTrainerControls`, then the data grid, then a bottom section.
+   - Grid: the landscape preset's 6 fields in 3 columns, sized to fill its
+     share of the height. Give `DataFieldGrid` an option to derive
+     `childAspectRatio` from the available height, or lay rows out with
+     `Expanded`.
+   - Bottom section: the bottom pane (HUD / route profile / live chart), with
+     the `PowerGauge` beside it (`Row`) when `config.showPowerGauge`.
+   - Start around grid 4 : bottom 5 and adjust by eye on the screenshots.
+3. `_adaptConfigToWidth` (`ride_screen.dart:262-270`): portrait tablets keep
+   the landscape preset (6 fields + gauge); only the arrangement changes.
+   Phones (< 600 dp) and desktop are unchanged.
+
+**Tests.** A widget test pumping the ride layout at 617×1097, 823×1463 and
+1032×1376 should find:
+- 6 data cells;
+- a `PowerGauge`;
+- the bottom pane;
+- no overflow.
+
+At 1366×1024 (landscape tablet), the existing side-by-side layout is still
+used.
+
+**Done when.** On 7", 10" and iPad portrait, the grid, the HUD/profile and the
+gauge fill the screen with no large blank areas. Check with T22's screenshots.
+
+---
+
+## T21 — Flutter end-of-support warnings (Gradle/AGP, CocoaPods-only plugins)
+
+**Why.** These aren't store blockers today, but a future Flutter upgrade will
+turn them into build failures. Flutter 3.47.4 prints them on every build:
+
+- **Android.**
+  - "Flutter support for your project's Gradle version (8.14.0) will soon be
+    dropped. Please upgrade your Gradle version to a version of at least
+    9.1.0 soon."
+  - "Flutter support for your project's Android Gradle Plugin version
+    (Android Gradle Plugin version 8.11.1) will soon be dropped. Please
+    upgrade your Android Gradle Plugin version to a version of at least
+    Android Gradle Plugin version 9.0.1 soon."
+  - Current versions:
+    - Gradle 8.14: `android/gradle/wrapper/gradle-wrapper.properties:5`;
+    - AGP 8.11.1: `android/settings.gradle.kts:22`;
+    - Kotlin plugin 2.2.20: `android/settings.gradle.kts:23`.
+- **iOS.** "The following plugins do not support Swift Package Manager for
+  ios: flutter_foreground_task, flutter_secure_storage,
+  permission_handler_apple. This will become an error in a future version of
+  Flutter." This is why `ios/Podfile` / CocoaPods are still needed alongside
+  SPM.
+
+**Prerequisite: D5.** CI is pinned to Flutter `3.41.x`
+(`.github/workflows/ci.yml:11`). Recent commits (`9406291`, `940aeb8`)
+deliberately keep the dependency set resolvable on it, while local
+development uses 3.47.4. Per Flutter's docs, AGP 9 with built-in Kotlin needs
+Flutter ≥ 3.47. Settle D5 before touching the Android build.
+
+**Change: Android (after D5 = a).**
+1. Move CI (`ci.yml`, and `release.yml` if it pins a version) to the same
+   Flutter `3.47.x`, and refresh `pubspec.lock` with it. That's one commit.
+2. Then follow Flutter's guides; where they disagree with this outline, the
+   guides win:
+   - https://docs.flutter.dev/release/breaking-changes/migrate-to-agp-9
+   - https://docs.flutter.dev/release/breaking-changes/migrate-to-built-in-kotlin/for-app-developers
+
+   In outline:
+   - Gradle wrapper to ≥ 9.1.0 (the guide uses 9.3.1). AGP to ≥ 9.0.1 (the
+     guide uses 9.1.0). Set the Kotlin Gradle plugin line in
+     `settings.gradle.kts` per the guide.
+   - In `android/app/build.gradle.kts`, remove `id("kotlin-android")` and
+     replace `kotlinOptions { … }` with a top-level
+     `kotlin { compilerOptions { … } }`.
+   - Flutter may add `android.builtInKotlin=false` and `android.newDsl=false`
+     to `android/gradle.properties` as a bridge. Only flip `builtInKotlin` to
+     `true` once every plugin in use has dropped the Kotlin Gradle plugin
+     (the guide shows how to check).
+   - `~/.gradle` already has a Gradle 9.3.1 distribution cached, so there's
+     no large download.
+
+**Change: iOS plugins.**
+- Run `flutter pub outdated`. Upgrade any of the three plugins whose newer
+  versions support SPM and are compatible.
+- Note the rest in `docs/release/checklist.md`: CocoaPods stays required
+  until upstream adds SPM.
+- Don't remove `ios/Podfile` or `macos/Podfile`.
+
+**Verify.**
+- `flutter build apk --debug` with no "will soon be dropped" warnings.
+- `flutter analyze` and `flutter test` pass.
+- CI is green on the new Flutter version.
+- Optionally, run `tool/screenshots/take_screenshots.sh android-phone static`
+  as an end-to-end smoke test (needs the Android SDK and emulator; see the
+  tool's README).
+
+**Done when.**
+- The Android build is on Gradle ≥ 9.1 / AGP ≥ 9.0.1 with no deprecation
+  warnings.
+- CI and local use the same Flutter version.
+- Each iOS plugin is either upgraded to an SPM-capable version, or recorded
+  as still CocoaPods-only.
+
+---
+
+## T22 — Retake the ride screenshots affected by T18–T20
+
+**Why.** These committed screenshots show the T18–T20 bugs:
+
+| File(s) | Shows |
+|---|---|
+| `macos/01-ride-workout.png` | Stale fields: avg power, NP, distance, TSS, IF, calories (T18) |
+| `macos/02-route-simulation.png` | Check for the same stale fields (desktop preset shows them) (T18) |
+| `ipad-13/01,02` | DISTANCE `0.00` (T18); empty lower half (T20) |
+| `android-7in/01,02` | DISTANCE `0.00` (T18); timer wrapped onto two lines (T19); empty space (T20) |
+| `android-10in/01,02` | DISTANCE `0.00` (T18); empty space (T20) |
+
+The phone sets (`ios-6.9`, `ios-6.3`, `android-phone`) only show the first
+data page (power, cadence, heart rate, speed), so they're fine as they are.
+So are `03`–`07` everywhere.
+
+**How.** Run the targets one after another, checking `df -h /` before each
+(rule 6):
+
+```bash
+export PATH=/Users/hugo/Developer/flutter/bin:$PATH
+tool/screenshots/take_screenshots.sh ipad-13 route,workout
+tool/screenshots/take_screenshots.sh macos route,workout
+tool/screenshots/take_screenshots.sh android-7in route,workout
+tool/screenshots/take_screenshots.sh android-10in route,workout
+```
+
+- Each run takes ~20 minutes: build/boot, then 3.5 min route and 12 min
+  workout in real time.
+- The Android targets need the Android SDK, emulator and a system image (see
+  `tool/screenshots/README.md`).
+- Look at every new PNG before committing. On a 01: all six T18 fields are
+  non-zero (where shown), the timer is on one line, and nothing is mostly
+  blank.
+- Known cosmetic issue: the 10" emulator's demo-mode status bar showed two
+  Wi-Fi icons. If it recurs, try dropping `-e ssid … -e activity none` from
+  `status_bar_demo` in `tool/screenshots/take_screenshots.sh` for that
+  target. Re-check that the phone bar still shows 9:41, Wi-Fi and battery
+  only.
+

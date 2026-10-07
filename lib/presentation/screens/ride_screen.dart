@@ -33,6 +33,8 @@ import '../widgets/zone_bar.dart';
 /// - **Portrait** (<600px): Header → ZoneBar → PageView(grids) → dots → Chart
 /// - **Landscape** (≥600px): Row → Left(header+zone+grid) → Right(chart+gauge)
 /// - **Desktop** (≥1200px): same as landscape but with larger grid (3×4)
+/// - **Portrait tablet** (≥600px wide and taller than wide): stacked — header,
+///   zone bar, a height-filling 3-column grid, then the chart/HUD beside the gauge
 class RideScreen extends ConsumerStatefulWidget {
   const RideScreen({super.key, this.extra});
 
@@ -238,7 +240,11 @@ class _RideScreenState extends ConsumerState<RideScreen> {
                   child: LayoutBuilder(
                     builder: (context, constraints) {
                       _adaptConfigToWidth(constraints.maxWidth);
-                      if (constraints.maxWidth >= 1200) {
+                      if (constraints.maxWidth >= 600 &&
+                          constraints.maxHeight > constraints.maxWidth) {
+                        return _buildTabletPortraitLayout(
+                            context, ref, constraints);
+                      } else if (constraints.maxWidth >= 1200) {
                         return _buildDesktopLayout(context, ref, constraints);
                       } else if (constraints.maxWidth >= 600) {
                         return _buildLandscapeLayout(
@@ -307,6 +313,54 @@ class _RideScreenState extends ConsumerState<RideScreen> {
         Expanded(
           flex: 2,
           child: _buildBottomPane(context, ref),
+        ),
+      ],
+    );
+  }
+
+  // ─── Portrait tablet ───────────────────────────────────────────────
+
+  /// Tall, wide screens (7"/10" tablets, iPad in portrait): the side-by-side
+  /// layouts would leave most of the height empty, so stack everything and
+  /// let the grid and the bottom section share the height.
+  Widget _buildTabletPortraitLayout(
+    BuildContext context,
+    WidgetRef ref,
+    BoxConstraints constraints,
+  ) {
+    final config = ref.watch(rideScreenConfigProvider);
+    final fields =
+        config.pages.isNotEmpty ? config.pages.first : <DataFieldType>[];
+
+    return Column(
+      children: [
+        const RideHeaderBar(),
+        const ZoneBar(),
+        const ManualTrainerControls(),
+        Expanded(
+          flex: 3,
+          child: DataFieldGrid(
+            fields: fields,
+            columns: 3,
+            pageIndex: 0,
+            fillHeight: true,
+          ),
+        ),
+        Expanded(
+          flex: 2,
+          child: Row(
+            children: [
+              Expanded(
+                flex: 3,
+                child: _buildBottomPane(context, ref),
+              ),
+              if (config.showPowerGauge)
+                const Expanded(
+                  flex: 2,
+                  child: PowerGauge(),
+                ),
+            ],
+          ),
         ),
       ],
     );

@@ -1,4 +1,5 @@
 import 'dart:async';
+import 'dart:collection';
 
 import 'package:logging/logging.dart';
 import 'package:uuid/uuid.dart';
@@ -47,6 +48,25 @@ class RecordingEngine {
 
   Ride? _currentRide;
   Ride? get currentRide => _currentRide;
+
+  /// Snapshot of the ride in progress for live metrics. [currentRide] is the
+  /// ride as created at start (no readings, no pause time); this one carries
+  /// the samples and laps recorded so far and the pause time including a
+  /// pause that is still running, so `activeDuration` freezes while paused.
+  /// The lists are views, not copies — a snapshot is cheap once a second.
+  Ride? get liveRide {
+    final ride = _currentRide;
+    if (ride == null) return null;
+    var pause = _totalPauseDuration;
+    if (_state == RecordingState.paused && _pauseStartTime != null) {
+      pause += DateTime.now().difference(_pauseStartTime!);
+    }
+    return ride.copyWith(
+      readings: UnmodifiableListView(_readings),
+      laps: UnmodifiableListView(_laps),
+      pauseDuration: pause,
+    );
+  }
 
   SensorReading? _latestReading;
   SensorReading? get latestReading => _latestReading;
