@@ -45,14 +45,23 @@ class RideHeaderBar extends ConsumerWidget {
         children: [
           // Timer
           Expanded(
-            child: Text(
-              timerText,
-              style: const TextStyle(
-                fontSize: 28,
-                fontWeight: FontWeight.bold,
-                fontFamily: 'monospace',
-                color: Colors.white,
-                letterSpacing: 2,
+            // Never wrap onto a second line: scale the timer down when the
+            // space beside the buttons is too narrow (small tablets, where
+            // this header only gets part of the width).
+            child: FittedBox(
+              fit: BoxFit.scaleDown,
+              alignment: Alignment.centerLeft,
+              child: Text(
+                timerText,
+                maxLines: 1,
+                softWrap: false,
+                style: const TextStyle(
+                  fontSize: 28,
+                  fontWeight: FontWeight.bold,
+                  fontFamily: 'monospace',
+                  color: Colors.white,
+                  letterSpacing: 2,
+                ),
               ),
             ),
           ),
