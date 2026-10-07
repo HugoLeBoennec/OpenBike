@@ -203,6 +203,40 @@ void main() {
       expect(controller.state.mode, ControlMode.resistance);
     });
 
+    test('workout stopped, then a route starts → SIM mode', () async {
+      eventBus.fire(WorkoutEvent.started(
+        Workout(id: 'w1', name: 'W', steps: []),
+      ));
+      eventBus.fire(WorkoutEvent.stepChanged(_step(StepType.steadyState), 0));
+      await Future<void>.delayed(Duration.zero);
+      expect(controller.state.mode, ControlMode.erg);
+
+      // Ride ended early: the workout never completes, it is stopped.
+      eventBus.fire(const WorkoutEvent.stopped());
+      await Future<void>.delayed(Duration.zero);
+      expect(controller.state.mode, ControlMode.resistance);
+
+      eventBus.fire(SimulationEvent.started(
+        domain.Route(id: 'r1', name: 'Test', points: []),
+      ));
+      await Future<void>.delayed(Duration.zero);
+
+      expect(controller.state.mode, ControlMode.simulation);
+    });
+
+    test('route stopped → returns to resistance mode', () async {
+      eventBus.fire(SimulationEvent.started(
+        domain.Route(id: 'r1', name: 'Test', points: []),
+      ));
+      await Future<void>.delayed(Duration.zero);
+      expect(controller.state.mode, ControlMode.simulation);
+
+      eventBus.fire(const SimulationEvent.stopped());
+      await Future<void>.delayed(Duration.zero);
+
+      expect(controller.state.mode, ControlMode.resistance);
+    });
+
     test('workout completed with active route → switches to SIM mode',
         () async {
       // Start both a workout and a simulation.

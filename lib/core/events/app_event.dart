@@ -43,6 +43,7 @@ class WorkoutEvent with _$WorkoutEvent {
   const factory WorkoutEvent.completed() = WorkoutCompleted;
   const factory WorkoutEvent.paused() = WorkoutPaused;
   const factory WorkoutEvent.resumed() = WorkoutResumed;
+  const factory WorkoutEvent.stopped() = WorkoutStopped;
 }
 
 // ---------------------------------------------------------------------------
@@ -74,6 +75,7 @@ class SimulationEvent with _$SimulationEvent {
   const factory SimulationEvent.paused() = SimulationPaused;
   const factory SimulationEvent.resumed() = SimulationResumed;
   const factory SimulationEvent.completed() = SimulationCompleted;
+  const factory SimulationEvent.stopped() = SimulationStopped;
 }
 
 // ---------------------------------------------------------------------------

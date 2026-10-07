@@ -315,6 +315,37 @@ class RecordingEngine {
   }
 
   // ---------------------------------------------------------------------------
+  // discard
+  // ---------------------------------------------------------------------------
+
+  /// Abandons the ride in progress: cancels sampling, deletes the partially
+  /// auto-saved ride and returns to idle. Unlike [stop] it fires no
+  /// [RideStopped], so auto-upload and calendar linking don't run.
+  Future<void> discard() async {
+    if (_state == RecordingState.idle) {
+      throw StateError('Cannot discard: engine is idle');
+    }
+
+    _sampleTimer?.cancel();
+    _sampleTimer = null;
+    await _sensorSubscription?.cancel();
+    _sensorSubscription = null;
+    await _simulationSubscription?.cancel();
+    _simulationSubscription = null;
+
+    final rideId = _currentRide!.id;
+    _pauseStartTime = null;
+    _currentRide = null;
+    _latestReading = null;
+    _readings.clear();
+    _laps.clear();
+    _setState(RecordingState.idle);
+
+    await _storage.deleteRide(rideId);
+    _log.info('Recording discarded: $rideId');
+  }
+
+  // ---------------------------------------------------------------------------
   // dispose
   // ---------------------------------------------------------------------------
 

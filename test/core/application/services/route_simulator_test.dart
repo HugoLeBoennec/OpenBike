@@ -318,6 +318,18 @@ void main() {
       expect(events.whereType<SimulationStarted>(), isNotEmpty);
     });
 
+    test('fires SimulationStopped on stop', () async {
+      final events = <SimulationEvent>[];
+      eventBus.on<SimulationEvent>().listen(events.add);
+
+      simulator.start(_flatRoute());
+      simulator.stop();
+
+      await Future<void>.delayed(Duration.zero);
+      expect(events.last, isA<SimulationStopped>());
+      expect(events.whereType<SimulationCompleted>(), isEmpty);
+    });
+
     test('fires SimulationPaused on pause', () async {
       final events = <SimulationEvent>[];
       eventBus.on<SimulationEvent>().listen(events.add);

@@ -163,6 +163,18 @@ void main() {
       expect(engine.currentWorkout, isNull);
     });
 
+    test('stop fires WorkoutStopped', () async {
+      final events = <WorkoutEvent>[];
+      eventBus.on<WorkoutEvent>().listen(events.add);
+
+      engine.start(simpleWorkout, const Watts(250));
+      engine.stop();
+
+      await Future<void>.delayed(Duration.zero);
+      expect(events.last, isA<WorkoutStopped>());
+      expect(events.whereType<WorkoutCompleted>(), isEmpty);
+    });
+
     test('stateStream emits transitions', () async {
       final states = <WorkoutEngineState>[];
       engine.stateStream.listen(states.add);
