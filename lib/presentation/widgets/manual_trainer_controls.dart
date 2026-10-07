@@ -143,6 +143,9 @@ class _ModeToggleButton extends StatelessWidget {
 
 /// Shows the current control mode and its active target — e.g.
 /// "ERG · 200 W", "RESISTANCE · Level 5.0", "SIM · Difficulty 50%".
+///
+/// While a workout drives the trainer, the ERG target is the workout's
+/// current step power rather than the last manually set value.
 class _TrainerStatusBanner extends ConsumerWidget {
   const _TrainerStatusBanner();
 
@@ -150,10 +153,18 @@ class _TrainerStatusBanner extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final mode = ref.watch(trainerModeProvider);
 
+    final workoutOwnsTargets = ref.watch(currentWorkoutProvider) != null &&
+        ref.watch(workoutEngineStateProvider).valueOrNull !=
+            WorkoutEngineState.paused;
+    final manualErgWatts = ref.watch(ergTargetWattsProvider);
+    final workoutProgress =
+        workoutOwnsTargets ? ref.watch(workoutProgressProvider).valueOrNull : null;
+    final double ergWatts = workoutProgress?.targetPower.value ?? manualErgWatts;
+
     final (label, target, color) = switch (mode) {
       ControlMode.erg => (
           'ERG',
-          '${ref.watch(ergTargetWattsProvider).round()} W',
+          '${ergWatts.round()} W',
           Colors.deepOrange,
         ),
       ControlMode.resistance => (

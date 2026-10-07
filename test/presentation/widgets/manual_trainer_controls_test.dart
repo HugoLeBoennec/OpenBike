@@ -70,6 +70,7 @@ void main() {
     Workout? workout,
     WorkoutEngineState workoutState = WorkoutEngineState.running,
     SimulationState? simState,
+    WorkoutProgress? progress,
   }) =>
       [
         appPreferencesProvider.overrideWithValue(prefs),
@@ -79,6 +80,8 @@ void main() {
             .overrideWith((ref) => Stream.value(workoutState)),
         simulationStateProvider
             .overrideWith((ref) => Stream.value(simState ?? SimulationState.idle)),
+        if (progress != null)
+          workoutProgressProvider.overrideWith((ref) => Stream.value(progress)),
       ];
 
   group('free ride (no workout, no route)', () {
@@ -220,6 +223,39 @@ void main() {
       expect(find.text('Resistance'), findsNothing);
       expect(find.byType(Slider), findsNothing);
       expect(find.textContaining('·'), findsOneWidget);
+    });
+
+    testWidgets('ERG banner shows the workout target, not the manual value',
+        (tester) async {
+      const step = WorkoutStep(
+        type: StepType.steadyState,
+        durationSeconds: 60,
+        powerTargetPercent: 100,
+      );
+      final workout = Workout(id: 'w1', name: 'W', steps: const [step]);
+      await controller.switchMode(ControlMode.erg, power: const Watts(150));
+
+      await tester.pumpWidget(_wrap([
+        ...baseOverrides(
+          workout: workout,
+          workoutState: WorkoutEngineState.running,
+          progress: const WorkoutProgress(
+            currentStepIndex: 0,
+            currentStep: step,
+            elapsedInStep: Duration(seconds: 10),
+            stepDuration: Duration(seconds: 60),
+            totalSteps: 1,
+            targetPower: Watts(226),
+            totalElapsed: Duration(seconds: 10),
+            totalDuration: Duration(seconds: 60),
+          ),
+        ),
+        ergTargetWattsProvider.overrideWith((ref) => 150.0),
+      ]));
+      await tester.pump();
+
+      expect(find.text('ERG · 226 W'), findsOneWidget);
+      expect(find.text('ERG · 150 W'), findsNothing);
     });
 
     testWidgets('controls reappear as an override while the workout is paused',
