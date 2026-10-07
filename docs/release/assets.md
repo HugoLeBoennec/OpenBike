@@ -1,10 +1,9 @@
 # Store screenshots & assets checklist
 
-Apple screenshots (iPhone, iPad, Mac) are produced by
-`tool/screenshots/take_screenshots.sh` into `docs/store/screenshots/` — see
-`tool/screenshots/README.md`. Google Play screenshots are still captured by
-hand. This is a checklist for whoever does that capture, plus where the
-results go.
+App Store (iPhone, iPad, Mac) and Google Play (phone, 7" and 10" tablet)
+screenshots are produced by `tool/screenshots/take_screenshots.sh` into
+`docs/store/screenshots/` — see `tool/screenshots/README.md`. This is the
+checklist around them, plus the assets that are still made by hand.
 
 ## Where assets live
 
@@ -28,10 +27,12 @@ v1.0.
 
 ### Google Play
 
-- Phone screenshots: 16:9 or 9:16, min 320px, max 3840px on the long edge
-  (2–8 images).
-- 7" and 10" tablet screenshots (if claiming tablet support — OpenBike's
-  responsive layouts from P3 support this).
+- All screenshots: JPEG or 24-bit PNG (no alpha), each side 320–3840 px,
+  and the long side no more than twice the short side — so a modern phone's
+  own 1080×2424 screenshots are rejected.
+- Phone: 1080×1920 (9:16), 2–8 images; at least 4 for promotion.
+- 7" and 10" tablet: exactly 9:16 with each side ≥ 1080 px to qualify for
+  promotion — 1080×1920 (rendered at tablet density) and 1440×2560.
 - Feature graphic: 1024×500 PNG/JPEG.
 - App icon: already generated via `flutter_launcher_icons`
   (`flutter_launcher_icons.yaml`) — export the 512×512 hi-res version Play
@@ -55,10 +56,10 @@ tool/screenshots/take_screenshots.sh ios-6.9
 tool/screenshots/take_screenshots.sh ipad-13
 tool/screenshots/take_screenshots.sh macos
 
-# Android Emulator
-flutter build apk --release
-# install on an emulator matching the target screenshot size, screenshot
-# via `adb exec-out screencap -p > screenshot.png`
+# Google Play (headless emulators, same driver and seeded data)
+tool/screenshots/take_screenshots.sh android-phone
+tool/screenshots/take_screenshots.sh android-7in
+tool/screenshots/take_screenshots.sh android-10in
 ```
 
 Toggle Settings → Theme between Light/Dark/System to capture both variants

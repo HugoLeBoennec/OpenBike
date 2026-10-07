@@ -265,7 +265,9 @@ Future<void> _shot(String name) async {
     print('OPENBIKE_SAVED $name ${file.path}');
   } else {
     print('OPENBIKE_SHOT $name');
-    await Future<void>.delayed(const Duration(seconds: 4));
+    // Android gets longer: the host may first have to re-apply its status
+    // bar demo mode (take_screenshots.sh) before it can capture.
+    await Future<void>.delayed(Duration(seconds: Platform.isAndroid ? 8 : 4));
   }
 }
 
