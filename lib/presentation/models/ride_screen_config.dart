@@ -93,15 +93,16 @@ class RideScreenConfigNotifier extends StateNotifier<RideScreenConfig> {
   bool _userCustomized = false;
 
   /// Auto-adapts layout based on screen dimensions. Respects manual overrides.
+  /// Idempotent: safe to call on every layout pass, since it only assigns
+  /// (and so only notifies) when the target preset actually changes.
   void adaptToLayout({required bool isLandscape, required bool isDesktop}) {
     if (_userCustomized) return;
-    if (isDesktop) {
-      state = RideScreenConfig.defaultDesktop;
-    } else if (isLandscape) {
-      state = RideScreenConfig.defaultLandscape;
-    } else {
-      state = RideScreenConfig.defaultPortrait;
-    }
+    final target = isDesktop
+        ? RideScreenConfig.defaultDesktop
+        : isLandscape
+            ? RideScreenConfig.defaultLandscape
+            : RideScreenConfig.defaultPortrait;
+    if (!identical(state, target)) state = target;
   }
 
   /// Replaces a single field in the grid. Marks config as user-customized.

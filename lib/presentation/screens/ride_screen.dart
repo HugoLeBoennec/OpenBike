@@ -228,6 +228,7 @@ class _RideScreenState extends ConsumerState<RideScreen> {
                 Expanded(
                   child: LayoutBuilder(
                     builder: (context, constraints) {
+                      _adaptConfigToWidth(constraints.maxWidth);
                       if (constraints.maxWidth >= 1200) {
                         return _buildDesktopLayout(context, ref, constraints);
                       } else if (constraints.maxWidth >= 600) {
@@ -246,6 +247,18 @@ class _RideScreenState extends ConsumerState<RideScreen> {
         ),
       ),
     );
+  }
+
+  /// Picks the data-field preset that matches the layout class chosen by
+  /// the [LayoutBuilder]. Deferred because providers can't change mid-build.
+  void _adaptConfigToWidth(double width) {
+    Future.microtask(() {
+      if (!mounted) return;
+      ref.read(rideScreenConfigProvider.notifier).adaptToLayout(
+            isLandscape: width >= 600,
+            isDesktop: width >= 1200,
+          );
+    });
   }
 
   // ─── Bottom pane — workout HUD / route profile / live chart ───────
