@@ -136,7 +136,7 @@ class _WorkoutEditorScreenState extends ConsumerState<WorkoutEditorScreen> {
             // Each tile has its own leading ReorderableDragStartListener;
             // the default trailing handles would duplicate it on desktop.
             buildDefaultDragHandles: false,
-            onReorder: _onReorder,
+            onReorderItem: _onReorder,
             itemBuilder: (context, index) => _StepTile(
               key: ValueKey('step-$index-${_steps[index].hashCode}'),
               index: index,
@@ -165,7 +165,6 @@ class _WorkoutEditorScreenState extends ConsumerState<WorkoutEditorScreen> {
 
   void _onReorder(int oldIndex, int newIndex) {
     setState(() {
-      if (newIndex > oldIndex) newIndex -= 1;
       final step = _steps.removeAt(oldIndex);
       _steps.insert(newIndex, step);
     });
