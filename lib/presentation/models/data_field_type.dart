@@ -120,10 +120,10 @@ extension DataFieldTypeX on DataFieldType {
       case DataFieldType.power:
         return ref.watch(livePowerProvider).value.round().toString();
       case DataFieldType.avgPower:
-        final ride = ref.watch(currentRideProvider);
+        final ride = ref.watch(currentRideProvider).valueOrNull;
         return ride?.averagePower.value.round().toString() ?? '--';
       case DataFieldType.normalizedPower:
-        final ride = ref.watch(currentRideProvider);
+        final ride = ref.watch(currentRideProvider).valueOrNull;
         return ride?.normalizedPower.value.round().toString() ?? '--';
       case DataFieldType.threeSecAvgPower:
         return ref.watch(threeSecondAvgPowerProvider).value.round().toString();
@@ -137,7 +137,7 @@ extension DataFieldTypeX on DataFieldType {
             .speedValue(ref.watch(liveSpeedProvider))
             .toStringAsFixed(1);
       case DataFieldType.distance:
-        final ride = ref.watch(currentRideProvider);
+        final ride = ref.watch(currentRideProvider).valueOrNull;
         final formatter = ref.watch(unitFormatterProvider);
         return ride != null
             ? formatter.distanceValue(ride.totalDistance).toStringAsFixed(2)
@@ -151,16 +151,16 @@ extension DataFieldTypeX on DataFieldType {
         );
       case DataFieldType.calories:
         // Simplified estimate: avg power × hours × 3.6
-        final ride = ref.watch(currentRideProvider);
+        final ride = ref.watch(currentRideProvider).valueOrNull;
         if (ride == null) return '0';
         final hours = ride.activeDuration.inSeconds / 3600.0;
         return (ride.averagePower.value * hours * 3.6).round().toString();
       case DataFieldType.tss:
-        final ride = ref.watch(currentRideProvider);
+        final ride = ref.watch(currentRideProvider).valueOrNull;
         final ftp = ref.watch(ftpProvider);
         return ride?.tss(ftp).toStringAsFixed(0) ?? '0';
       case DataFieldType.intensityFactor:
-        final ride = ref.watch(currentRideProvider);
+        final ride = ref.watch(currentRideProvider).valueOrNull;
         final ftp = ref.watch(ftpProvider);
         return ride?.intensityFactor(ftp).toStringAsFixed(2) ?? '0.00';
       case DataFieldType.grade:

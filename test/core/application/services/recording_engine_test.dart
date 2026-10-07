@@ -76,6 +76,62 @@ void main() {
   });
 
   // =========================================================================
+  // liveRide
+  // =========================================================================
+
+  group('RecordingEngine — liveRide', () {
+    test('is null when idle', () {
+      expect(engine.liveRide, isNull);
+    });
+
+    test('carries the samples recorded so far', () async {
+      await engine.start();
+      eventBus.fire(SensorEvent(
+        reading: SensorReading(
+          timestamp: DateTime.now(),
+          power: const Watts(200),
+          distance: const Distance(1500),
+        ),
+        deviceId: 'test-trainer',
+      ));
+      await Future<void>.delayed(const Duration(milliseconds: 2200));
+
+      final live = engine.liveRide!;
+      expect(live.readings.length, greaterThanOrEqualTo(2));
+      expect(live.averagePower, const Watts(200));
+      expect(live.totalDistance.meters, 1500);
+      // The ride as created at start stays empty.
+      expect(engine.currentRide!.readings, isEmpty);
+    });
+
+    test('active duration freezes while paused and excludes the pause',
+        () async {
+      await engine.start();
+      engine.pause();
+
+      // activeDuration reads the clock, so sample it at the same moment as
+      // the snapshot it belongs to.
+      final first = engine.liveRide!;
+      final firstActive = first.activeDuration;
+      await Future<void>.delayed(const Duration(milliseconds: 300));
+      final second = engine.liveRide!;
+      final secondActive = second.activeDuration;
+
+      expect(second.pauseDuration - first.pauseDuration,
+          greaterThanOrEqualTo(const Duration(milliseconds: 250)));
+      expect(
+        (secondActive - firstActive).abs(),
+        lessThan(const Duration(milliseconds: 50)),
+      );
+
+      engine.resume();
+      await Future<void>.delayed(const Duration(milliseconds: 100));
+      expect(engine.liveRide!.pauseDuration,
+          greaterThanOrEqualTo(const Duration(milliseconds: 300)));
+    });
+  });
+
+  // =========================================================================
   // discard
   // =========================================================================
 
