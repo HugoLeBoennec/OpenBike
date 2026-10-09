@@ -54,7 +54,7 @@
 		     in its photo and music pickers, and App Store Connect rejects an
 		     upload (ITMS-90683) that links those APIs without purpose strings. -->
 		<key>NSCameraUsageDescription</key>
-		<string>OpenBike only uses the camera if you choose to take a photo while importing a workout or route file.</string>
+		<string>OpenBike does not use the camera. This message is required by a file-selection component included in the app.</string>
 		<key>NSLocationWhenInUseUsageDescription</key>
 		<string>OpenBike does not track your location. iOS may ask for this permission when connecting to Bluetooth sensors.</string>
 		<key>NSPhotoLibraryUsageDescription</key>
