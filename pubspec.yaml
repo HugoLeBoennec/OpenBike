@@ -109,6 +109,8 @@ dev_dependencies:
     sdk: flutter
   flutter_lints: ^5.0.0
   mocktail: ^1.0.4
+  # Lets BLE tests stand in a fake platform behind FlutterBluePlus's statics.
+  flutter_blue_plus_platform_interface: ^9.0.3
 
   # Code generation
   build_runner: ^2.4.14

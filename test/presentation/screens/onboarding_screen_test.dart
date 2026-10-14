@@ -3,10 +3,14 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:go_router/go_router.dart';
+import 'package:mocktail/mocktail.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
+import 'package:open_bike/core/application/services/device_pairing_service.dart';
 import 'package:open_bike/core/domain/entities/entities.dart';
 import 'package:open_bike/core/domain/value_objects/value_objects.dart';
+import 'package:open_bike/infrastructure/ble/ble_permission_handler.dart';
+import 'package:open_bike/infrastructure/ble/ble_transport.dart';
 import 'package:open_bike/infrastructure/persistence/app_database.dart';
 import 'package:open_bike/infrastructure/persistence/drift_storage.dart';
 import 'package:open_bike/infrastructure/preferences/app_preferences.dart';
@@ -14,7 +18,21 @@ import 'package:open_bike/presentation/screens/home_screen.dart';
 import 'package:open_bike/presentation/screens/onboarding_screen.dart';
 import 'package:open_bike/presentation/state/providers.dart';
 
-Widget _wrap(DriftStorage storage, AppPreferences appPrefs) {
+class _MockPermissionHandler extends Mock implements BlePermissionHandler {}
+
+class _MockPairingService extends Mock implements DevicePairingService {}
+
+const _trainer = TrainerDevice(
+  id: 'AA:BB:CC:DD:EE:FF',
+  name: 'KICKR CORE',
+  protocol: DeviceProtocol.bleFtms,
+);
+
+Widget _wrap(
+  DriftStorage storage,
+  AppPreferences appPrefs, {
+  List<Override> overrides = const [],
+}) {
   final router = GoRouter(
     initialLocation: '/onboarding',
     routes: [
@@ -29,12 +47,29 @@ Widget _wrap(DriftStorage storage, AppPreferences appPrefs) {
     overrides: [
       storageProvider.overrideWithValue(storage),
       appPreferencesProvider.overrideWithValue(appPrefs),
+      ...overrides,
     ],
     child: MaterialApp.router(routerConfig: router),
   );
 }
 
+/// Welcome → Profile → Units & Body → Sensor scan.
+Future<void> _goToScanPage(WidgetTester tester) async {
+  await tester.tap(find.text('Get Started'));
+  await tester.pumpAndSettle();
+  await tester.tap(find.text('Continue'));
+  await tester.pumpAndSettle();
+  await tester.tap(find.text('Continue'));
+  await tester.pumpAndSettle();
+  expect(find.text('Connect Your Trainer'), findsOneWidget);
+}
+
 void main() {
+  setUpAll(() {
+    registerFallbackValue(SensorRole.trainer);
+    registerFallbackValue(_trainer);
+  });
+
   late AppDatabase db;
   late DriftStorage storage;
   late AppPreferences appPrefs;
@@ -155,5 +190,52 @@ void main() {
 
     expect(find.text('Help improve OpenBike'), findsNothing);
     expect(find.text('OpenBike'), findsOneWidget);
+  });
+
+  testWidgets(
+      'scan page explains a Bluetooth denial and links to Settings instead '
+      'of silently finding nothing', (tester) async {
+    final permissions = _MockPermissionHandler();
+    when(() => permissions.requestAccess())
+        .thenAnswer((_) async => BleAvailability.permissionDenied);
+    when(() => permissions.openSettings()).thenAnswer((_) async => true);
+
+    await tester.pumpWidget(_wrap(storage, appPrefs, overrides: [
+      bleTransportProvider
+          .overrideWithValue(BleTransport(permissionHandler: permissions)),
+    ]));
+    await tester.pumpAndSettle();
+    await _goToScanPage(tester);
+
+    await tester.tap(find.byKey(const Key('onboardingScanButton')));
+    await tester.pumpAndSettle();
+
+    expect(find.byKey(const Key('onboardingScanError')), findsOneWidget);
+    await tester.tap(find.byKey(const Key('onboardingOpenSettingsButton')));
+    verify(() => permissions.openSettings()).called(1);
+  });
+
+  testWidgets('a failed trainer connection is reported on the scan page',
+      (tester) async {
+    final pairing = _MockPairingService();
+    when(() => pairing.assign(any(), any()))
+        .thenAnswer((_) async => throw StateError('Request Control timed out'));
+    when(() => pairing.dispose()).thenAnswer((_) async {});
+
+    await tester.pumpWidget(_wrap(storage, appPrefs, overrides: [
+      bleScanResultsProvider.overrideWith((ref) => Stream.value(const [
+            BleScannedDevice(device: _trainer, rssi: -60, serviceUuids: []),
+          ])),
+      devicePairingServiceProvider.overrideWithValue(pairing),
+    ]));
+    await tester.pumpAndSettle();
+    await _goToScanPage(tester);
+
+    await tester.tap(find.text('KICKR CORE'));
+    await tester.pumpAndSettle();
+
+    expect(find.byKey(const Key('onboardingConnectError')), findsOneWidget);
+    expect(find.text('Connect Your Trainer'), findsOneWidget);
+    expect(appPrefs.pairedDevices.forRole(SensorRole.trainer), isNull);
   });
 }

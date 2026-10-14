@@ -1,11 +1,13 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
+import 'package:logging/logging.dart';
 
 import '../../core/domain/entities/paired_devices.dart';
 import '../../core/domain/entities/trainer_device.dart';
 import '../../core/domain/entities/user_profile.dart';
 import '../../core/domain/value_objects/value_objects.dart';
+import '../../infrastructure/ble/ble_permission_handler.dart';
 import '../../infrastructure/ble/ble_transport.dart';
 import '../../infrastructure/observability/crash_reporting_service.dart';
 import '../format/unit_formatter.dart';
@@ -13,6 +15,8 @@ import '../state/providers.dart';
 import '../theme/app_theme.dart';
 import '../widgets/crash_reporting_consent_dialog.dart';
 import '../widgets/edit_value_dialog.dart';
+
+final _log = Logger('OnboardingScreen');
 
 /// First-run onboarding — 6-page flow: welcome, profile, units & body,
 /// sensor scan, connection test, ready.
@@ -30,6 +34,7 @@ class OnboardingScreen extends ConsumerStatefulWidget {
 
 class _OnboardingScreenState extends ConsumerState<OnboardingScreen> {
   static const _pageCount = 6;
+  static const _scanPage = 3;
 
   final _pageController = PageController();
   int _currentPage = 0;
@@ -44,6 +49,17 @@ class _OnboardingScreenState extends ConsumerState<OnboardingScreen> {
 
   // Whether user connected a device during onboarding.
   bool _deviceConnected = false;
+  String? _connectedDeviceName;
+
+  // Scan page state.
+  bool _hasScanned = false;
+  String? _scanError;
+  bool _bluetoothAccessDenied = false;
+
+  /// Id of the device a connection is in flight for — its row shows a
+  /// spinner and every other row is disabled until it settles.
+  String? _connectingDeviceId;
+  String? _connectError;
 
   @override
   void dispose() {
@@ -402,8 +418,9 @@ class _OnboardingScreenState extends ConsumerState<OnboardingScreen> {
   Widget _buildScanPage() {
     final tokens = context.tokens;
     final scanState = ref.watch(bleScanStateProvider);
-    final scanResults = ref.watch(bleScanResultsProvider);
+    final devices = ref.watch(bleScanResultsProvider).valueOrNull ?? const [];
     final isScanning = scanState.valueOrNull == BleTransportState.scanning;
+    final isConnecting = _connectingDeviceId != null;
 
     return Padding(
       padding: const EdgeInsets.symmetric(horizontal: 32),
@@ -430,12 +447,15 @@ class _OnboardingScreenState extends ConsumerState<OnboardingScreen> {
           SizedBox(
             width: double.infinity,
             child: OutlinedButton.icon(
-              onPressed: isScanning
-                  ? null
-                  : () => ref
-                      .read(bleTransportProvider)
-                      .startScan(timeout: const Duration(seconds: 10)),
-              icon: Icon(isScanning ? Icons.hourglass_top : Icons.search),
+              key: const Key('onboardingScanButton'),
+              onPressed: isScanning || isConnecting ? null : _scan,
+              icon: isScanning
+                  ? const SizedBox(
+                      width: 16,
+                      height: 16,
+                      child: CircularProgressIndicator(strokeWidth: 2),
+                    )
+                  : const Icon(Icons.search),
               label: Text(isScanning ? 'Scanning…' : 'Scan for Devices'),
               style: OutlinedButton.styleFrom(
                 padding: const EdgeInsets.symmetric(vertical: 14),
@@ -446,51 +466,23 @@ class _OnboardingScreenState extends ConsumerState<OnboardingScreen> {
           const SizedBox(height: 16),
           SizedBox(
             height: 140,
-            child: scanResults.when(
-              data: (devices) {
-                if (devices.isEmpty) {
-                  return Center(
-                    child: Text(
-                      isScanning ? 'Scanning…' : 'No devices found yet.',
-                      style: TextStyle(color: tokens.textDisabled, fontSize: 13),
-                    ),
-                  );
-                }
-                return ListView.builder(
-                  itemCount: devices.length,
-                  itemBuilder: (_, i) {
-                    final d = devices[i];
-                    final name = d.device.name.isNotEmpty
-                        ? d.device.name
-                        : 'Unknown Device';
-                    return ListTile(
-                      leading: const Icon(Icons.bluetooth,
-                          color: Colors.blue, size: 20),
-                      title:
-                          Text(name, style: TextStyle(color: tokens.textPrimary)),
-                      dense: true,
-                      onTap: () => _connectTrainer(d.device),
-                    );
-                  },
-                );
-              },
-              // The scan-results stream sits in "loading" until the first
-              // scan produces a result, not just while a scan is running
-              // (that's isScanning, shown separately on the Scan button) —
-              // an indeterminate spinner here would never settle, so this
-              // shares the empty-state text instead.
-              loading: () => Center(
-                child: Text(
-                  isScanning ? 'Scanning…' : 'No devices found yet.',
-                  style: TextStyle(color: tokens.textDisabled, fontSize: 13),
-                ),
-              ),
-              error: (e, _) => Center(
-                child: Text('Scan failed: $e',
-                    style: const TextStyle(color: Colors.red, fontSize: 12)),
+            child: devices.isNotEmpty
+                ? ListView.builder(
+                    itemCount: devices.length,
+                    itemBuilder: (_, i) => _buildScannedDeviceRow(devices[i]),
+                  )
+                : _buildScanEmptyState(isScanning),
+          ),
+          if (_connectError != null)
+            Padding(
+              padding: const EdgeInsets.only(top: 8),
+              child: Text(
+                _connectError!,
+                key: const Key('onboardingConnectError'),
+                textAlign: TextAlign.center,
+                style: const TextStyle(color: Colors.orange, fontSize: 12),
               ),
             ),
-          ),
           const SizedBox(height: 16),
           Row(
             children: [
@@ -509,13 +501,108 @@ class _OnboardingScreenState extends ConsumerState<OnboardingScreen> {
     );
   }
 
+  Widget _buildScannedDeviceRow(BleScannedDevice scanned) {
+    final tokens = context.tokens;
+    final device = scanned.device;
+    final name = device.name.isNotEmpty ? device.name : 'Unknown Device';
+    final connecting = _connectingDeviceId == device.id;
+    return ListTile(
+      leading: const Icon(Icons.bluetooth, color: Colors.blue, size: 20),
+      title: Text(name, style: TextStyle(color: tokens.textPrimary)),
+      subtitle: connecting
+          ? Text('Connecting…',
+              style: TextStyle(color: tokens.textTertiary, fontSize: 12))
+          : null,
+      trailing: connecting
+          ? const SizedBox(
+              width: 20,
+              height: 20,
+              child: CircularProgressIndicator(strokeWidth: 2),
+            )
+          : Icon(Icons.chevron_right, color: tokens.textDisabled),
+      dense: true,
+      onTap: _connectingDeviceId == null ? () => _connectTrainer(device) : null,
+    );
+  }
+
+  /// What the device list shows when it has nothing to list: progress while
+  /// scanning, the reason a scan couldn't run, or tips after an empty scan.
+  Widget _buildScanEmptyState(bool isScanning) {
+    final tokens = context.tokens;
+    if (isScanning) {
+      return Center(
+        child: Text(
+          'Looking for devices…',
+          style: TextStyle(color: tokens.textDisabled, fontSize: 13),
+        ),
+      );
+    }
+    if (_scanError != null) {
+      return Column(
+        mainAxisAlignment: MainAxisAlignment.center,
+        children: [
+          Text(
+            _scanError!,
+            key: const Key('onboardingScanError'),
+            textAlign: TextAlign.center,
+            style: const TextStyle(color: Colors.orange, fontSize: 13),
+          ),
+          if (_bluetoothAccessDenied)
+            TextButton(
+              key: const Key('onboardingOpenSettingsButton'),
+              onPressed: () =>
+                  ref.read(bleTransportProvider).openPermissionSettings(),
+              child: const Text('Open Settings'),
+            ),
+        ],
+      );
+    }
+    return Center(
+      child: Text(
+        _hasScanned
+            ? 'No devices found. Make sure your trainer is awake and not '
+                'connected to another app, then scan again.'
+            : 'No devices found yet.',
+        textAlign: TextAlign.center,
+        style: TextStyle(color: tokens.textDisabled, fontSize: 13),
+      ),
+    );
+  }
+
+  Future<void> _scan() async {
+    setState(() {
+      _scanError = null;
+      _bluetoothAccessDenied = false;
+      _connectError = null;
+    });
+    final transport = ref.read(bleTransportProvider);
+    await transport.startScan(timeout: const Duration(seconds: 10));
+    if (!mounted) return;
+    setState(() {
+      _hasScanned = true;
+      _scanError = transport.lastScanError;
+      _bluetoothAccessDenied =
+          transport.lastScanProblem == BleAvailability.permissionDenied;
+    });
+  }
+
   /// Pairs [device] to the trainer role via [devicePairingServiceProvider] —
   /// the same per-role pairing service the Devices screen uses (P2), so a
   /// trainer connected during onboarding is a real pairing, not just a
   /// local flag. Reuses the service rather than the Devices screen's full
   /// multi-role slot UI, which doesn't fit this single-purpose step.
   Future<void> _connectTrainer(TrainerDevice device) async {
+    if (_connectingDeviceId != null) return;
+    setState(() {
+      _connectingDeviceId = device.id;
+      _connectError = null;
+    });
+
     try {
+      // This step pairs a single trainer, so the scan has done its job —
+      // and connecting mid-scan is unreliable on some Android stacks.
+      await ref.read(bleTransportProvider).stopScan();
+
       final service = ref.read(devicePairingServiceProvider);
       final port = await service.assign(SensorRole.trainer, device);
       if (!mounted) return;
@@ -538,12 +625,26 @@ class _OnboardingScreenState extends ConsumerState<OnboardingScreen> {
           .read(roleConnectionStatusProvider.notifier)
           .markConnected(SensorRole.trainer);
 
-      setState(() => _deviceConnected = true);
-      _nextPage();
-    } catch (_) {
-      // Connection failures during onboarding are non-fatal — the user can
-      // always pair from the Devices tab later; the Continue button on the
-      // scan page and "I'll set up later" both remain available.
+      if (!mounted) return;
+      setState(() {
+        _deviceConnected = true;
+        _connectedDeviceName = device.name;
+        _connectingDeviceId = null;
+      });
+      // The handshake can take several seconds; if the user skipped ahead
+      // meanwhile, don't yank them forward again — the connection-test
+      // page picks up _deviceConnected on its own.
+      if (_currentPage == _scanPage) _nextPage();
+    } catch (e, st) {
+      // Non-fatal — the user can retry, skip, or pair later from the
+      // Devices tab — but it must be visible, not swallowed.
+      _log.warning('Onboarding connect to ${device.name} failed: $e', e, st);
+      if (!mounted) return;
+      setState(() {
+        _connectingDeviceId = null;
+        _connectError = "Couldn't connect to ${device.name}. Make sure it's "
+            'awake and not connected to another app, then tap it again.';
+      });
     }
   }
 
@@ -613,7 +714,9 @@ class _OnboardingScreenState extends ConsumerState<OnboardingScreen> {
           ),
           const SizedBox(height: 8),
           Text(
-            'Live data from your trainer:',
+            _connectedDeviceName != null && _connectedDeviceName!.isNotEmpty
+                ? 'Live data from $_connectedDeviceName:'
+                : 'Live data from your trainer:',
             style: TextStyle(color: tokens.textTertiary, fontSize: 14),
           ),
           const SizedBox(height: 24),

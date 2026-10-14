@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:logging/logging.dart';
 
 import '../../core/domain/entities/entities.dart';
+import '../../infrastructure/ble/ble_permission_handler.dart';
 import '../../infrastructure/ble/ble_transport.dart';
 import '../../infrastructure/simulator/simulator.dart';
 import '../state/providers.dart';
@@ -29,6 +30,10 @@ class _DeviceScanScreenState extends ConsumerState<DeviceScanScreen> {
   List<TrainerDevice> _simulatorDevices = [];
   bool _scanningSimulator = false;
   String? _bleError;
+
+  /// The last scan couldn't run because Bluetooth access was denied — the
+  /// error banner then offers a shortcut to the app's Settings page.
+  bool _bluetoothAccessDenied = false;
 
   /// Role currently awaiting a device assignment (set by tapping a role
   /// slot's "assign" affordance). `null` means the next tapped device is
@@ -140,6 +145,14 @@ class _DeviceScanScreenState extends ConsumerState<DeviceScanScreen> {
                           color: Colors.orange, fontSize: 12),
                     ),
                   ),
+                  if (_bluetoothAccessDenied)
+                    TextButton(
+                      key: const Key('devicesOpenSettingsButton'),
+                      onPressed: () => ref
+                          .read(bleTransportProvider)
+                          .openPermissionSettings(),
+                      child: const Text('Open Settings'),
+                    ),
                 ],
               ),
             ),
@@ -269,10 +282,18 @@ class _DeviceScanScreenState extends ConsumerState<DeviceScanScreen> {
       _loadSimulatorDevices();
       return;
     }
+    setState(() {
+      _bleError = null;
+      _bluetoothAccessDenied = false;
+    });
     final transport = ref.read(bleTransportProvider);
     await transport.startScan(timeout: const Duration(seconds: 10));
     if (mounted && transport.lastScanError != null) {
-      setState(() => _bleError = transport.lastScanError);
+      setState(() {
+        _bleError = transport.lastScanError;
+        _bluetoothAccessDenied =
+            transport.lastScanProblem == BleAvailability.permissionDenied;
+      });
     }
   }
 

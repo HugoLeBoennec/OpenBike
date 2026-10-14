@@ -78,6 +78,10 @@ class BleTransport {
       StreamController<List<BleScannedDevice>>.broadcast();
   StreamSubscription? _scanSubscription;
 
+  /// Bumped by every [startScan] so a scan that finishes after a newer one
+  /// has started doesn't tear down the newer one's subscription.
+  int _scanGeneration = 0;
+
   /// Stream of scan results, updated as devices are discovered.
   Stream<List<BleScannedDevice>> get scanResults =>
       _scanResultsController.stream;
@@ -88,23 +92,50 @@ class BleTransport {
   /// were denied. Callers can check this before calling [startScan].
   Future<bool> get isAvailable async {
     try {
-      final allowed = await _permissionHandler.requestPermissions();
-      return allowed;
+      final availability = await _permissionHandler.requestAccess();
+      return availability == BleAvailability.ready;
     } catch (e) {
       _log.warning('BLE availability check failed: $e');
       return false;
     }
   }
 
-  /// Error message from the last failed scan attempt, or `null`.
+  /// Why the last [startScan] couldn't run, or `null` if it could. Lets the
+  /// UI offer the right fix — e.g. an "Open Settings" action when access
+  /// was denied.
+  BleAvailability? lastScanProblem;
+
+  /// User-facing message for the last failed scan attempt, or `null`.
   String? lastScanError;
 
-  /// Starts scanning for BLE cycling devices.
+  /// Opens this app's page in the system Settings, where a denied
+  /// Bluetooth permission can be granted.
+  Future<bool> openPermissionSettings() => _permissionHandler.openSettings();
+
+  /// User-facing explanation of why BLE can't be used.
+  static String describeProblem(BleAvailability availability) {
+    switch (availability) {
+      case BleAvailability.permissionDenied:
+        return 'OpenBike isn\'t allowed to use Bluetooth. '
+            'Allow it in Settings, then scan again.';
+      case BleAvailability.bluetoothOff:
+        return 'Bluetooth is turned off. Turn it on, then scan again.';
+      case BleAvailability.unsupported:
+        return 'This device doesn\'t support Bluetooth LE.';
+      case BleAvailability.ready:
+        return '';
+    }
+  }
+
+  /// Scans for BLE cycling devices and completes when the scan ends — after
+  /// [timeout], or earlier if [stopScan] is called.
   ///
-  /// Checks permissions first.  Emits discovered devices on [scanResults].
-  /// Scanning stops automatically after [timeout] or when [stopScan] is called.
+  /// Checks permissions first (on first use this is what shows the OS
+  /// Bluetooth prompt). Emits discovered devices on [scanResults] while the
+  /// scan runs.
   ///
-  /// If Bluetooth is unavailable, sets [lastScanError] and returns without
+  /// If Bluetooth is unavailable or the scan fails, sets [lastScanError]
+  /// (and [lastScanProblem] when the cause is known) and returns without
   /// throwing — the UI can display a user-friendly message.
   Future<void> startScan({
     Duration timeout = const Duration(seconds: 10),
@@ -114,22 +145,34 @@ class BleTransport {
       return;
     }
 
-    final allowed = await _permissionHandler.requestPermissions();
-    if (!allowed) {
-      _log.severe('BLE permissions not granted — cannot scan');
-      lastScanError = 'Bluetooth is not available on this device. '
-          'Check that Bluetooth is turned on and permissions are granted.';
+    // Report "scanning" while the permission check runs too: on first use
+    // it waits on the OS prompt, and the Scan button has to stay disabled
+    // meanwhile or a second tap starts a second scan.
+    _setState(BleTransportState.scanning);
+    final generation = ++_scanGeneration;
+
+    final availability = await _permissionHandler.requestAccess();
+    if (availability != BleAvailability.ready) {
+      _log.severe('BLE unavailable ($availability) — cannot scan');
+      lastScanProblem = availability;
+      lastScanError = describeProblem(availability);
       _scanResultsController.add([]);
+      if (_state == BleTransportState.scanning) {
+        _setState(BleTransportState.idle);
+      }
       return;
     }
+    lastScanProblem = null;
     lastScanError = null;
 
-    _setState(BleTransportState.scanning);
     _log.info('Starting BLE scan (timeout=${timeout.inSeconds}s)…');
 
     final discovered = <String, BleScannedDevice>{};
 
-    _scanSubscription = FlutterBluePlus.scanResults.listen((results) {
+    // onScanResults, not scanResults: the latter replays the previous
+    // scan's list to every new listener, which would show devices that may
+    // no longer be around.
+    _scanSubscription = FlutterBluePlus.onScanResults.listen((results) {
       for (final r in results) {
         final serviceUuids = r.advertisementData.serviceUuids;
 
@@ -166,31 +209,46 @@ class BleTransport {
       }
 
       _scanResultsController.add(discovered.values.toList());
+    }, onError: (Object e) {
+      _log.severe('BLE scan failed mid-scan: $e');
+      lastScanError = 'Scan failed: $e';
     });
 
-    await FlutterBluePlus.startScan(
-      timeout: timeout,
-      withServices: BleConstants.knownServiceUuids,
-    );
-
-    // Scan finished naturally.
-    await _scanSubscription?.cancel();
-    _scanSubscription = null;
-
-    if (_state == BleTransportState.scanning) {
-      _setState(BleTransportState.idle);
+    try {
+      await FlutterBluePlus.startScan(
+        timeout: timeout,
+        withServices: BleConstants.knownServiceUuids,
+      );
+      // startScan returns as soon as the scan is *running*; results keep
+      // arriving until the timeout fires or stopScan() is called. Tearing
+      // the subscription down here instead (as this used to) dropped every
+      // result — the first scan always came back empty.
+      await FlutterBluePlus.isScanning.where((scanning) => !scanning).first;
+    } catch (e) {
+      _log.severe('BLE scan failed to start: $e');
+      lastScanError = 'Scan failed: $e';
+    } finally {
+      if (generation == _scanGeneration) {
+        await _scanSubscription?.cancel();
+        _scanSubscription = null;
+        if (_state == BleTransportState.scanning) {
+          _setState(BleTransportState.idle);
+        }
+      }
     }
     _log.info('Scan complete — ${discovered.length} device(s) found');
   }
 
   /// Stops an in-progress scan.
   Future<void> stopScan() async {
-    if (_state != BleTransportState.scanning) return;
+    if (_scanSubscription == null) return;
     _log.info('Stopping BLE scan');
     await FlutterBluePlus.stopScan();
     await _scanSubscription?.cancel();
     _scanSubscription = null;
-    _setState(BleTransportState.idle);
+    if (_state == BleTransportState.scanning) {
+      _setState(BleTransportState.idle);
+    }
   }
 
   // ---------------------------------------------------------------------------
@@ -239,12 +297,9 @@ class BleTransport {
     // radio has powered up — notably the auto-reconnect that fires on the
     // first frame after launch — fails against a Bluetooth stack that
     // simply wasn't ready yet.
-    final allowed = await _permissionHandler.requestPermissions();
-    if (!allowed) {
-      throw StateError(
-        'Bluetooth is not available — check that it is turned on and '
-        'permissions are granted.',
-      );
+    final availability = await _permissionHandler.requestAccess();
+    if (availability != BleAvailability.ready) {
+      throw StateError(describeProblem(availability));
     }
 
     if (_connections.containsKey(deviceId)) {
