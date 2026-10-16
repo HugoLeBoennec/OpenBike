@@ -88,7 +88,15 @@ class FtmsDevicePlugin implements DevicePlugin {
       eventBus: _eventBus,
     );
 
-    await adapter.initialize();
+    try {
+      await adapter.initialize();
+    } catch (_) {
+      // Don't leave the link open behind a failed handshake: the device
+      // would look connected (and the transport would keep reconnecting
+      // it) while the app reports the connection as failed.
+      await _transport.disconnectDeviceId(device.id);
+      rethrow;
+    }
     return adapter;
   }
 }

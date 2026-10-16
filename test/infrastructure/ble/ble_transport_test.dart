@@ -1,10 +1,18 @@
 import 'dart:async';
 
 import 'package:flutter_blue_plus/flutter_blue_plus.dart';
+import 'package:flutter_blue_plus_platform_interface/flutter_blue_plus_platform_interface.dart'
+    show
+        BmScanAdvertisement,
+        BmScanResponse,
+        BmScanSettings,
+        BmStopScanRequest,
+        FlutterBluePlusPlatform;
 import 'package:flutter_test/flutter_test.dart';
 import 'package:mocktail/mocktail.dart';
 import 'package:open_bike/core/domain/entities/trainer_device.dart';
 import 'package:open_bike/infrastructure/ble/ble_connection.dart';
+import 'package:open_bike/infrastructure/ble/ble_constants.dart';
 import 'package:open_bike/infrastructure/ble/ble_permission_handler.dart';
 import 'package:open_bike/infrastructure/ble/ble_transport.dart';
 
@@ -15,6 +23,48 @@ import 'package:open_bike/infrastructure/ble/ble_transport.dart';
 class MockPermissionHandler extends Mock implements BlePermissionHandler {}
 
 class MockBluetoothDevice extends Mock implements BluetoothDevice {}
+
+/// Stands in for the native side behind FlutterBluePlus's static API, so a
+/// test can deliver advertisements whenever it likes — in particular after
+/// `startScan` has already returned, which is when real ones arrive.
+final class FakeFbpPlatform extends FlutterBluePlusPlatform {
+  final scanResponses = StreamController<BmScanResponse>.broadcast();
+  int stopScanCalls = 0;
+
+  @override
+  Stream<BmScanResponse> get onScanResponse => scanResponses.stream;
+
+  @override
+  Future<bool> startScan(BmScanSettings request) async => true;
+
+  @override
+  Future<bool> stopScan(BmStopScanRequest request) async {
+    stopScanCalls++;
+    return true;
+  }
+
+  void advertise(String remoteId, String name, List<Guid> services) {
+    scanResponses.add(BmScanResponse(
+      advertisements: [
+        BmScanAdvertisement(
+          remoteId: DeviceIdentifier(remoteId),
+          platformName: name,
+          advName: name,
+          connectable: true,
+          txPowerLevel: null,
+          appearance: null,
+          manufacturerData: const {},
+          serviceData: const {},
+          serviceUuids: services,
+          rssi: -60,
+        ),
+      ],
+      success: true,
+      errorCode: 0,
+      errorString: '',
+    ));
+  }
+}
 
 // ---------------------------------------------------------------------------
 // Fakes — a BleConnection double that never touches a real platform channel,
@@ -106,8 +156,8 @@ void main() {
     mockPermissions = MockPermissionHandler();
     // Both startScan and connectToDevice gate on this; individual tests
     // re-stub it to false where they exercise the denied path.
-    when(() => mockPermissions.requestPermissions())
-        .thenAnswer((_) async => true);
+    when(() => mockPermissions.requestAccess())
+        .thenAnswer((_) async => BleAvailability.ready);
   });
 
   group('BleTransport', () {
@@ -119,30 +169,104 @@ void main() {
     });
 
     test('startScan sets lastScanError when permissions denied', () async {
-      when(() => mockPermissions.requestPermissions())
-          .thenAnswer((_) async => false);
+      when(() => mockPermissions.requestAccess())
+          .thenAnswer((_) async => BleAvailability.permissionDenied);
 
       final transport = BleTransport(permissionHandler: mockPermissions);
 
       await transport.startScan();
 
       expect(transport.lastScanError, isNotNull);
+      expect(transport.lastScanProblem, BleAvailability.permissionDenied);
       expect(transport.state, BleTransportState.idle);
 
       await transport.dispose();
     });
 
-    test('startScan checks permissions', () async {
-      when(() => mockPermissions.requestPermissions())
-          .thenAnswer((_) async => false);
+    test('startScan reports Bluetooth being off distinctly from a denial',
+        () async {
+      when(() => mockPermissions.requestAccess())
+          .thenAnswer((_) async => BleAvailability.bluetoothOff);
 
       final transport = BleTransport(permissionHandler: mockPermissions);
 
       await transport.startScan();
 
-      verify(() => mockPermissions.requestPermissions()).called(1);
+      expect(transport.lastScanProblem, BleAvailability.bluetoothOff);
+      expect(transport.lastScanError, contains('turned off'));
 
       await transport.dispose();
+    });
+
+    test('startScan checks permissions', () async {
+      when(() => mockPermissions.requestAccess())
+          .thenAnswer((_) async => BleAvailability.permissionDenied);
+
+      final transport = BleTransport(permissionHandler: mockPermissions);
+
+      await transport.startScan();
+
+      verify(() => mockPermissions.requestAccess()).called(1);
+
+      await transport.dispose();
+    });
+
+    group('scan lifecycle', () {
+      late FakeFbpPlatform platform;
+
+      setUp(() {
+        platform = FakeFbpPlatform();
+        FlutterBluePlusPlatform.instance = platform;
+      });
+
+      test(
+          'keeps collecting results after FlutterBluePlus.startScan returns, '
+          'until the scan times out', () async {
+        // Regression: startScan used to cancel its results subscription as
+        // soon as FlutterBluePlus.startScan returned — which it does the
+        // moment the scan is *running* — so a first scan never showed
+        // anything.
+        final transport = BleTransport(permissionHandler: mockPermissions);
+        final emitted = <List<BleScannedDevice>>[];
+        final sub = transport.scanResults.listen(emitted.add);
+
+        final scan = transport.startScan(
+          timeout: const Duration(milliseconds: 300),
+        );
+        await Future<void>.delayed(const Duration(milliseconds: 100));
+        expect(transport.state, BleTransportState.scanning);
+
+        platform.advertise(
+          'AA:BB:CC:DD:EE:FF',
+          'KICKR CORE',
+          [BleConstants.ftmsService],
+        );
+        await scan;
+
+        expect(transport.state, BleTransportState.idle);
+        expect(emitted, isNotEmpty);
+        expect(emitted.last.single.device.name, 'KICKR CORE');
+        expect(emitted.last.single.device.protocol, DeviceProtocol.bleFtms);
+
+        await sub.cancel();
+        await transport.dispose();
+      });
+
+      test('stopScan ends a running scan early', () async {
+        final transport = BleTransport(permissionHandler: mockPermissions);
+
+        final scan = transport.startScan(timeout: const Duration(seconds: 30));
+        await Future<void>.delayed(const Duration(milliseconds: 50));
+        expect(transport.state, BleTransportState.scanning);
+
+        await transport.stopScan();
+        await scan.timeout(const Duration(seconds: 2));
+
+        expect(transport.state, BleTransportState.idle);
+        expect(platform.stopScanCalls, greaterThanOrEqualTo(1));
+
+        await transport.dispose();
+      });
     });
 
     test('stopScan is no-op when not scanning', () async {
@@ -300,8 +424,8 @@ void main() {
       // Mirrors a connect issued at app start (auto-reconnect) before the
       // radio has powered up: it must surface as an error rather than
       // silently attempting a doomed GATT connect.
-      when(() => mockPermissions.requestPermissions())
-          .thenAnswer((_) async => false);
+      when(() => mockPermissions.requestAccess())
+          .thenAnswer((_) async => BleAvailability.bluetoothOff);
 
       await expectLater(
         transport.connectToDevice('trainer-1'),
@@ -310,8 +434,8 @@ void main() {
       expect(factory.attemptCount('trainer-1'), 0);
 
       // Once the adapter is up, the same call goes through.
-      when(() => mockPermissions.requestPermissions())
-          .thenAnswer((_) async => true);
+      when(() => mockPermissions.requestAccess())
+          .thenAnswer((_) async => BleAvailability.ready);
       await transport.connectToDevice('trainer-1');
       expect(factory.attemptCount('trainer-1'), 1);
     });
