@@ -171,8 +171,10 @@ class ExportQueueService {
           continue;
         }
 
-        if (!isOnline) {
-          // Skip — will retry when connectivity is restored.
+        if (!isOnline && !plugin.isFileExport) {
+          // Skip — will retry when connectivity is restored. Local file
+          // exports (FIT/TCX) never touch the network, so they go ahead —
+          // indoor rides often happen with no signal.
           continue;
         }
 
@@ -208,13 +210,11 @@ class ExportQueueService {
       // Success! Only file-export plugins return a local path worth
       // keeping around (e.g. for a share action) — Strava returns a
       // remote activity id, which isn't useful here.
-      final isFileExport =
-          plugin.manifest.capabilities.contains('file-export');
       await (_db.update(_db.exportQueue)
             ..where((t) => t.id.equals(item.id)))
           .write(ExportQueueCompanion(
         status: const Value('success'),
-        resultPath: Value(isFileExport ? result : null),
+        resultPath: Value(plugin.isFileExport ? result : null),
       ));
     } catch (e) {
       final nextRetry = item.retryCount + 1;

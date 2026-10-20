@@ -208,6 +208,35 @@ void main() {
       expect(items.first.isPending, isTrue);
     });
 
+    test('still writes local file exports when offline', () async {
+      when(() => connectivity.checkConnectivity())
+          .thenAnswer((_) async => [ConnectivityResult.none]);
+      final filePlugin = MockExportPlugin();
+      when(() => filePlugin.isAuthenticated).thenReturn(true);
+      when(() => filePlugin.manifest).thenReturn(const PluginManifest(
+        id: 'tcx-file-export',
+        name: 'TCX File',
+        version: '1.0.0',
+        type: PluginType.export,
+        capabilities: ['file-export'],
+      ));
+      when(() => filePlugin.export(any(), format: any(named: 'format')))
+          .thenAnswer((_) async => '/exports/ride.tcx');
+      final offlineService = ExportQueueService(
+        db: db,
+        storage: storage,
+        plugins: {'tcx-file-export': filePlugin},
+        connectivity: connectivity,
+      );
+      addTearDown(offlineService.dispose);
+
+      await offlineService.enqueue('ride-001', 'tcx-file-export');
+
+      final items = await offlineService.getAll();
+      expect(items.first.isSuccess, isTrue);
+      expect(items.first.resultPath, '/exports/ride.tcx');
+    });
+
     test('fails permanently with unknown target', () async {
       await service.enqueue('ride-001', 'unknown-plugin');
       await Future<void>.delayed(const Duration(milliseconds: 200));

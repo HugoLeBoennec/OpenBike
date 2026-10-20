@@ -1017,9 +1017,12 @@ final autoUploadProvider = Provider<void>((ref) {
     final queueService = ref.read(exportQueueServiceProvider);
     for (final target in targets) {
       final plugin = plugins[target];
-      if (plugin != null && plugin.isAuthenticated) {
-        queueService.enqueue(event.ride.id, target);
-      }
+      if (plugin == null || !plugin.isAuthenticated) continue;
+      // Settings no longer offers auto for local file exports (the file
+      // would land where the rider can't reach it) — ignore a switch left
+      // on from before.
+      if (plugin.isFileExport) continue;
+      queueService.enqueue(event.ride.id, target);
     }
   });
   ref.onDispose(sub.cancel);

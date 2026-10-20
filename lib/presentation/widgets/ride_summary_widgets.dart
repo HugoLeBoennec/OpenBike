@@ -6,6 +6,7 @@ import 'package:share_plus/share_plus.dart';
 import '../../core/domain/entities/entities.dart';
 import '../../core/domain/value_objects/value_objects.dart';
 import '../../infrastructure/persistence/export_queue_service.dart';
+import '../../plugins/plugin_interfaces.dart';
 import '../state/providers.dart';
 import '../theme/app_theme.dart';
 
@@ -505,6 +506,7 @@ class ExportSection extends ConsumerWidget {
             pluginId: entry.key,
             pluginName: entry.value.manifest.name,
             isAuthenticated: entry.value.isAuthenticated,
+            isFileExport: entry.value.isFileExport,
             queueItems: queueAsync.valueOrNull ?? [],
           ),
       ],
@@ -512,7 +514,7 @@ class ExportSection extends ConsumerWidget {
   }
 }
 
-class ExportButton extends ConsumerWidget {
+class ExportButton extends ConsumerStatefulWidget {
   const ExportButton({
     super.key,
     required this.rideId,
@@ -520,6 +522,7 @@ class ExportButton extends ConsumerWidget {
     required this.pluginName,
     required this.isAuthenticated,
     required this.queueItems,
+    this.isFileExport = false,
   });
 
   final String rideId;
@@ -528,13 +531,66 @@ class ExportButton extends ConsumerWidget {
   final bool isAuthenticated;
   final List<ExportQueueItem> queueItems;
 
+  /// Local file exports (FIT / TCX) only write to the app's sandbox:
+  /// a finished one reads "Saved" rather than "Uploaded", and tapping the
+  /// button hands the file to the share sheet once it's written.
+  final bool isFileExport;
+
   @override
-  Widget build(BuildContext context, WidgetRef ref) {
-    // queueItems (exportQueueProvider) is newest-first, so the first match
-    // for this ride/target is the current attempt.
-    final item = queueItems
-        .cast<ExportQueueItem?>()
-        .firstWhere((i) => i!.rideId == rideId && i.target == pluginId, orElse: () => null);
+  ConsumerState<ExportButton> createState() => _ExportButtonState();
+}
+
+class _ExportButtonState extends ConsumerState<ExportButton> {
+  /// Set when the rider taps a file export, so the share sheet opens once
+  /// that file is written — but not for auto-uploads or earlier exports.
+  bool _shareWhenSaved = false;
+
+  // queueItems (exportQueueProvider) is newest-first, so the first match
+  // for this ride/target is the current attempt.
+  ExportQueueItem? get _item => widget.queueItems
+      .cast<ExportQueueItem?>()
+      .firstWhere((i) => i!.rideId == widget.rideId && i.target == widget.pluginId,
+          orElse: () => null);
+
+  @override
+  void didUpdateWidget(ExportButton oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    if (!_shareWhenSaved) return;
+    final item = _item;
+    if (item == null) return;
+    final path = item.resultPath;
+    if (item.isSuccess && path != null) {
+      _shareWhenSaved = false;
+      WidgetsBinding.instance.addPostFrameCallback((_) => _share(path));
+    } else if (item.isFailed &&
+        item.retryCount >= ExportQueueService.maxRetries) {
+      _shareWhenSaved = false;
+    }
+  }
+
+  Future<void> _share(String path) async {
+    if (!mounted) return;
+    // iPads (and Macs running the iOS build) show the share sheet as a
+    // popover, which share_plus refuses to open without an on-screen anchor.
+    final box = context.findRenderObject() as RenderBox?;
+    final screen = Offset.zero & MediaQuery.sizeOf(context);
+    final origin = box != null && box.hasSize
+        ? (box.localToGlobal(Offset.zero) & box.size).intersect(screen)
+        : null;
+    try {
+      await Share.shareXFiles([XFile(path)], sharePositionOrigin: origin);
+    } catch (e) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text("Couldn't share ${widget.pluginName} file: $e")),
+      );
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final pluginName = widget.pluginName;
+    final item = _item;
 
     final isSuccess = item?.isSuccess ?? false;
     final isBusy = item != null && (item.isUploading || item.isPending);
@@ -567,9 +623,15 @@ class ExportButton extends ConsumerWidget {
               ),
               onPressed: isSuccess || isBusy || isRetrying
                   ? null
-                  : () => isTerminallyFailed
-                      ? ref.read(exportQueueServiceProvider).retry(item.id)
-                      : ref.read(exportRideProvider)(rideId, pluginId),
+                  : () {
+                      _shareWhenSaved = widget.isFileExport;
+                      if (isTerminallyFailed) {
+                        ref.read(exportQueueServiceProvider).retry(item.id);
+                      } else {
+                        ref.read(exportRideProvider)(
+                            widget.rideId, widget.pluginId);
+                      }
+                    },
               icon: Icon(
                 isSuccess
                     ? Icons.check_circle
@@ -577,12 +639,14 @@ class ExportButton extends ConsumerWidget {
                         ? Icons.refresh
                         : isBusy || isRetrying
                             ? Icons.hourglass_top
-                            : Icons.upload,
+                            : widget.isFileExport
+                                ? Icons.save_alt
+                                : Icons.upload,
                 size: 16,
               ),
               label: Text(isTerminallyFailed ? 'Retry $pluginName' : pluginName),
             ),
-            // Local file exports (Garmin FIT / TCX) just write to the app's
+            // Local file exports (FIT / TCX) just write to the app's
             // sandboxed documents folder — offer the native share sheet so
             // the user can actually get the file somewhere useful without
             // digging through Finder/Files.
@@ -590,8 +654,7 @@ class ExportButton extends ConsumerWidget {
               IconButton(
                 tooltip: 'Share $pluginName file',
                 icon: Icon(Icons.ios_share, size: 18, color: context.tokens.textSecondary),
-                onPressed: () =>
-                    Share.shareXFiles([XFile(item!.resultPath!)]),
+                onPressed: () => _share(item!.resultPath!),
               ),
           ],
         ),
@@ -613,8 +676,8 @@ class ExportButton extends ConsumerWidget {
   }
 
   String _statusLabel(ExportQueueItem item) {
-    if (item.isSuccess) return 'Uploaded';
-    if (item.isUploading) return 'Uploading…';
+    if (item.isSuccess) return widget.isFileExport ? 'Saved' : 'Uploaded';
+    if (item.isUploading) return widget.isFileExport ? 'Saving…' : 'Uploading…';
     if (item.isPending) return 'Queued';
     if (item.isFailed) {
       if (item.retryCount < ExportQueueService.maxRetries) {

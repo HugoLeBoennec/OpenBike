@@ -37,17 +37,28 @@ Future<void> connectExportPlugin(ExportPlugin plugin) async {
 /// [ExportPlugin.isAuthenticated] — that getter isn't itself reactive.
 final connectionsRefreshProvider = StateProvider<int>((ref) => 0);
 
-/// Settings → Connections: one row per registered [ExportPlugin], driven
-/// entirely by [exportPluginsProvider] so private-package plugins (see
-/// `docs/release/private-plugins.md`) get a working row automatically once
-/// registered — no per-service code needed here.
+/// The export plugins worth a row in Settings → Connections. Local file
+/// exports (FIT / TCX) have no account and nothing to configure, so
+/// they live on the ride summary only — listed here they'd just read
+/// "Available" with nothing to do.
+final connectablePluginsProvider = Provider<Map<String, ExportPlugin>>((ref) {
+  return {
+    for (final entry in ref.watch(exportPluginsProvider).entries)
+      if (!entry.value.isFileExport) entry.key: entry.value,
+  };
+});
+
+/// Settings → Connections: one row per [connectablePluginsProvider] plugin,
+/// so private-package plugins (see `docs/release/private-plugins.md`) get a
+/// working row automatically once registered — no per-service code needed
+/// here.
 class ConnectionsSection extends ConsumerWidget {
   const ConnectionsSection({super.key});
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     ref.watch(connectionsRefreshProvider);
-    final plugins = ref.watch(exportPluginsProvider);
+    final plugins = ref.watch(connectablePluginsProvider);
 
     if (plugins.isEmpty) {
       return Padding(
@@ -88,7 +99,6 @@ class _ConnectionTileState extends ConsumerState<ConnectionTile> {
   IconData get _icon {
     final caps = widget.plugin.manifest.capabilities;
     if (caps.contains('oauth2')) return Icons.cloud_upload_outlined;
-    if (caps.contains('file-export')) return Icons.save_alt_outlined;
     return Icons.extension_outlined;
   }
 
@@ -152,8 +162,8 @@ class _ConnectionTileState extends ConsumerState<ConnectionTile> {
                         ),
                       ),
                     )
-              : Text('Available',
-                  style: TextStyle(color: tokens.textTertiary, fontSize: 14)),
+              // The status line below already says "Available".
+              : null,
           onTap: _requiresAuth && !_busy ? _toggleConnection : null,
         ),
         Padding(

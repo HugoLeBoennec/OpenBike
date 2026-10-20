@@ -45,6 +45,13 @@ abstract class ExportPlugin {
   Future<String> export(Ride ride, {ExportFormat format, Watts? ftp});
 }
 
+extension ExportPluginKind on ExportPlugin {
+  /// Writes a local file (FIT/TCX) instead of sending the ride anywhere:
+  /// works offline, has no account to connect, and isn't worth running
+  /// unasked since the file lands in the app's private folder.
+  bool get isFileExport => manifest.capabilities.contains('file-export');
+}
+
 // ---------------------------------------------------------------------------
 // WorkoutFormatPlugin
 // ---------------------------------------------------------------------------

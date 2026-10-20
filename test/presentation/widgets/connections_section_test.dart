@@ -137,7 +137,7 @@ void main() {
       expect(find.text('Not connected'), findsOneWidget);
     });
 
-    testWidgets('non-oauth2 plugin shows Available with no connect action',
+    testWidgets('leaves out local file exports — nothing to set up there',
         (tester) async {
       final registry = PluginRegistry()
         ..registerExport(FakeExportPlugin(
@@ -148,7 +148,21 @@ void main() {
 
       await _pump(tester, registry, await _fakePrefs());
 
-      expect(find.text('Available'), findsWidgets);
+      expect(find.text('Fake File Export'), findsNothing);
+    });
+
+    testWidgets('a plugin with no sign-in says Available once', (tester) async {
+      final registry = PluginRegistry()
+        ..registerExport(FakeExportPlugin(
+          id: 'fake-plain',
+          name: 'Fake Plain Export',
+          capabilities: const [],
+        ));
+
+      await _pump(tester, registry, await _fakePrefs());
+
+      expect(find.text('Fake Plain Export'), findsOneWidget);
+      expect(find.text('Available'), findsOneWidget);
       expect(find.text('Connect'), findsNothing);
     });
 
