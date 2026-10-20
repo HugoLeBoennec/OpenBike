@@ -9,21 +9,22 @@ import '../../infrastructure/files/fit_encoder.dart';
 import '../plugin_interfaces.dart';
 import '../plugin_manifest.dart';
 
-/// Garmin Connect export plugin — **MVP: local file export**.
+/// FIT file export plugin — local file export, alongside the TCX plugin.
 ///
-/// Garmin Connect has no public activity-upload API. For the MVP we:
+/// FIT is the standard activity format, so one file covers Garmin Connect
+/// (which has no public activity-upload API), Strava, TrainingPeaks,
+/// intervals.icu and most other training sites. We:
 ///   1. Generate a conformant FIT file
 ///   2. Save it to the device's documents directory
 ///   3. Return the file path so the UI can show sharing options
 ///
-/// The user can then import the file manually via
-/// <https://connect.garmin.com/modern/import-data> or the Garmin Connect
-/// mobile app.
+/// The user then uploads it on the service's website, e.g.
+/// <https://connect.garmin.com/modern/import-data>.
 ///
 /// Future work: integrate the Garmin Health API (requires a partnership
 /// agreement) or use the Connect IQ SDK for direct push.
-class GarminConnectExportPlugin implements ExportPlugin {
-  GarminConnectExportPlugin({
+class FitFileExportPlugin implements ExportPlugin {
+  FitFileExportPlugin({
     FitEncoder? fitEncoder,
     String? exportDirectory,
   })  : _fitEncoder = fitEncoder ?? FitEncoder(),
@@ -38,12 +39,15 @@ class GarminConnectExportPlugin implements ExportPlugin {
 
   @override
   PluginManifest get manifest => const PluginManifest(
+        // Pre-rename id, kept: it's stored in export-queue rows and
+        // auto-upload preferences on existing installs.
         id: 'garmin-connect-export',
-        name: 'Garmin Connect',
+        name: 'FIT File',
         version: '1.0.0',
         type: PluginType.export,
         author: 'OpenBike',
-        description: 'Export FIT file for manual import into Garmin Connect',
+        description: 'Export ride as a FIT file for Garmin Connect, Strava '
+            'and other training sites',
         capabilities: ['file-export'],
       );
 

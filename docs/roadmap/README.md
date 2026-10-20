@@ -27,7 +27,7 @@ Each phase file in this directory is a self-contained work order for a coding ag
 | Binary FIT encoder (definitions, CRC-16, session/lap/records) + TCX encoder | `lib/infrastructure/files/fit_encoder.dart`, `tcx_encoder.dart` |
 | GPX / ZWO / ERG-MRC parsers | `lib/infrastructure/files/` |
 | Strava OAuth2 plugin (auth-code flow, secure token storage, multipart upload, rate limiting) | `lib/plugins/exports/strava_export_plugin.dart` |
-| Garmin local-FIT export plugin | `lib/plugins/exports/garmin_export_plugin.dart` |
+| Local FIT file export plugin | `lib/plugins/exports/fit_file_export_plugin.dart` |
 | SQLite export queue: retry, exponential backoff, connectivity-resume | `lib/infrastructure/persistence/export_queue_service.dart` |
 | ANT+ FE-C protocol (framing, channel init, pages 16/25/48–51) — blocked only on a concrete `UsbBackend` | `lib/infrastructure/ant/` |
 | Physics-backed simulator device plugin (DEV_MODE) | `lib/infrastructure/simulator/` |

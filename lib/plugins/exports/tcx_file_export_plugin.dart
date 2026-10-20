@@ -9,7 +9,7 @@ import '../../infrastructure/files/tcx_encoder.dart';
 import '../plugin_interfaces.dart';
 import '../plugin_manifest.dart';
 
-/// TCX file export plugin — local file export, alongside the Garmin FIT
+/// TCX file export plugin — local file export, alongside the FIT
 /// plugin.
 ///
 /// Encodes the ride as a Training Center XML (TCX) file and saves it to the

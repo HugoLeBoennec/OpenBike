@@ -11,7 +11,7 @@ import 'package:open_bike/infrastructure/files/zwo_parser.dart';
 import 'package:open_bike/infrastructure/persistence/app_database.dart';
 import 'package:open_bike/infrastructure/preferences/app_preferences.dart';
 import 'package:open_bike/infrastructure/simulator/simulator.dart';
-import 'package:open_bike/plugins/exports/garmin_export_plugin.dart';
+import 'package:open_bike/plugins/exports/fit_file_export_plugin.dart';
 import 'package:open_bike/plugins/plugin_registry.dart';
 import 'package:open_bike/presentation/models/ride_extra.dart';
 import 'package:open_bike/presentation/screens/screens.dart';
@@ -36,7 +36,7 @@ Widget buildTestApp({
   registry.registerDevice(simPlugin);
 
   // Export plugins.
-  registry.registerExport(GarminConnectExportPlugin());
+  registry.registerExport(FitFileExportPlugin());
 
   // Format plugins.
   registry.registerFormat(ZwoParser());
