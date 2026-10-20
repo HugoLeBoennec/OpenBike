@@ -14,6 +14,27 @@ contains **no code, endpoints, or credentials for either service** — that's
 enforced by CI (`grep -ri "opencoach\|records_api" lib/` must be empty; see
 the P6 phase's `validation` block).
 
+## Ideas — not started
+
+More candidates for the private package. None exist yet; each would be one
+more `ExportPlugin` returned from `register.dart`.
+
+- **intervals.icu** — upload the ride's FIT file directly. Its open API
+  accepts FIT/TCX/GPX uploads and authenticates with OAuth 2.0 or a
+  personal API key, so there's no app review to wait on.
+- **Apple Health** (iOS) — save each ride as an indoor-cycling workout
+  (duration, distance, energy, heart rate, power) through HealthKit.
+  On-device only: no server, no account; `authenticate()` would be the
+  HealthKit permission prompt.
+- **Health Connect** (Android) — the same through Android's Health Connect
+  API, with the same permission-prompt-as-`authenticate()` shape.
+
+Unlike Records/OpenCoach, the two health plugins also need changes on the
+app target itself — HealthKit entitlement and usage strings in
+`ios/Runner`, Health Connect permissions in the Android manifest — so the
+release-build swap below would have to apply those too, and the store
+listings declare the health-data use.
+
 ## The seam
 
 - `lib/plugins/private_registration.dart` — the checked-in **public

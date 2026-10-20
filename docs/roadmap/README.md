@@ -88,6 +88,8 @@ via the existing plugin seams (`ExportPlugin` / `DevicePlugin` interfaces in
 - **Records and OpenCoach connections** — implemented as plugins in a **private companion
   package** (`openbike_private_plugins`, separate private repo) that release builds add as
   a dependency; the public app compiles and runs fully without it. P6 defines the seam.
+  Ideas for the same package, not started: intervals.icu, Apple Health, Health Connect
+  (see `docs/release/private-plugins.md`).
 - License choice (P9) must permit closed-source plugins to link against the core →
   MIT or Apache-2.0 for the core (not GPL).
 
