@@ -850,18 +850,23 @@ final newPersonalRecordsForRideProvider =
 // Performance Management Chart (CTL / ATL / TSB)
 // ---------------------------------------------------------------------------
 
+/// One point per day from the first ride through today.
+///
+/// Built on [rideHistoryProvider] and [ftpHistoryProvider] rather than
+/// reading storage directly, so saving or deleting a ride (which invalidates
+/// the ride history) or recording an FTP test refreshes it too — Home's
+/// CTL/TSB used to stay at their old values until the app restarted.
 final fitnessHistoryProvider =
     FutureProvider<List<FitnessDataPoint>>((ref) async {
-  final storage = ref.watch(storageProvider);
-  final rides = await storage.getRides();
-  final ftpHistory = await storage.getFtpHistory();
+  final rides = await ref.watch(rideHistoryProvider.future);
+  final ftpHistory = await ref.watch(ftpHistoryProvider.future);
   final currentFtp = ref.watch(ftpProvider);
   final daily = dailyTssFromRides(
     rides,
     ftpHistory: ftpHistory,
     currentFtp: currentFtp,
   );
-  return FitnessCalculator().calculate(daily);
+  return FitnessCalculator().calculate(daily, until: DateTime.now());
 });
 
 /// Today's fitness point (or null if there's no ride history yet) — drives

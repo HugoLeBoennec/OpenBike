@@ -14,6 +14,7 @@ import '../../infrastructure/files/gpx_parser.dart';
 import '../models/ride_extra.dart';
 import '../state/providers.dart';
 import '../theme/app_theme.dart';
+import '../widgets/fitness_info_button.dart';
 import '../widgets/ride_summary_widgets.dart';
 import '../widgets/start_ride_actions.dart';
 import '../widgets/workout_mini_profile.dart';
@@ -657,6 +658,7 @@ class _FitnessSparkline extends ConsumerWidget {
                       const SizedBox(width: 16),
                       _FitnessNumber(
                           label: 'TSB', value: latest.tsb, color: Colors.purpleAccent),
+                      const FitnessInfoButton(),
                     ],
                   ),
                 ),
