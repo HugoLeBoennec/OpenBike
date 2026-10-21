@@ -7,6 +7,7 @@ import '../../core/domain/entities/ride.dart';
 import '../../core/domain/value_objects/value_objects.dart';
 import '../state/providers.dart';
 import '../theme/app_theme.dart';
+import '../widgets/delete_ride_action.dart';
 import '../widgets/ftp_test_prompt.dart';
 import '../widgets/ride_summary_widgets.dart';
 
@@ -120,7 +121,13 @@ class RideSummaryScreen extends ConsumerWidget {
                           side: const BorderSide(color: Colors.redAccent),
                           minimumSize: const Size.fromHeight(48),
                         ),
-                        onPressed: () => _confirmDelete(context, ref),
+                        onPressed: () async {
+                          if (await confirmAndDeleteRide(
+                                  context, ref, rideId) &&
+                              context.mounted) {
+                            context.go('/');
+                          }
+                        },
                         icon: const Icon(Icons.delete_outline, size: 18),
                         label: const Text('Delete'),
                       ),
@@ -151,30 +158,4 @@ class RideSummaryScreen extends ConsumerWidget {
         );
   }
 
-  Future<void> _confirmDelete(BuildContext context, WidgetRef ref) async {
-    final confirmed = await showDialog<bool>(
-      context: context,
-      builder: (ctx) => AlertDialog(
-        title: const Text('Delete ride?'),
-        content: const Text('This action cannot be undone.'),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.of(ctx).pop(false),
-            child: const Text('Cancel'),
-          ),
-          TextButton(
-            onPressed: () => Navigator.of(ctx).pop(true),
-            child: const Text('Delete',
-                style: TextStyle(color: Colors.redAccent)),
-          ),
-        ],
-      ),
-    );
-    if (confirmed == true && context.mounted) {
-      final storage = ref.read(storageProvider);
-      await storage.deleteRide(rideId);
-      ref.invalidate(rideHistoryProvider);
-      if (context.mounted) context.go('/');
-    }
-  }
 }

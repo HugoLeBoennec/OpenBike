@@ -68,7 +68,7 @@ extension DataFieldTypeX on DataFieldType {
       case DataFieldType.avgPower:
       case DataFieldType.normalizedPower:
       case DataFieldType.threeSecAvgPower:
-        return 'w';
+        return 'W';
       case DataFieldType.cadence:
         return 'rpm';
       case DataFieldType.heartRate:

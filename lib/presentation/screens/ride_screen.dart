@@ -11,6 +11,8 @@ import '../../core/application/services/ftp_test_planner.dart';
 import '../../core/application/services/recording_engine.dart';
 import '../../core/application/services/route_simulator.dart';
 import '../../core/application/services/workout_engine.dart';
+import '../../core/domain/entities/workout.dart';
+import '../../core/domain/entities/workout_step.dart';
 import '../../core/events/app_event.dart';
 import '../models/data_field_type.dart';
 import '../models/ride_extra.dart';
@@ -46,6 +48,7 @@ class RideScreen extends ConsumerStatefulWidget {
 
 class _RideScreenState extends ConsumerState<RideScreen> {
   StreamSubscription<SimulationEvent>? _simCompletionSub;
+  StreamSubscription<WorkoutEvent>? _ftpTestStepSub;
   Timer? _autoPauseTimer;
   final _autoPauseDetector = AutoPauseDetector();
   bool _autoPauseDialogShowing = false;
@@ -62,15 +65,20 @@ class _RideScreenState extends ConsumerState<RideScreen> {
       Future.microtask(() {
         final workout = widget.extra!.workout!;
         ref.read(currentWorkoutProvider.notifier).state = workout;
-        ref.read(activeFtpTestProvider.notifier).state = switch (workout.id) {
+        final ftpTest = switch (workout.id) {
           BundledWorkouts.rampTestId => FtpTestProtocol.ramp,
           BundledWorkouts.twentyMinTestId => FtpTestProtocol.twentyMinute,
           _ => null,
         };
+        ref.read(activeFtpTestProvider.notifier).state = ftpTest;
+        _trackFtpTestProgress(ftpTest == null ? null : workout);
         final ftp = ref.read(ftpProvider);
         final engine = ref.read(workoutEngineProvider);
         // A previous ride may have left the engine running or completed.
         if (engine.state != WorkoutEngineState.idle) engine.stop();
+        // Listening before the start, so the trace has every second, and
+        // empty of the last workout's power.
+        ref.read(workoutPowerTraceProvider.notifier).clear();
         engine.start(workout, ftp);
         _startRecording();
       });
@@ -107,6 +115,29 @@ class _RideScreenState extends ConsumerState<RideScreen> {
         Timer.periodic(const Duration(seconds: 1), (_) => _checkAutoPause());
   }
 
+  /// Follows how far an FTP test [workout] gets, for the post-ride prompt to
+  /// judge whether the test counts. Subscribes before the engine starts, so
+  /// the first step is seen too. A null [workout] (not a test) clears it.
+  void _trackFtpTestProgress(Workout? workout) {
+    final progress = ref.read(ftpTestProgressProvider.notifier);
+    if (workout == null) {
+      progress.state = null;
+      return;
+    }
+    final block = workout.steps.indexWhere((s) => s.type == StepType.freeRide);
+    progress.state = (furthestStep: 0, testBlockStep: block < 0 ? null : block);
+    _ftpTestStepSub =
+        ref.read(eventBusProvider).on<WorkoutEvent>().listen((event) {
+      if (event is! WorkoutStepChanged) return;
+      final current = progress.state;
+      if (current == null || event.index <= current.furthestStep) return;
+      progress.state = (
+        furthestStep: event.index,
+        testBlockStep: current.testBlockStep,
+      );
+    });
+  }
+
   /// Starts recording alongside a workout or route, which drive the trainer
   /// from the moment the screen opens — otherwise their timeline runs while
   /// the ride timer sits at zero until the rider finds the play button.
@@ -118,6 +149,7 @@ class _RideScreenState extends ConsumerState<RideScreen> {
   @override
   void dispose() {
     _simCompletionSub?.cancel();
+    _ftpTestStepSub?.cancel();
     _autoPauseTimer?.cancel();
     WakelockPlus.disable();
     super.dispose();
@@ -250,7 +282,7 @@ class _RideScreenState extends ConsumerState<RideScreen> {
                 Expanded(
                   child: LayoutBuilder(
                     builder: (context, constraints) {
-                      _adaptConfigToWidth(constraints.maxWidth);
+                      _adaptConfigToSize(constraints);
                       if (constraints.maxWidth >= 600 &&
                           constraints.maxHeight > constraints.maxWidth) {
                         return _buildTabletPortraitLayout(
@@ -275,27 +307,45 @@ class _RideScreenState extends ConsumerState<RideScreen> {
     );
   }
 
-  /// Picks the data-field preset that matches the layout class chosen by
-  /// the [LayoutBuilder]. Deferred because providers can't change mid-build.
-  void _adaptConfigToWidth(double width) {
+  /// Height from which a landscape or tablet screen shows the full 12-field
+  /// set: below it (phones on their side) the cells would be too short.
+  static const _fullFieldSetMinHeight = 600.0;
+
+  /// Picks the data-field preset that fits the space the [LayoutBuilder]
+  /// gives: the full set on desktop widths, and on any wide screen tall
+  /// enough for it — a 1024 px Mac window or an iPad has room for all 12
+  /// fields, not just 6. Deferred because providers can't change mid-build.
+  void _adaptConfigToSize(BoxConstraints constraints) {
+    final width = constraints.maxWidth;
+    final isLandscape = width >= 600;
     Future.microtask(() {
       if (!mounted) return;
       ref.read(rideScreenConfigProvider.notifier).adaptToLayout(
-            isLandscape: width >= 600,
-            isDesktop: width >= 1200,
+            isLandscape: isLandscape,
+            isDesktop: width >= 1200 ||
+                (isLandscape &&
+                    constraints.maxHeight >= _fullFieldSetMinHeight),
           );
     });
   }
 
   // ─── Bottom pane — workout HUD / route profile / live chart ───────
 
-  /// Picks the bottom pane by mode: a workout HUD when a structured workout
-  /// is driving the ride, the GPX elevation profile for a route simulation,
-  /// or the default live power/HR chart otherwise.
+  /// Picks the bottom pane by mode: a workout HUD (with the power ridden
+  /// drawn over the workout profile) when a structured workout is driving
+  /// the ride, the GPX elevation profile above the live power/HR chart for a
+  /// route simulation, or just the live chart otherwise.
   Widget _buildBottomPane(BuildContext context, WidgetRef ref) {
     final hasWorkout = ref.watch(currentWorkoutProvider) != null;
     if (hasWorkout) return const WorkoutHudWidget();
-    if (widget.extra?.route != null) return const RouteProfilePane();
+    if (widget.extra?.route != null) {
+      return const Column(
+        children: [
+          Expanded(flex: 3, child: RouteProfilePane()),
+          Expanded(flex: 2, child: LiveChart()),
+        ],
+      );
+    }
     return const LiveChart();
   }
 
@@ -403,6 +453,7 @@ class _RideScreenState extends ConsumerState<RideScreen> {
                   fields: fields,
                   columns: 3,
                   pageIndex: 0,
+                  fillHeight: true,
                 ),
               ),
             ],
@@ -455,6 +506,7 @@ class _RideScreenState extends ConsumerState<RideScreen> {
                   fields: fields,
                   columns: 3,
                   pageIndex: 0,
+                  fillHeight: true,
                 ),
               ),
             ],

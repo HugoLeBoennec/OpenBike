@@ -1,13 +1,21 @@
+import 'package:drift/native.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:go_router/go_router.dart';
+import 'package:mocktail/mocktail.dart';
 
 import 'package:open_bike/core/application/services/ftp_test_planner.dart';
 import 'package:open_bike/core/domain/entities/ftp_history_entry.dart';
 import 'package:open_bike/core/domain/entities/user_profile.dart';
+import 'package:open_bike/core/domain/ports/trainer_port.dart';
 import 'package:open_bike/core/domain/value_objects/value_objects.dart';
+import 'package:open_bike/infrastructure/persistence/app_database.dart';
+import 'package:open_bike/infrastructure/persistence/drift_storage.dart';
 import 'package:open_bike/presentation/screens/ftp_test_screen.dart';
 import 'package:open_bike/presentation/state/providers.dart';
+
+class MockTrainerPort extends Mock implements TrainerPort {}
 
 const _profile = UserProfile(
   name: 'A',
@@ -46,10 +54,24 @@ Future<ProviderContainer> _pump(
   addTearDown(tester.view.resetPhysicalSize);
   addTearDown(tester.view.resetDevicePixelRatio);
 
+  final router = GoRouter(
+    routes: [
+      GoRoute(path: '/', builder: (_, __) => const FtpTestScreen()),
+      GoRoute(
+        path: '/ride',
+        builder: (_, __) => const Scaffold(body: Text('ride screen')),
+      ),
+      GoRoute(
+        path: '/scan',
+        builder: (_, __) => const Scaffold(body: Text('scan screen')),
+      ),
+    ],
+  );
+
   await tester.pumpWidget(
     UncontrolledProviderScope(
       container: container,
-      child: const MaterialApp(home: FtpTestScreen()),
+      child: MaterialApp.router(routerConfig: router),
     ),
   );
   await tester.pumpAndSettle();
@@ -156,5 +178,96 @@ void main() {
     // Progress is measured test-to-test: 200 → 220, ignoring the 215 edit.
     expect(find.textContaining('+20 W since your previous test'),
         findsOneWidget);
+  });
+
+  // No trainer is connected in [_pump]'s container.
+  testWidgets('the ramp test asks for a trainer when none is connected',
+      (tester) async {
+    await _pump(tester, history: const []);
+
+    await tester.tap(find.text('Start Ramp Test'));
+    await tester.pumpAndSettle();
+
+    expect(find.text('Connect a trainer'), findsOneWidget);
+    expect(find.text('ride screen'), findsNothing);
+  });
+
+  testWidgets('the 20-minute test asks for a trainer too', (tester) async {
+    await _pump(tester, history: const []);
+
+    await tester.tap(find.byKey(const Key('protocol-twentyMinute')));
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('Start 20-Minute Test'));
+    await tester.pumpAndSettle();
+
+    expect(find.text('Connect a trainer'), findsOneWidget);
+    expect(find.text('ride screen'), findsNothing);
+  });
+
+  testWidgets('starts the test ride once a trainer is connected',
+      (tester) async {
+    final container = await _pump(tester, history: const []);
+    container.read(activeTrainerPortProvider.notifier).state =
+        MockTrainerPort();
+
+    await tester.tap(find.text('Start Ramp Test'));
+    await tester.pumpAndSettle();
+
+    expect(find.text('Connect a trainer'), findsNothing);
+    expect(find.text('ride screen'), findsOneWidget);
+  });
+
+  testWidgets(
+      'removing the latest test result restores the FTP before it, and '
+      'the retest card asks for a test again', (tester) async {
+    final db = AppDatabase(NativeDatabase.memory());
+    addTearDown(db.close);
+    final storage = DriftStorage(db);
+    const before = UserProfile(
+      name: 'A',
+      ftp: Watts(200),
+      maxHr: HeartRate(180),
+      restingHr: HeartRate(60),
+      weight: 70,
+      height: 1.75,
+    );
+    await storage.saveProfile(before);
+    // Entries are keyed by their millisecond timestamp — keep them apart.
+    await tester.runAsync(
+        () => Future<void>.delayed(const Duration(milliseconds: 5)));
+    final afterTest = before.copyWith(ftp: const Watts(66));
+    await storage.saveProfile(afterTest, ftpSource: FtpSource.rampTest);
+    final test = (await storage.getFtpHistory()).last;
+
+    final container = ProviderContainer(overrides: [
+      storageProvider.overrideWithValue(storage),
+      userProfileProvider.overrideWith((ref) => afterTest),
+      ftpRetestIntervalProvider
+          .overrideWith((ref) => FtpTestPlanner.defaultIntervalDays),
+    ]);
+    addTearDown(container.dispose);
+    tester.view.physicalSize = const Size(1000, 3000);
+    tester.view.devicePixelRatio = 1.0;
+    addTearDown(tester.view.resetPhysicalSize);
+    addTearDown(tester.view.resetDevicePixelRatio);
+    await tester.pumpWidget(UncontrolledProviderScope(
+      container: container,
+      child: const MaterialApp(home: FtpTestScreen()),
+    ));
+    await tester.pumpAndSettle();
+    expect(find.text('Up to date'), findsOneWidget);
+
+    await tester.tap(find.byKey(
+        Key('removeFtpTest-${test.effectiveDate.millisecondsSinceEpoch}')));
+    await tester.pumpAndSettle();
+    expect(find.textContaining('Your FTP goes back to 200 W'), findsOneWidget);
+    await tester.tap(find.byKey(const Key('confirmRemoveFtpTestButton')));
+    await tester.pumpAndSettle();
+
+    final history = await storage.getFtpHistory();
+    expect(history.map((e) => e.source), [FtpSource.manual]);
+    expect(container.read(userProfileProvider)?.ftp.value, 200);
+    expect((await storage.getProfile())?.ftp.value, 200);
+    expect(find.text('Not tested yet'), findsOneWidget);
   });
 }

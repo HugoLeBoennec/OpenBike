@@ -55,8 +55,17 @@ class _PrStat extends StatelessWidget {
   Widget build(BuildContext context) {
     return Column(
       children: [
-        Text(
-          watts != null ? '${watts!.round()}' : '—',
+        Text.rich(
+          TextSpan(
+            text: watts != null ? '${watts!.round()}' : '—',
+            children: [
+              if (watts != null)
+                const TextSpan(
+                  text: ' W',
+                  style: TextStyle(fontSize: 11, fontWeight: FontWeight.w600),
+                ),
+            ],
+          ),
           style: const TextStyle(
               color: Colors.amber, fontSize: 18, fontWeight: FontWeight.w700),
         ),

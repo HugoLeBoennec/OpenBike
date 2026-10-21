@@ -130,7 +130,31 @@ void main() {
     await tester.pumpAndSettle();
 
     await tester.scrollUntilVisible(find.text('PERSONAL RECORDS'), 200);
-    expect(find.text('280'), findsOneWidget);
+    expect(find.text('280 W'), findsOneWidget);
     expect(find.text('5 MIN'), findsOneWidget);
+  });
+
+  testWidgets('explains CTL, ATL and TSB behind the info button',
+      (tester) async {
+    final start = DateTime.now().subtract(const Duration(days: 2));
+    await storage.saveRide(
+      Ride(
+        id: 'ride-1',
+        startTime: start,
+        endTime: start.add(const Duration(minutes: 10)),
+        status: RideStatus.finished,
+        readings: _steadyPower(start, 200, 600),
+      ),
+      ftp: const Watts(200),
+    );
+
+    await tester.pumpWidget(_wrap(storage, appPrefs));
+    await tester.pumpAndSettle();
+    await tester.tap(find.byKey(const Key('fitnessInfoButton')));
+    await tester.pumpAndSettle();
+
+    expect(find.text('CTL — Fitness'), findsOneWidget);
+    expect(find.text('ATL — Fatigue'), findsOneWidget);
+    expect(find.text('TSB — Form'), findsOneWidget);
   });
 }

@@ -1,15 +1,14 @@
 import 'package:fl_chart/fl_chart.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:go_router/go_router.dart';
 
 import '../../core/application/services/bundled_workouts.dart';
 import '../../core/application/services/ftp_test_planner.dart';
 import '../../core/domain/entities/entities.dart';
 import '../../core/domain/value_objects/value_objects.dart';
-import '../models/ride_extra.dart';
 import '../state/providers.dart';
 import '../theme/app_theme.dart';
+import '../widgets/start_ride_actions.dart';
 
 /// Guided FTP testing — explains what the test measures, recommends a
 /// protocol, walks through preparation, launches the test ride, and charts
@@ -95,48 +94,71 @@ class _FtpTestScreenState extends ConsumerState<FtpTestScreen> {
               'Couldn\'t load FTP history: $e',
               style: const TextStyle(color: Colors.red, fontSize: 13),
             ),
-            data: (history) => _FtpProgression(history: history, plan: plan),
+            data: (history) => _FtpProgression(
+              history: history,
+              plan: plan,
+              onRemove: _removeTest,
+            ),
           ),
         ],
       ),
     );
   }
 
-  Future<void> _startTest(FtpTestProtocol protocol) async {
-    // The ramp holds you at a prescribed watt target that steps up every
-    // minute — without trainer control there is nothing to drive those steps,
-    // so the protocol simply doesn't work. The 20-minute test is a self-paced
-    // free ride and only needs a power source.
-    if (protocol == FtpTestProtocol.ramp &&
-        ref.read(activeTrainerPortProvider) == null) {
-      final connect = await showDialog<bool>(
-        context: context,
-        builder: (ctx) => AlertDialog(
-          title: const Text('Connect a trainer'),
-          content: const Text(
-            'The ramp test drives your trainer to a new target every minute, '
-            'so it needs a smart trainer. With a power meter only, use the '
-            '20-minute test instead — you set the pace yourself.',
-          ),
-          actions: [
-            TextButton(
-              onPressed: () => Navigator.of(ctx).pop(false),
-              child: const Text('Cancel'),
-            ),
-            TextButton(
-              onPressed: () => Navigator.of(ctx).pop(true),
-              child: const Text('Connect Device'),
-            ),
-          ],
-        ),
-      );
-      if (connect == true && mounted) context.push('/scan');
-      return;
-    }
+  Future<void> _startTest(FtpTestProtocol protocol) =>
+      startWorkoutRide(context, ref, _workoutFor(protocol));
 
-    final workout = _workoutFor(protocol);
-    if (!mounted) return;
-    context.go('/ride', extra: RideExtra(workout: workout));
+  /// Removes a test result the rider doesn't trust — a ramp cut short, a
+  /// power meter that dropped out. Removing the latest entry also puts the
+  /// profile FTP back to the one before it, and the retest reminder goes
+  /// back to counting from the previous real test.
+  Future<void> _removeTest(FtpHistoryEntry entry) async {
+    final history = ref.read(ftpHistoryProvider).valueOrNull ?? const [];
+    final remaining = [
+      for (final e in history)
+        if (e.effectiveDate != entry.effectiveDate) e,
+    ];
+    final isLatest =
+        history.isNotEmpty && history.last.effectiveDate == entry.effectiveDate;
+    final revertTo =
+        isLatest && remaining.isNotEmpty ? remaining.last.ftp : null;
+    final date = _HistoryRow.formatDate(entry.effectiveDate);
+
+    final confirmed = await showDialog<bool>(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        title: const Text('Remove this test result?'),
+        content: Text(
+          '${entry.ftp.value.round()} W from $date will no longer count as '
+          'a test.${revertTo != null ? ' Your FTP goes back to '
+              '${revertTo.value.round()} W.' : ''}',
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.of(ctx).pop(false),
+            child: const Text('Cancel'),
+          ),
+          TextButton(
+            key: const Key('confirmRemoveFtpTestButton'),
+            onPressed: () => Navigator.of(ctx).pop(true),
+            child: const Text('Remove',
+                style: TextStyle(color: Colors.redAccent)),
+          ),
+        ],
+      ),
+    );
+    if (confirmed != true) return;
+
+    final storage = ref.read(storageProvider);
+    await storage.deleteFtpHistoryEntry(entry.effectiveDate);
+    final profile = ref.read(userProfileProvider);
+    if (revertTo != null && profile != null) {
+      final updated = profile.copyWith(ftp: revertTo);
+      ref.read(userProfileProvider.notifier).state = updated;
+      // Matches the (now) latest entry, so no new history entry is added.
+      await storage.saveProfile(updated);
+    }
+    ref.invalidate(ftpHistoryProvider);
   }
 
   /// Prefers the saved copy so an edited protocol is honoured, falling back to
@@ -581,10 +603,15 @@ class _PrepChecklist extends StatelessWidget {
 // ---------------------------------------------------------------------------
 
 class _FtpProgression extends StatelessWidget {
-  const _FtpProgression({required this.history, required this.plan});
+  const _FtpProgression({
+    required this.history,
+    required this.plan,
+    required this.onRemove,
+  });
 
   final List<FtpHistoryEntry> history;
   final FtpTestPlan? plan;
+  final ValueChanged<FtpHistoryEntry> onRemove;
 
   @override
   Widget build(BuildContext context) {
@@ -627,7 +654,11 @@ class _FtpProgression extends StatelessWidget {
           SizedBox(height: tokens.spacingMd),
         ],
         for (final entry in tests.reversed)
-          _HistoryRow(entry: entry, tests: tests),
+          _HistoryRow(
+            entry: entry,
+            tests: tests,
+            onRemove: () => onRemove(entry),
+          ),
       ],
     );
   }
@@ -750,10 +781,15 @@ class _ChangeSummary extends StatelessWidget {
 }
 
 class _HistoryRow extends StatelessWidget {
-  const _HistoryRow({required this.entry, required this.tests});
+  const _HistoryRow({
+    required this.entry,
+    required this.tests,
+    required this.onRemove,
+  });
 
   final FtpHistoryEntry entry;
   final List<FtpHistoryEntry> tests;
+  final VoidCallback onRemove;
 
   @override
   Widget build(BuildContext context) {
@@ -797,15 +833,23 @@ class _HistoryRow extends StatelessWidget {
               ),
             ),
           Text(
-            _formatDate(entry.effectiveDate),
+            formatDate(entry.effectiveDate),
             style: TextStyle(color: tokens.textDisabled, fontSize: 12),
+          ),
+          IconButton(
+            key: Key(
+                'removeFtpTest-${entry.effectiveDate.millisecondsSinceEpoch}'),
+            icon: Icon(Icons.close, size: 16, color: tokens.textDisabled),
+            tooltip: 'Remove this result',
+            visualDensity: VisualDensity.compact,
+            onPressed: onRemove,
           ),
         ],
       ),
     );
   }
 
-  static String _formatDate(DateTime date) {
+  static String formatDate(DateTime date) {
     const months = [
       'Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun',
       'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec',

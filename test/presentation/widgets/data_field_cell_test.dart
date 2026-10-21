@@ -31,7 +31,7 @@ void main() {
     ]));
     await tester.pump();
 
-    final finder = find.bySemanticsLabel('POWER: 215 w');
+    final finder = find.bySemanticsLabel('POWER: 215 W');
     expect(finder, findsOneWidget);
     expect(tester.takeException(), isNull);
 

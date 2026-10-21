@@ -70,10 +70,10 @@ void main() {
 
   group('DataFieldType — unit', () {
     test('power fields have unit "w"', () {
-      expect(DataFieldType.power.unit, 'w');
-      expect(DataFieldType.avgPower.unit, 'w');
-      expect(DataFieldType.normalizedPower.unit, 'w');
-      expect(DataFieldType.threeSecAvgPower.unit, 'w');
+      expect(DataFieldType.power.unit, 'W');
+      expect(DataFieldType.avgPower.unit, 'W');
+      expect(DataFieldType.normalizedPower.unit, 'W');
+      expect(DataFieldType.threeSecAvgPower.unit, 'W');
     });
 
     test('cadence unit is "rpm"', () {

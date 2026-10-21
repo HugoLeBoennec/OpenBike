@@ -31,6 +31,22 @@ class FtpTestPrompt extends ConsumerWidget {
 
       // Clear immediately — this consumes the pending test exactly once.
       ref.read(activeFtpTestProvider.notifier).state = null;
+      final progress = ref.read(ftpTestProgressProvider);
+      ref.read(ftpTestProgressProvider.notifier).state = null;
+
+      final complete = progress != null &&
+          FtpEstimator.isCompleteTest(
+            testType,
+            furthestStep: progress.furthestStep,
+            testBlockStep: progress.testBlockStep,
+            recordedSeconds: ride.readings.length,
+          );
+      if (!complete) {
+        WidgetsBinding.instance.addPostFrameCallback((_) {
+          if (context.mounted) _showIncomplete(context, ref, testType);
+        });
+        return;
+      }
 
       final estimated = testType == FtpTestProtocol.ramp
           ? FtpEstimator.estimateFromRamp(ride.readings)
@@ -45,6 +61,44 @@ class FtpTestPrompt extends ConsumerWidget {
     return const SizedBox.shrink();
   }
 
+  /// A test stopped too early has no FTP to offer — say so rather than stay
+  /// silent, so the rider knows the ride didn't count.
+  void _showIncomplete(
+    BuildContext context,
+    WidgetRef ref,
+    FtpTestProtocol protocol,
+  ) {
+    final current = ref.read(userProfileProvider)?.ftp.value.round();
+    final keeps = current != null && current > 0
+        ? 'Your FTP stays at $current W.'
+        : 'Your FTP is unchanged.';
+    showDialog<void>(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        title: const Text('Test not complete'),
+        content: Text(switch (protocol) {
+          FtpTestProtocol.ramp =>
+            'The ramp test needs at least ${FtpEstimator.minRampSteps} steps '
+                'to estimate your FTP, and this one stopped earlier. $keeps '
+                'Next time, keep going until you can no longer hold the target.',
+          FtpTestProtocol.twentyMinute =>
+            'The 20-minute test only counts once the full 20-minute effort '
+                'is done. $keeps',
+        }),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.of(ctx).pop(),
+            child: const Text('OK'),
+          ),
+        ],
+      ),
+    );
+  }
+
+  /// A result this far below the current FTP is more likely a cut-short
+  /// test or a sensor dropout than lost fitness.
+  static const _bigDropFraction = 0.8;
+
   void _showPrompt(
     BuildContext context,
     WidgetRef ref,
@@ -53,6 +107,8 @@ class FtpTestPrompt extends ConsumerWidget {
   ) {
     final rounded = estimated.value.round();
     final previous = ref.read(userProfileProvider)?.ftp.value.round();
+    final bigDrop =
+        previous != null && previous > 0 && rounded < previous * _bigDropFraction;
 
     showDialog<void>(
       context: context,
@@ -66,6 +122,15 @@ class FtpTestPrompt extends ConsumerWidget {
             if (previous != null && previous > 0) ...[
               const SizedBox(height: 8),
               Text(_changeSummary(previous, rounded)),
+            ],
+            if (bigDrop) ...[
+              const SizedBox(height: 8),
+              const Text(
+                "That's a big drop. If the test was cut short or a sensor "
+                'dropped out, choose Not now.',
+                key: Key('ftpBigDropWarning'),
+                style: TextStyle(color: Colors.orangeAccent),
+              ),
             ],
             const SizedBox(height: 12),
             const Text(

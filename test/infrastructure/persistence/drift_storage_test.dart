@@ -410,6 +410,29 @@ void main() {
       expect(history.last.ftp.value, 230);
     });
 
+    test('deleteFtpHistoryEntry removes only the entry at that date',
+        () async {
+      const base = UserProfile(
+        name: 'A',
+        ftp: Watts(200),
+        maxHr: HeartRate(180),
+        restingHr: HeartRate(60),
+        weight: 70,
+        height: 1.75,
+      );
+      await storage.saveProfile(base);
+      await Future<void>.delayed(const Duration(milliseconds: 5));
+      await storage.saveProfile(base.copyWith(ftp: const Watts(66)),
+          ftpSource: FtpSource.rampTest);
+      final test = (await storage.getFtpHistory()).last;
+
+      await storage.deleteFtpHistoryEntry(test.effectiveDate);
+
+      final history = await storage.getFtpHistory();
+      expect(history, hasLength(1));
+      expect(history.single.ftp.value, 200);
+    });
+
     test('defaults the recorded source to manual', () async {
       await storage.saveProfile(const UserProfile(
         name: 'A',

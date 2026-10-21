@@ -14,7 +14,9 @@ import '../../infrastructure/files/gpx_parser.dart';
 import '../models/ride_extra.dart';
 import '../state/providers.dart';
 import '../theme/app_theme.dart';
+import '../widgets/fitness_info_button.dart';
 import '../widgets/ride_summary_widgets.dart';
+import '../widgets/start_ride_actions.dart';
 import '../widgets/workout_mini_profile.dart';
 
 /// Home dashboard — device status, ride/workout/simulate actions, recent rides.
@@ -57,7 +59,7 @@ class HomeScreen extends ConsumerWidget {
             title: 'Free Ride',
             subtitle: 'Start riding without a workout',
             color: Colors.deepOrange,
-            onTap: () => context.go('/ride'),
+            onTap: () => _startFreeRide(context, ref),
           ),
           const SizedBox(height: 8),
           _ActionCard(
@@ -86,31 +88,24 @@ class HomeScreen extends ConsumerWidget {
     );
   }
 
+  Future<void> _startFreeRide(BuildContext context, WidgetRef ref) async {
+    final connected = await ensureTrainerConnected(
+      context,
+      ref,
+      reason: 'Free rides record from your trainer and let you set its '
+          'resistance or ERG target as you go — pair a trainer first.',
+    );
+    if (connected && context.mounted) context.go('/ride');
+  }
+
   Future<void> _pickRoute(BuildContext context, WidgetRef ref) async {
-    if (ref.read(activeTrainerPortProvider) == null) {
-      final connect = await showDialog<bool>(
-        context: context,
-        builder: (ctx) => AlertDialog(
-          title: const Text('Connect a trainer'),
-          content: const Text(
-            'Route simulation drives your trainer\'s resistance to match '
-            'the terrain — pair a trainer first.',
-          ),
-          actions: [
-            TextButton(
-              onPressed: () => Navigator.of(ctx).pop(false),
-              child: const Text('Cancel'),
-            ),
-            TextButton(
-              onPressed: () => Navigator.of(ctx).pop(true),
-              child: const Text('Connect Device'),
-            ),
-          ],
-        ),
-      );
-      if (connect == true && context.mounted) context.push('/scan');
-      return;
-    }
+    final connected = await ensureTrainerConnected(
+      context,
+      ref,
+      reason: 'Route simulation drives your trainer\'s resistance to match '
+          'the terrain — pair a trainer first.',
+    );
+    if (!connected) return;
 
     final result = await FilePicker.platform.pickFiles(
       type: FileType.custom,
@@ -663,6 +658,7 @@ class _FitnessSparkline extends ConsumerWidget {
                       const SizedBox(width: 16),
                       _FitnessNumber(
                           label: 'TSB', value: latest.tsb, color: Colors.purpleAccent),
+                      const FitnessInfoButton(),
                     ],
                   ),
                 ),

@@ -7,6 +7,7 @@ import '../../core/domain/entities/entities.dart';
 import '../../core/domain/value_objects/value_objects.dart';
 import '../state/providers.dart';
 import '../theme/app_theme.dart';
+import '../widgets/fitness_info_button.dart';
 import '../widgets/personal_records_panel.dart';
 
 /// Performance Management Chart — CTL/ATL/TSB trend, weekly TSS, totals, and
@@ -93,8 +94,12 @@ class _TrendsScreenState extends ConsumerState<TrendsScreen> {
                 orElse: () => const SizedBox.shrink(),
               ),
               const SizedBox(height: 24),
-              _SectionLabel('FITNESS / FATIGUE / FORM'),
-              const SizedBox(height: 8),
+              const Row(
+                children: [
+                  _SectionLabel('FITNESS / FATIGUE / FORM'),
+                  FitnessInfoButton(),
+                ],
+              ),
               SizedBox(height: 220, child: _PmcChart(points: visible)),
               const SizedBox(height: 8),
               _PmcLegend(latest: visible.last),

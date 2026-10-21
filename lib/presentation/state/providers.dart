@@ -590,16 +590,9 @@ class _RingBufferNotifier extends StateNotifier<List<double>> {
   _RingBufferNotifier() : super([]);
 
   static const _maxSize = 3600;
-  DateTime? _lastAdded;
 
-  /// Adds a value, throttled to ~1 Hz (ignores calls within 900 ms).
+  /// Adds one 1 Hz sample.
   void add(double value) {
-    final now = DateTime.now();
-    if (_lastAdded != null &&
-        now.difference(_lastAdded!).inMilliseconds < 900) {
-      return;
-    }
-    _lastAdded = now;
     if (state.length >= _maxSize) {
       state = [...state.sublist(1), value];
     } else {
@@ -610,29 +603,26 @@ class _RingBufferNotifier extends StateNotifier<List<double>> {
   void clear() => state = [];
 }
 
-/// Watch this in RideScreen to push live power into the ring buffer.
+/// Watch this in RideScreen to push each recorded power sample into the
+/// ring buffer.
 ///
-/// Mutations are scheduled via [Future.microtask] to avoid modifying providers
-/// during initialization (a Riverpod restriction).
+/// Follows [RecordingEngine.sampleStream] rather than recomputing from
+/// [livePowerProvider]: Riverpod only re-runs a watched provider while the
+/// app draws frames, so with the window hidden or the screen off the chart
+/// and the 3s average froze while the recording carried on. The samples also
+/// keep the history in step with the recorded ride (nothing while paused).
 final powerHistoryUpdaterProvider = Provider<void>((ref) {
-  final power = ref.watch(livePowerProvider);
-  final recState = ref.watch(recordingStateProvider);
-  recState.whenData((s) {
-    if (s == RecordingState.recording) {
-      Future.microtask(() => ref.read(powerHistoryProvider.notifier).add(power.value));
-    }
-  });
+  final sub = ref.watch(recordingEngineProvider).sampleStream.listen(
+      (r) => ref.read(powerHistoryProvider.notifier).add(r.power?.value ?? 0));
+  ref.onDispose(sub.cancel);
 });
 
-/// Watch this in RideScreen to push live HR into the ring buffer.
+/// Watch this in RideScreen to push each recorded HR sample into the ring
+/// buffer — see [powerHistoryUpdaterProvider].
 final hrHistoryUpdaterProvider = Provider<void>((ref) {
-  final hr = ref.watch(liveHeartRateProvider);
-  final recState = ref.watch(recordingStateProvider);
-  recState.whenData((s) {
-    if (s == RecordingState.recording) {
-      Future.microtask(() => ref.read(hrHistoryProvider.notifier).add(hr.bpm.toDouble()));
-    }
-  });
+  final sub = ref.watch(recordingEngineProvider).sampleStream.listen((r) =>
+      ref.read(hrHistoryProvider.notifier).add(r.heartRate?.bpm.toDouble() ?? 0));
+  ref.onDispose(sub.cancel);
 });
 
 // ---------------------------------------------------------------------------
@@ -672,12 +662,58 @@ final workoutProgressProvider = StreamProvider<WorkoutProgress>((ref) {
   return ref.watch(workoutEngineProvider).progressStream;
 });
 
+/// Power ridden at one second of the workout timeline.
+typedef WorkoutTracePoint = ({int second, Watts power});
+
+/// The rider's power over the running workout's timeline, for the HUD to
+/// draw over the target profile. Each engine tick records the live power at
+/// that workout second; a new workout (progress back at 0) starts afresh,
+/// and a skip leaves a gap where the timeline jumped.
+///
+/// Fed from [WorkoutEngine.progressStream] rather than recomputed by the UI,
+/// so it keeps up while the app draws no frames — see
+/// [powerHistoryUpdaterProvider].
+final workoutPowerTraceProvider =
+    StateNotifierProvider<WorkoutTraceNotifier, List<WorkoutTracePoint>>(
+        (ref) {
+  final notifier = WorkoutTraceNotifier();
+  // workoutEngineProvider throws without a trainer, and without one no
+  // workout runs — stay empty rather than throw into the HUD's build.
+  if (ref.watch(activeTrainerPortProvider) == null) return notifier;
+  final sub = ref.watch(workoutEngineProvider).progressStream.listen((p) {
+    if (p.totalElapsed == Duration.zero) notifier.clear();
+    notifier.add(p.totalElapsed.inSeconds, ref.read(livePowerProvider));
+  });
+  ref.onDispose(sub.cancel);
+  return notifier;
+});
+
+class WorkoutTraceNotifier extends StateNotifier<List<WorkoutTracePoint>> {
+  WorkoutTraceNotifier() : super(const []);
+
+  void add(int second, Watts power) =>
+      state = [...state, (second: second, power: power)];
+
+  void clear() => state = const [];
+}
+
 /// Which bundled FTP test protocol (if any) is driving the ride currently
 /// starting. Set by [RideScreen] when the started workout's id matches one
 /// of [BundledWorkouts.rampTestId] / [BundledWorkouts.twentyMinTestId];
 /// consumed once by `FtpTestPrompt` on the ride-summary screen, which
 /// clears it back to null after showing the update-profile prompt.
 final activeFtpTestProvider = StateProvider<FtpTestProtocol?>((ref) => null);
+
+/// How far the FTP test ride got: the furthest workout step reached, and the
+/// index of its free-ride test block (the 20-minute effort; null for the
+/// ramp).
+typedef FtpTestProgress = ({int furthestStep, int? testBlockStep});
+
+/// Tracked by [RideScreen] alongside [activeFtpTestProvider], so the
+/// post-ride prompt only offers a result for a test ridden far enough — see
+/// [FtpEstimator.isCompleteTest].
+final ftpTestProgressProvider =
+    StateProvider<FtpTestProgress?>((ref) => null);
 
 /// Every dated FTP value on record, oldest first — the raw material for the
 /// FTP test screen's progression chart and retest reminder.
@@ -825,18 +861,23 @@ final newPersonalRecordsForRideProvider =
 // Performance Management Chart (CTL / ATL / TSB)
 // ---------------------------------------------------------------------------
 
+/// One point per day from the first ride through today.
+///
+/// Built on [rideHistoryProvider] and [ftpHistoryProvider] rather than
+/// reading storage directly, so saving or deleting a ride (which invalidates
+/// the ride history) or recording an FTP test refreshes it too — Home's
+/// CTL/TSB used to stay at their old values until the app restarted.
 final fitnessHistoryProvider =
     FutureProvider<List<FitnessDataPoint>>((ref) async {
-  final storage = ref.watch(storageProvider);
-  final rides = await storage.getRides();
-  final ftpHistory = await storage.getFtpHistory();
+  final rides = await ref.watch(rideHistoryProvider.future);
+  final ftpHistory = await ref.watch(ftpHistoryProvider.future);
   final currentFtp = ref.watch(ftpProvider);
   final daily = dailyTssFromRides(
     rides,
     ftpHistory: ftpHistory,
     currentFtp: currentFtp,
   );
-  return FitnessCalculator().calculate(daily);
+  return FitnessCalculator().calculate(daily, until: DateTime.now());
 });
 
 /// Today's fitness point (or null if there's no ride history yet) — drives

@@ -3,12 +3,17 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:go_router/go_router.dart';
+import 'package:mocktail/mocktail.dart';
 
 import 'package:open_bike/core/domain/entities/entities.dart';
+import 'package:open_bike/core/domain/ports/trainer_port.dart';
+import 'package:open_bike/core/domain/value_objects/value_objects.dart';
 import 'package:open_bike/infrastructure/persistence/app_database.dart';
 import 'package:open_bike/infrastructure/persistence/drift_storage.dart';
 import 'package:open_bike/presentation/screens/calendar_screen.dart';
 import 'package:open_bike/presentation/state/providers.dart';
+
+class MockTrainerPort extends Mock implements TrainerPort {}
 
 Workout _testWorkout({String id = 'w-1'}) => Workout(
       id: id,
@@ -37,6 +42,10 @@ Widget _wrap(DriftStorage storage, {List<Override> extraOverrides = const []}) {
       GoRoute(
         path: '/history/:id',
         builder: (_, __) => const Scaffold(body: Text('ride detail')),
+      ),
+      GoRoute(
+        path: '/scan',
+        builder: (_, __) => const Scaffold(body: Text('scan screen')),
       ),
     ],
   );
@@ -93,7 +102,7 @@ void main() {
     expect(scheduled.single.workoutId, workout.id);
   });
 
-  testWidgets('a completed scheduled workout shows a check mark instead of Start',
+  testWidgets('a completed plan shows a check mark instead of Start, and can be removed',
       (tester) async {
     final workout = _testWorkout();
     await storage.saveWorkout(workout);
@@ -120,6 +129,14 @@ void main() {
 
     expect(find.text('Start'), findsNothing);
     expect(find.byIcon(Icons.check_circle), findsOneWidget);
+
+    // A done plan can be removed too; its ride stays and shows on its own.
+    await tester.tap(find.byTooltip('Remove from calendar'));
+    await tester.pumpAndSettle();
+
+    expect(await storage.getScheduledWorkouts(), isEmpty);
+    expect(await storage.getRide('ride-1'), isNotNull);
+    expect(find.byKey(const Key('calendarRide-ride-1')), findsOneWidget);
   });
 
   testWidgets('deleting a scheduled workout removes it from the day list',
@@ -148,5 +165,127 @@ void main() {
 
     expect(find.text('Nothing scheduled.\nTap + to plan a workout.'), findsOneWidget);
     expect(await storage.getScheduledWorkouts(), isEmpty);
+  });
+
+  group('starting a scheduled workout', () {
+    Future<void> scheduleToday(Workout workout) async {
+      await storage.saveWorkout(workout);
+      final today = DateTime.now();
+      await storage.saveScheduledWorkout(ScheduledWorkout(
+        id: 'sched-1',
+        workoutId: workout.id,
+        date: DateTime(today.year, today.month, today.day),
+      ));
+    }
+
+    testWidgets('without a trainer asks to connect one instead of riding',
+        (tester) async {
+      final workout = _testWorkout();
+      await scheduleToday(workout);
+
+      await tester.pumpWidget(_wrap(
+        storage,
+        extraOverrides: [
+          workoutListProvider.overrideWith((ref) => [workout]),
+        ],
+      ));
+      await tester.pumpAndSettle();
+
+      await tester.tap(find.text('Start'));
+      await tester.pumpAndSettle();
+
+      expect(find.text('Connect a trainer'), findsOneWidget);
+      expect(find.text('ride screen'), findsNothing);
+
+      await tester.tap(find.text('Connect Device'));
+      await tester.pumpAndSettle();
+
+      expect(find.text('scan screen'), findsOneWidget);
+    });
+
+    testWidgets('with a trainer goes straight to the ride', (tester) async {
+      final workout = _testWorkout();
+      await scheduleToday(workout);
+
+      await tester.pumpWidget(_wrap(
+        storage,
+        extraOverrides: [
+          workoutListProvider.overrideWith((ref) => [workout]),
+          activeTrainerPortProvider.overrideWith((ref) => MockTrainerPort()),
+        ],
+      ));
+      await tester.pumpAndSettle();
+
+      await tester.tap(find.text('Start'));
+      await tester.pumpAndSettle();
+
+      expect(find.text('Connect a trainer'), findsNothing);
+      expect(find.text('ride screen'), findsOneWidget);
+    });
+  });
+
+  group('past days', () {
+    DateTime dateOnly(DateTime d) => DateTime(d.year, d.month, d.day);
+
+    /// Selects [day] in the month grid, paging back a month if needed.
+    Future<void> selectDay(WidgetTester tester, DateTime day) async {
+      if (day.month != DateTime.now().month) {
+        await tester.tap(find.byKey(const Key('prevMonthButton')));
+        await tester.pumpAndSettle();
+      }
+      await tester.tap(find.byKey(
+          Key('calendarDay-${day.year}-${day.month}-${day.day}')));
+      await tester.pumpAndSettle();
+    }
+
+    testWidgets('shows a ride that was not planned on its day, and opens it',
+        (tester) async {
+      final start = DateTime.now().subtract(const Duration(minutes: 90));
+      await storage.saveRide(
+        Ride(
+          id: 'ride-1',
+          startTime: start,
+          endTime: start.add(const Duration(minutes: 45)),
+          status: RideStatus.finished,
+        ),
+        ftp: const Watts(200),
+      );
+
+      await tester.pumpWidget(_wrap(storage));
+      await tester.pumpAndSettle();
+      await selectDay(tester, dateOnly(start));
+
+      expect(find.byKey(const Key('calendarRide-ride-1')), findsOneWidget);
+      expect(find.text('45 min · 0 TSS'), findsOneWidget);
+
+      await tester.tap(find.byKey(const Key('calendarRide-ride-1')));
+      await tester.pumpAndSettle();
+      expect(find.text('ride detail'), findsOneWidget);
+    });
+
+    testWidgets('a plan from a past day that was never ridden shows as missed',
+        (tester) async {
+      final workout = _testWorkout();
+      await storage.saveWorkout(workout);
+      final yesterday =
+          dateOnly(DateTime.now()).subtract(const Duration(days: 1));
+      await storage.saveScheduledWorkout(ScheduledWorkout(
+        id: 'sched-1',
+        workoutId: workout.id,
+        date: yesterday,
+      ));
+
+      await tester.pumpWidget(_wrap(
+        storage,
+        extraOverrides: [
+          workoutListProvider.overrideWith((ref) => [workout]),
+        ],
+      ));
+      await tester.pumpAndSettle();
+      await selectDay(tester, yesterday);
+
+      expect(find.text('Missed'), findsOneWidget);
+      expect(find.text('Start'), findsNothing);
+    });
   });
 }

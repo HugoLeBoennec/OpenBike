@@ -81,6 +81,30 @@ void main() {
       expect(last.atl, lessThan(last.ctl));
     });
 
+    test('until carries the series to today, decaying across days off', () {
+      final points = calc.calculate(
+        {_d(2026, 3, 1): 100},
+        until: DateTime(2026, 3, 8, 18, 30),
+      );
+
+      expect(points, hasLength(8));
+      expect(points.last.date, _d(2026, 3, 8));
+      expect(points.last.tss, 0);
+      // A week off: fatigue has fallen below where the ride left it, and
+      // form has recovered from its low on the day after the ride.
+      expect(points.last.atl, lessThan(points.first.atl));
+      expect(points.last.tsb, greaterThan(points[1].tsb));
+    });
+
+    test('until before the last ride changes nothing', () {
+      final points = calc.calculate(
+        {_d(2026, 3, 1): 100, _d(2026, 3, 4): 50},
+        until: _d(2026, 3, 2),
+      );
+
+      expect(points.last.date, _d(2026, 3, 4));
+    });
+
     test('duplicate keys at different times of day collapse to one day', () {
       final points = calc.calculate({
         DateTime(2026, 4, 1, 6): 40,

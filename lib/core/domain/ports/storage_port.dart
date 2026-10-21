@@ -67,4 +67,8 @@ abstract class StoragePort {
   // --- FTP history ---
 
   Future<List<FtpHistoryEntry>> getFtpHistory();
+
+  /// Removes the entry recorded at [effectiveDate] — a test result the rider
+  /// doesn't trust. The profile FTP is the caller's to restore.
+  Future<void> deleteFtpHistoryEntry(DateTime effectiveDate);
 }

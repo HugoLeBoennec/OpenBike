@@ -409,6 +409,14 @@ class DriftStorage implements StoragePort {
         .toList();
   }
 
+  @override
+  Future<void> deleteFtpHistoryEntry(DateTime effectiveDate) async {
+    await (_db.delete(_db.ftpHistory)
+          ..where((t) =>
+              t.effectiveDate.equals(effectiveDate.millisecondsSinceEpoch)))
+        .go();
+  }
+
   /// Pre-v6 rows (and anything unrecognised) read back as
   /// [FtpSource.manual] — see the `source` column docs on `FtpHistory`.
   static FtpSource _ftpSourceFromName(String? name) {

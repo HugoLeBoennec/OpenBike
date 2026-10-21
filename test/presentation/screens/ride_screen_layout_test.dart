@@ -63,12 +63,12 @@ void main() {
   };
 
   tablets.forEach((name, size) {
-    testWidgets('$name: six data fields and the gauge fill the screen',
+    testWidgets('$name: all twelve data fields and the gauge fill the screen',
         (tester) async {
       await _pumpRideScreen(tester, size);
 
       expect(tester.takeException(), isNull);
-      expect(find.byType(DataFieldCell), findsNWidgets(6));
+      expect(find.byType(DataFieldCell), findsNWidgets(12));
       expect(find.byType(PowerGauge), findsOneWidget);
 
       // The grid starts near the top and the gauge sits in the lower half:
@@ -78,6 +78,25 @@ void main() {
       expect(tester.getCenter(find.byType(PowerGauge)).dy,
           greaterThan(size.height * 0.6));
     });
+  });
+
+  testWidgets('a mid-size Mac window shows every field and fills the column',
+      (tester) async {
+    // 1024 px is under the desktop width, but there's room for all 12.
+    const size = Size(1024, 668);
+    await _pumpRideScreen(tester, size);
+
+    expect(tester.takeException(), isNull);
+    expect(find.byType(DataFieldCell), findsNWidgets(12));
+    final lastCell = tester.getBottomRight(find.byType(DataFieldCell).last);
+    expect(lastCell.dy, greaterThan(size.height * 0.9));
+  });
+
+  testWidgets('a phone on its side keeps six fields', (tester) async {
+    await _pumpRideScreen(tester, const Size(844, 390));
+
+    expect(tester.takeException(), isNull);
+    expect(find.byType(DataFieldCell), findsNWidgets(6));
   });
 
   testWidgets('landscape tablet keeps the side-by-side layout', (tester) async {

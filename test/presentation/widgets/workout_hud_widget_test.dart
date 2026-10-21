@@ -13,6 +13,7 @@ import 'package:open_bike/core/domain/value_objects/value_objects.dart';
 import 'package:open_bike/core/events/event_bus.dart';
 import 'package:open_bike/presentation/state/providers.dart';
 import 'package:open_bike/presentation/widgets/workout_hud_widget.dart';
+import 'package:open_bike/presentation/widgets/workout_mini_profile.dart';
 
 class MockTrainerPort extends Mock implements TrainerPort {}
 
@@ -143,8 +144,8 @@ void main() {
     );
     await tester.pump();
 
-    // Setting state directly bypasses the ring buffer's ~1 Hz add()
-    // throttle, so each assertion below reflects its own value.
+    // Setting the whole buffer, so each 3-sample average below is exactly
+    // the value under test.
 
     // On target (200 W avg vs 200 W target) → "ON".
     container.read(powerHistoryProvider.notifier).state = [200, 200, 200];
@@ -160,5 +161,41 @@ void main() {
     container.read(powerHistoryProvider.notifier).state = [300, 300, 300];
     await tester.pump();
     expect(find.text('OVER'), findsOneWidget);
+  });
+
+  testWidgets('draws the power ridden over the profile, filling the pane',
+      (tester) async {
+    final eventBus = EventBus();
+    addTearDown(eventBus.dispose);
+    final trainer = MockTrainerPort();
+    when(() => trainer.setTargetPower(any())).thenAnswer((_) async {});
+    final engine = WorkoutEngine(trainerPort: trainer, eventBus: eventBus);
+
+    await tester.pumpWidget(_wrap(
+      const SizedBox(height: 300, child: WorkoutHudWidget()),
+      [
+        currentWorkoutProvider.overrideWith((ref) => _workout),
+        activeTrainerPortProvider.overrideWith((ref) => trainer),
+        workoutEngineProvider.overrideWithValue(engine),
+        workoutProgressProvider.overrideWith((ref) => engine.progressStream),
+        livePowerProvider.overrideWith((ref) => const Watts(180)),
+        ftpProvider.overrideWithValue(const Watts(200)),
+      ],
+    ));
+    engine.start(_workout, const Watts(200));
+    for (var i = 0; i < 3; i++) {
+      await tester.pump(const Duration(seconds: 1));
+    }
+
+    final profile =
+        tester.widget<WorkoutMiniProfile>(find.byType(WorkoutMiniProfile));
+    expect(profile.trace, isNotEmpty);
+    expect(profile.trace.last.percent, 90); // 180 W of a 200 W FTP
+    expect(profile.trace.last.second, 3);
+    // Takes the room left in the pane, not a 28 px strip.
+    expect(tester.getSize(find.byType(WorkoutMiniProfile)).height,
+        greaterThan(100));
+
+    engine.dispose();
   });
 }

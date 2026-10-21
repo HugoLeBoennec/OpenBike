@@ -1,5 +1,6 @@
 import 'package:flutter_test/flutter_test.dart';
 import 'package:open_bike/core/application/services/ftp_estimator.dart';
+import 'package:open_bike/core/application/services/ftp_test_planner.dart';
 import 'package:open_bike/core/domain/entities/sensor_reading.dart';
 import 'package:open_bike/core/domain/value_objects/value_objects.dart';
 
@@ -64,6 +65,47 @@ void main() {
       ];
       final ftp = FtpEstimator.estimateFrom20Min(readings);
       expect(ftp.value, closeTo(280 * 0.95, 0.01));
+    });
+  });
+
+  group('FtpEstimator.isCompleteTest', () {
+    test('a ramp counts from its 8th step', () {
+      bool ramp(int furthestStep) => FtpEstimator.isCompleteTest(
+            FtpTestProtocol.ramp,
+            furthestStep: furthestStep,
+            testBlockStep: null,
+            recordedSeconds: (furthestStep + 1) * 60,
+          );
+
+      expect(ramp(1), isFalse); // stopped in the 2nd minute
+      expect(ramp(6), isFalse);
+      expect(ramp(7), isTrue); // reached step 8
+    });
+
+    test('a 20-minute test counts once past its block, 20 min recorded', () {
+      bool twenty(int furthestStep, int seconds) => FtpEstimator.isCompleteTest(
+            FtpTestProtocol.twentyMinute,
+            furthestStep: furthestStep,
+            testBlockStep: 1,
+            recordedSeconds: seconds,
+          );
+
+      expect(twenty(1, 25 * 60), isFalse); // still in the block
+      expect(twenty(2, 30 * 60), isTrue); // into the cool-down
+      // Skipped the block: past it, but not 20 minutes of riding.
+      expect(twenty(2, 12 * 60), isFalse);
+    });
+
+    test('a 20-minute test without a free-ride block never counts', () {
+      expect(
+        FtpEstimator.isCompleteTest(
+          FtpTestProtocol.twentyMinute,
+          furthestStep: 5,
+          testBlockStep: null,
+          recordedSeconds: 40 * 60,
+        ),
+        isFalse,
+      );
     });
   });
 }

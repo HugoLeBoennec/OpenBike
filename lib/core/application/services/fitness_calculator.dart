@@ -42,7 +42,14 @@ class FitnessCalculator {
 
   /// Builds one [FitnessDataPoint] per day from the earliest to the latest
   /// date present in [dailyTss] (inclusive), filling any gap day with 0 TSS.
-  List<FitnessDataPoint> calculate(Map<DateTime, double> dailyTss) {
+  ///
+  /// [until] carries the series on past the last ride — pass today, or the
+  /// last point is the last ride's day and a week off shows that day's
+  /// fatigue instead of the recovered form.
+  List<FitnessDataPoint> calculate(
+    Map<DateTime, double> dailyTss, {
+    DateTime? until,
+  }) {
     if (dailyTss.isEmpty) return [];
 
     final normalized = <DateTime, double>{};
@@ -53,7 +60,10 @@ class FitnessCalculator {
 
     final dates = normalized.keys.toList()..sort();
     final start = dates.first;
-    final end = dates.last;
+    final lastUntil = until == null ? null : _dateOnly(until);
+    final end = lastUntil != null && lastUntil.isAfter(dates.last)
+        ? lastUntil
+        : dates.last;
 
     final points = <FitnessDataPoint>[];
     double ctl = 0;
