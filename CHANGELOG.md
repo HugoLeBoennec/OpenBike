@@ -19,6 +19,14 @@ and this project adheres to [Semantic Versioning](https://semver.org/).
   since the last measured test has elapsed. Defaults to six weeks, adjustable
   from four to sixteen in Settings.
 
+### Fixed
+- The first Bluetooth scan always came back empty; devices now appear on
+  the first scan.
+- Onboarding shows progress while pairing the trainer and reports
+  connection failures instead of silently staying put. When Bluetooth is
+  unavailable, onboarding and the Devices screen say why (access denied,
+  radio off, unsupported) and offer Open Settings.
+
 ## [1.0.0] - 2026-07-10
 
 First public release. Built in ten phases (`docs/roadmap/`) from an existing
