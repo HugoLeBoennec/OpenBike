@@ -130,7 +130,7 @@ void main() {
     await tester.pumpAndSettle();
 
     await tester.scrollUntilVisible(find.text('PERSONAL RECORDS'), 200);
-    expect(find.text('280'), findsOneWidget);
+    expect(find.text('280 W'), findsOneWidget);
     expect(find.text('5 MIN'), findsOneWidget);
   });
 }
