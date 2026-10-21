@@ -4,12 +4,15 @@ import 'package:go_router/go_router.dart';
 import 'package:uuid/uuid.dart';
 
 import '../../core/domain/entities/entities.dart';
+import '../../core/domain/value_objects/value_objects.dart';
 import '../state/providers.dart';
 import '../theme/app_theme.dart';
 import '../widgets/start_ride_actions.dart';
 import '../widgets/workout_mini_profile.dart';
 
-/// Training calendar — month grid + day list. Tap a day to schedule a
+/// Training calendar — month grid + day list, with the rides done on each
+/// day alongside the plan: dots are green when done, red when a planned
+/// workout was missed, blue when it's still ahead. Tap a day to schedule a
 /// workout from the library; scheduled entries can be started directly or
 /// show the ride they were completed with.
 class CalendarScreen extends ConsumerStatefulWidget {
@@ -29,6 +32,12 @@ class _CalendarScreenState extends ConsumerState<CalendarScreen> {
   Widget build(BuildContext context) {
     final scheduledAsync = ref.watch(scheduledWorkoutsProvider);
     final workouts = ref.watch(workoutListProvider);
+    final ftp = ref.watch(ftpProvider);
+    // Rides fill in once loaded; the plan doesn't wait for them.
+    final rides = [
+      for (final r in ref.watch(rideHistoryProvider).valueOrNull ?? const <Ride>[])
+        if (r.status == RideStatus.finished) r,
+    ];
 
     return Scaffold(
       appBar: AppBar(
@@ -47,6 +56,29 @@ class _CalendarScreenState extends ConsumerState<CalendarScreen> {
             byDay.putIfAbsent(day, () => []).add(s);
           }
 
+          // A ride linked to a plan already shows as that plan's ✓.
+          final linkedRideIds = {
+            for (final s in scheduled)
+              if (s.completedRideId != null) s.completedRideId!,
+          };
+          final ridesByDay = <DateTime, List<Ride>>{};
+          for (final r in rides) {
+            if (linkedRideIds.contains(r.id)) continue;
+            ridesByDay.putIfAbsent(_dateOnly(r.startTime), () => []).add(r);
+          }
+
+          final today = _dateOnly(DateTime.now());
+          final markersByDay = <DateTime, List<_PlanStatus>>{};
+          byDay.forEach((day, entries) {
+            markersByDay[day] = [
+              for (final s in entries) _PlanStatus.of(s, today),
+            ];
+          });
+          ridesByDay.forEach((day, dayRides) {
+            markersByDay.putIfAbsent(day, () => []).addAll(
+                List.filled(dayRides.length, _PlanStatus.done));
+          });
+
           return Column(
             children: [
               _MonthHeader(
@@ -63,15 +95,19 @@ class _CalendarScreenState extends ConsumerState<CalendarScreen> {
               _MonthGrid(
                 month: _monthCursor,
                 selectedDay: _selectedDay,
-                scheduledByDay: byDay,
+                markersByDay: markersByDay,
                 onDayTap: (day) => setState(() => _selectedDay = day),
               ),
               Divider(color: context.tokens.surfaceTier3Line, height: 1),
               Expanded(
                 child: _DayList(
                   day: _selectedDay,
+                  isPast: _selectedDay.isBefore(today),
                   scheduled: byDay[_selectedDay] ?? const [],
+                  rides: ridesByDay[_selectedDay] ?? const [],
+                  ftp: ftp,
                   workouts: workouts,
+                  onOpenRide: (id) => context.push('/history/$id'),
                   onStartNow: (s, workout) => startWorkoutRide(
                     context,
                     ref,
@@ -222,13 +258,13 @@ class _MonthGrid extends StatelessWidget {
   const _MonthGrid({
     required this.month,
     required this.selectedDay,
-    required this.scheduledByDay,
+    required this.markersByDay,
     required this.onDayTap,
   });
 
   final DateTime month;
   final DateTime selectedDay;
-  final Map<DateTime, List<ScheduledWorkout>> scheduledByDay;
+  final Map<DateTime, List<_PlanStatus>> markersByDay;
   final ValueChanged<DateTime> onDayTap;
 
   static const _weekdayLabels = ['M', 'T', 'W', 'T', 'F', 'S', 'S'];
@@ -250,10 +286,11 @@ class _MonthGrid extends StatelessWidget {
           child: Builder(builder: (_) {
             final date = DateTime(month.year, month.month, day);
             return _DayCell(
+              key: Key('calendarDay-${date.year}-${date.month}-${date.day}'),
               day: day,
               isSelected: date == selectedDay,
               isToday: date == todayOnly,
-              hasScheduled: scheduledByDay.containsKey(date),
+              markers: markersByDay[date] ?? const [],
               onTap: () => onDayTap(date),
             );
           }),
@@ -301,17 +338,20 @@ class _MonthGrid extends StatelessWidget {
 
 class _DayCell extends StatelessWidget {
   const _DayCell({
+    super.key,
     required this.day,
     required this.isSelected,
     required this.isToday,
-    required this.hasScheduled,
+    required this.markers,
     required this.onTap,
   });
 
   final int day;
   final bool isSelected;
   final bool isToday;
-  final bool hasScheduled;
+
+  /// One dot per plan or ride on the day, up to three.
+  final List<_PlanStatus> markers;
   final VoidCallback onTap;
 
   @override
@@ -340,15 +380,25 @@ class _DayCell extends StatelessWidget {
                   fontSize: 13,
                 ),
               ),
-              if (hasScheduled)
-                Container(
-                  margin: const EdgeInsets.only(top: 1),
-                  width: 4,
-                  height: 4,
-                  decoration: BoxDecoration(
-                    color: isSelected ? context.tokens.textPrimary : Colors.blue,
-                    shape: BoxShape.circle,
-                  ),
+              if (markers.isNotEmpty)
+                Row(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    for (final status in markers.take(3))
+                      Container(
+                        margin: const EdgeInsets.only(top: 1, left: 1, right: 1),
+                        width: 4,
+                        height: 4,
+                        decoration: BoxDecoration(
+                          // On the orange selection, white reads better than
+                          // red or green.
+                          color: isSelected
+                              ? context.tokens.textPrimary
+                              : status.color,
+                          shape: BoxShape.circle,
+                        ),
+                      ),
+                  ],
                 ),
             ],
           ),
@@ -365,21 +415,33 @@ class _DayCell extends StatelessWidget {
 class _DayList extends StatelessWidget {
   const _DayList({
     required this.day,
+    required this.isPast,
     required this.scheduled,
+    required this.rides,
+    required this.ftp,
     required this.workouts,
+    required this.onOpenRide,
     required this.onStartNow,
     required this.onDelete,
   });
 
   final DateTime day;
+
+  /// Before today — a plan still open on such a day was missed.
+  final bool isPast;
   final List<ScheduledWorkout> scheduled;
+
+  /// Rides on the day that aren't the completion of one of [scheduled].
+  final List<Ride> rides;
+  final Watts ftp;
   final List<Workout> workouts;
+  final ValueChanged<String> onOpenRide;
   final void Function(ScheduledWorkout scheduled, Workout workout) onStartNow;
   final ValueChanged<String> onDelete;
 
   @override
   Widget build(BuildContext context) {
-    if (scheduled.isEmpty) {
+    if (scheduled.isEmpty && rides.isEmpty) {
       return Center(
         child: Text(
           'Nothing scheduled.\nTap + to plan a workout.',
@@ -391,8 +453,16 @@ class _DayList extends StatelessWidget {
 
     return ListView.builder(
       padding: const EdgeInsets.symmetric(vertical: 8),
-      itemCount: scheduled.length,
+      itemCount: scheduled.length + rides.length,
       itemBuilder: (context, index) {
+        if (index >= scheduled.length) {
+          final ride = rides[index - scheduled.length];
+          return _RideTile(
+            ride: ride,
+            ftp: ftp,
+            onTap: () => onOpenRide(ride.id),
+          );
+        }
         final s = scheduled[index];
         Workout? workout;
         for (final w in workouts) {
@@ -404,6 +474,7 @@ class _DayList extends StatelessWidget {
         return _ScheduledTile(
           scheduled: s,
           workout: workout,
+          isMissed: isPast && s.completedRideId == null,
           onStartNow: workout == null ? null : () => onStartNow(s, workout!),
           onDelete: () => onDelete(s.id),
         );
@@ -416,12 +487,16 @@ class _ScheduledTile extends StatelessWidget {
   const _ScheduledTile({
     required this.scheduled,
     required this.workout,
+    required this.isMissed,
     required this.onStartNow,
     required this.onDelete,
   });
 
   final ScheduledWorkout scheduled;
   final Workout? workout;
+
+  /// Planned for a day that has passed and never ridden.
+  final bool isMissed;
   final VoidCallback? onStartNow;
   final VoidCallback onDelete;
 
@@ -465,7 +540,24 @@ class _ScheduledTile extends StatelessWidget {
               : Row(
                   mainAxisSize: MainAxisSize.min,
                   children: [
-                    if (onStartNow != null)
+                    if (isMissed)
+                      Container(
+                        padding: const EdgeInsets.symmetric(
+                            horizontal: 8, vertical: 3),
+                        decoration: BoxDecoration(
+                          color: _PlanStatus.missed.color.withValues(alpha: 0.15),
+                          borderRadius: BorderRadius.circular(4),
+                        ),
+                        child: Text(
+                          'Missed',
+                          style: TextStyle(
+                            color: _PlanStatus.missed.color,
+                            fontSize: 11,
+                            fontWeight: FontWeight.w600,
+                          ),
+                        ),
+                      )
+                    else if (onStartNow != null)
                       FilledButton(
                         onPressed: onStartNow,
                         style: FilledButton.styleFrom(
@@ -481,6 +573,73 @@ class _ScheduledTile extends StatelessWidget {
                     ),
                   ],
                 ),
+        ),
+      ),
+    );
+  }
+}
+
+// ---------------------------------------------------------------------------
+// Plan status + ride tile
+// ---------------------------------------------------------------------------
+
+/// Where a day's plan stands — the color of its dot in the month grid.
+enum _PlanStatus {
+  done(Colors.green),
+  missed(Colors.redAccent),
+  planned(Colors.blue);
+
+  const _PlanStatus(this.color);
+  final Color color;
+
+  static _PlanStatus of(ScheduledWorkout scheduled, DateTime today) {
+    if (scheduled.completedRideId != null) return done;
+    final day = DateTime(
+        scheduled.date.year, scheduled.date.month, scheduled.date.day);
+    return day.isBefore(today) ? missed : planned;
+  }
+}
+
+/// A ride done on the day that wasn't one of its plans — opens the ride.
+class _RideTile extends StatelessWidget {
+  const _RideTile({required this.ride, required this.ftp, required this.onTap});
+
+  final Ride ride;
+  final Watts ftp;
+  final VoidCallback onTap;
+
+  @override
+  Widget build(BuildContext context) {
+    final start = ride.startTime;
+    final time = '${start.hour.toString().padLeft(2, '0')}:'
+        '${start.minute.toString().padLeft(2, '0')}';
+    final minutes = ride.activeDuration.inMinutes;
+    final tss = ride.tss(ftp).round();
+    return Container(
+      key: Key('calendarRide-${ride.id}'),
+      margin: const EdgeInsets.symmetric(horizontal: 12, vertical: 3),
+      decoration: BoxDecoration(
+        color: context.tokens.surfaceTier2,
+        borderRadius: BorderRadius.circular(12),
+      ),
+      child: Material(
+        type: MaterialType.transparency,
+        child: ListTile(
+          contentPadding:
+              const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
+          leading: Icon(Icons.pedal_bike, color: _PlanStatus.done.color),
+          title: Text(
+            'Ride · $time',
+            style: TextStyle(
+                color: context.tokens.textPrimary, fontWeight: FontWeight.w600),
+          ),
+          subtitle: Text(
+            '$minutes min · $tss TSS',
+            style: TextStyle(color: context.tokens.textTertiary, fontSize: 12),
+          ),
+          trailing: Icon(Icons.chevron_right,
+              color: context.tokens.textDisabled),
+          onTap: onTap,
         ),
       ),
     );

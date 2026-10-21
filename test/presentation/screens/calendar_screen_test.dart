@@ -7,6 +7,7 @@ import 'package:mocktail/mocktail.dart';
 
 import 'package:open_bike/core/domain/entities/entities.dart';
 import 'package:open_bike/core/domain/ports/trainer_port.dart';
+import 'package:open_bike/core/domain/value_objects/value_objects.dart';
 import 'package:open_bike/infrastructure/persistence/app_database.dart';
 import 'package:open_bike/infrastructure/persistence/drift_storage.dart';
 import 'package:open_bike/presentation/screens/calendar_screen.dart';
@@ -212,6 +213,71 @@ void main() {
 
       expect(find.text('Connect a trainer'), findsNothing);
       expect(find.text('ride screen'), findsOneWidget);
+    });
+  });
+
+  group('past days', () {
+    DateTime dateOnly(DateTime d) => DateTime(d.year, d.month, d.day);
+
+    /// Selects [day] in the month grid, paging back a month if needed.
+    Future<void> selectDay(WidgetTester tester, DateTime day) async {
+      if (day.month != DateTime.now().month) {
+        await tester.tap(find.byKey(const Key('prevMonthButton')));
+        await tester.pumpAndSettle();
+      }
+      await tester.tap(find.byKey(
+          Key('calendarDay-${day.year}-${day.month}-${day.day}')));
+      await tester.pumpAndSettle();
+    }
+
+    testWidgets('shows a ride that was not planned on its day, and opens it',
+        (tester) async {
+      final start = DateTime.now().subtract(const Duration(minutes: 90));
+      await storage.saveRide(
+        Ride(
+          id: 'ride-1',
+          startTime: start,
+          endTime: start.add(const Duration(minutes: 45)),
+          status: RideStatus.finished,
+        ),
+        ftp: const Watts(200),
+      );
+
+      await tester.pumpWidget(_wrap(storage));
+      await tester.pumpAndSettle();
+      await selectDay(tester, dateOnly(start));
+
+      expect(find.byKey(const Key('calendarRide-ride-1')), findsOneWidget);
+      expect(find.text('45 min · 0 TSS'), findsOneWidget);
+
+      await tester.tap(find.byKey(const Key('calendarRide-ride-1')));
+      await tester.pumpAndSettle();
+      expect(find.text('ride detail'), findsOneWidget);
+    });
+
+    testWidgets('a plan from a past day that was never ridden shows as missed',
+        (tester) async {
+      final workout = _testWorkout();
+      await storage.saveWorkout(workout);
+      final yesterday =
+          dateOnly(DateTime.now()).subtract(const Duration(days: 1));
+      await storage.saveScheduledWorkout(ScheduledWorkout(
+        id: 'sched-1',
+        workoutId: workout.id,
+        date: yesterday,
+      ));
+
+      await tester.pumpWidget(_wrap(
+        storage,
+        extraOverrides: [
+          workoutListProvider.overrideWith((ref) => [workout]),
+        ],
+      ));
+      await tester.pumpAndSettle();
+      await selectDay(tester, yesterday);
+
+      expect(find.text('Missed'), findsOneWidget);
+      expect(find.text('Start'), findsNothing);
     });
   });
 }
