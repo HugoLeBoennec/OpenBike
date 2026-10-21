@@ -333,6 +333,57 @@ void main() {
 
       expect(engine.currentStepIndex, 1);
     });
+
+    test('skip moves the timeline to the end of the skipped step at once',
+        () async {
+      final progresses = <WorkoutProgress>[];
+      engine.progressStream.listen(progresses.add);
+
+      engine.start(simpleWorkout, const Watts(250));
+      engine.skip(); // the 2s warmup
+
+      await Future<void>.delayed(Duration.zero);
+      final p = progresses.last;
+      expect(p.currentStepIndex, 1);
+      expect(p.totalElapsed, const Duration(seconds: 2));
+      expect(p.targetPower, const Watts(250));
+      engine.stop();
+    });
+
+    test('skip in an interval ends the current phase, not the whole set',
+        () async {
+      final progresses = <WorkoutProgress>[];
+      engine.progressStream.listen(progresses.add);
+
+      engine.start(intervalWorkout, const Watts(250));
+      engine.skip(); // repeat 1 on → repeat 1 off
+      await Future<void>.delayed(Duration.zero);
+      expect(progresses.last.currentStepIndex, 0);
+      expect(progresses.last.intervalRepeat, 1);
+      expect(progresses.last.intervalPhase, isFalse);
+      expect(progresses.last.totalElapsed, const Duration(seconds: 2));
+
+      engine.skip(); // repeat 1 off → repeat 2 on
+      await Future<void>.delayed(Duration.zero);
+      expect(progresses.last.intervalRepeat, 2);
+      expect(progresses.last.intervalPhase, isTrue);
+      expect(progresses.last.totalElapsed, const Duration(seconds: 3));
+      engine.stop();
+    });
+  });
+
+  group('WorkoutEngine — start', () {
+    test('emits progress right away, before the first tick', () async {
+      final progresses = <WorkoutProgress>[];
+      engine.progressStream.listen(progresses.add);
+
+      engine.start(simpleWorkout, const Watts(250));
+      await Future<void>.delayed(Duration.zero);
+
+      expect(progresses, hasLength(1));
+      expect(progresses.single.totalElapsed, Duration.zero);
+      engine.stop();
+    });
   });
 
   // =========================================================================

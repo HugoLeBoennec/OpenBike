@@ -163,6 +163,9 @@ class WorkoutEngine {
     _log.info('Workout started: ${workout.name} (${workout.steps.length} steps, FTP=${ftp.value})');
 
     _beginStep(0);
+    // Right away rather than on the first tick, so the HUD never shows the
+    // previous workout's last progress.
+    _emitProgress();
 
     _ticker = Timer.periodic(const Duration(seconds: 1), (_) => _onTick());
   }
@@ -190,21 +193,31 @@ class WorkoutEngine {
   }
 
   // ---------------------------------------------------------------------------
-  // skip (advance to next step)
+  // skip (end the current phase)
   // ---------------------------------------------------------------------------
 
+  /// Ends the current phase early: the rest of a step, or one on/off phase of
+  /// an interval step — skipping a recovery moves on to the next repeat
+  /// rather than past the whole set. The timeline jumps to where that phase
+  /// would have ended, so progress, remaining time and text events stay in
+  /// step with the workout, and progress is emitted at once.
   void skip() {
     if (_state != WorkoutEngineState.running &&
         _state != WorkoutEngineState.paused) {
       throw StateError('Cannot skip: engine is $_state');
     }
 
-    final nextIndex = _currentStepIndex + 1;
-    if (nextIndex >= _currentWorkout!.steps.length) {
-      _complete();
-    } else {
-      _beginStep(nextIndex);
+    _totalElapsed += _phaseDuration - _elapsedInPhase;
+    final stepBefore = _currentStepIndex;
+    if (!_advancePhase()) return; // workout completed
+
+    // A new step already sent its target from _beginStep; only a new phase
+    // of the same interval step still needs one.
+    if (_currentStepIndex == stepBefore) {
+      _updateTargetPower();
+      _sendTargetToTrainer();
     }
+    _emitProgress();
   }
 
   // ---------------------------------------------------------------------------
