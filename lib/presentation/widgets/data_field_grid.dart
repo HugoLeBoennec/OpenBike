@@ -13,8 +13,9 @@ class DataFieldGrid extends ConsumerWidget {
   final int pageIndex;
 
   /// Stretch the rows to fill the available height instead of using the
-  /// fixed cell shape — for tall panes (portrait tablets) where fixed-ratio
-  /// cells would fill only the top of the space.
+  /// fixed cell shape — for panes taller than fixed-ratio cells need
+  /// (portrait tablets, the landscape and desktop data columns), which would
+  /// otherwise fill only the top of the space.
   final bool fillHeight;
 
   const DataFieldGrid({

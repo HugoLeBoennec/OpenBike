@@ -253,7 +253,7 @@ class _RideScreenState extends ConsumerState<RideScreen> {
                 Expanded(
                   child: LayoutBuilder(
                     builder: (context, constraints) {
-                      _adaptConfigToWidth(constraints.maxWidth);
+                      _adaptConfigToSize(constraints);
                       if (constraints.maxWidth >= 600 &&
                           constraints.maxHeight > constraints.maxWidth) {
                         return _buildTabletPortraitLayout(
@@ -278,14 +278,24 @@ class _RideScreenState extends ConsumerState<RideScreen> {
     );
   }
 
-  /// Picks the data-field preset that matches the layout class chosen by
-  /// the [LayoutBuilder]. Deferred because providers can't change mid-build.
-  void _adaptConfigToWidth(double width) {
+  /// Height from which a landscape or tablet screen shows the full 12-field
+  /// set: below it (phones on their side) the cells would be too short.
+  static const _fullFieldSetMinHeight = 600.0;
+
+  /// Picks the data-field preset that fits the space the [LayoutBuilder]
+  /// gives: the full set on desktop widths, and on any wide screen tall
+  /// enough for it — a 1024 px Mac window or an iPad has room for all 12
+  /// fields, not just 6. Deferred because providers can't change mid-build.
+  void _adaptConfigToSize(BoxConstraints constraints) {
+    final width = constraints.maxWidth;
+    final isLandscape = width >= 600;
     Future.microtask(() {
       if (!mounted) return;
       ref.read(rideScreenConfigProvider.notifier).adaptToLayout(
-            isLandscape: width >= 600,
-            isDesktop: width >= 1200,
+            isLandscape: isLandscape,
+            isDesktop: width >= 1200 ||
+                (isLandscape &&
+                    constraints.maxHeight >= _fullFieldSetMinHeight),
           );
     });
   }
@@ -414,6 +424,7 @@ class _RideScreenState extends ConsumerState<RideScreen> {
                   fields: fields,
                   columns: 3,
                   pageIndex: 0,
+                  fillHeight: true,
                 ),
               ),
             ],
@@ -466,6 +477,7 @@ class _RideScreenState extends ConsumerState<RideScreen> {
                   fields: fields,
                   columns: 3,
                   pageIndex: 0,
+                  fillHeight: true,
                 ),
               ),
             ],
