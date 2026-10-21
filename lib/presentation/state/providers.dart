@@ -590,16 +590,9 @@ class _RingBufferNotifier extends StateNotifier<List<double>> {
   _RingBufferNotifier() : super([]);
 
   static const _maxSize = 3600;
-  DateTime? _lastAdded;
 
-  /// Adds a value, throttled to ~1 Hz (ignores calls within 900 ms).
+  /// Adds one 1 Hz sample.
   void add(double value) {
-    final now = DateTime.now();
-    if (_lastAdded != null &&
-        now.difference(_lastAdded!).inMilliseconds < 900) {
-      return;
-    }
-    _lastAdded = now;
     if (state.length >= _maxSize) {
       state = [...state.sublist(1), value];
     } else {
@@ -610,29 +603,26 @@ class _RingBufferNotifier extends StateNotifier<List<double>> {
   void clear() => state = [];
 }
 
-/// Watch this in RideScreen to push live power into the ring buffer.
+/// Watch this in RideScreen to push each recorded power sample into the
+/// ring buffer.
 ///
-/// Mutations are scheduled via [Future.microtask] to avoid modifying providers
-/// during initialization (a Riverpod restriction).
+/// Follows [RecordingEngine.sampleStream] rather than recomputing from
+/// [livePowerProvider]: Riverpod only re-runs a watched provider while the
+/// app draws frames, so with the window hidden or the screen off the chart
+/// and the 3s average froze while the recording carried on. The samples also
+/// keep the history in step with the recorded ride (nothing while paused).
 final powerHistoryUpdaterProvider = Provider<void>((ref) {
-  final power = ref.watch(livePowerProvider);
-  final recState = ref.watch(recordingStateProvider);
-  recState.whenData((s) {
-    if (s == RecordingState.recording) {
-      Future.microtask(() => ref.read(powerHistoryProvider.notifier).add(power.value));
-    }
-  });
+  final sub = ref.watch(recordingEngineProvider).sampleStream.listen(
+      (r) => ref.read(powerHistoryProvider.notifier).add(r.power?.value ?? 0));
+  ref.onDispose(sub.cancel);
 });
 
-/// Watch this in RideScreen to push live HR into the ring buffer.
+/// Watch this in RideScreen to push each recorded HR sample into the ring
+/// buffer — see [powerHistoryUpdaterProvider].
 final hrHistoryUpdaterProvider = Provider<void>((ref) {
-  final hr = ref.watch(liveHeartRateProvider);
-  final recState = ref.watch(recordingStateProvider);
-  recState.whenData((s) {
-    if (s == RecordingState.recording) {
-      Future.microtask(() => ref.read(hrHistoryProvider.notifier).add(hr.bpm.toDouble()));
-    }
-  });
+  final sub = ref.watch(recordingEngineProvider).sampleStream.listen((r) =>
+      ref.read(hrHistoryProvider.notifier).add(r.heartRate?.bpm.toDouble() ?? 0));
+  ref.onDispose(sub.cancel);
 });
 
 // ---------------------------------------------------------------------------

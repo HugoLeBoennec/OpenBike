@@ -46,6 +46,12 @@ class RecordingEngine {
   final _stateController = StreamController<RecordingState>.broadcast();
   Stream<RecordingState> get stateStream => _stateController.stream;
 
+  /// Every reading as it is recorded, once a second while recording. Driven
+  /// by the sample timer, so it keeps flowing while the app draws no frames
+  /// (window hidden, screen off) — unlike anything recomputed by the UI.
+  final _sampleController = StreamController<SensorReading>.broadcast();
+  Stream<SensorReading> get sampleStream => _sampleController.stream;
+
   Ride? _currentRide;
   Ride? get currentRide => _currentRide;
 
@@ -385,6 +391,7 @@ class RecordingEngine {
     await _sensorSubscription?.cancel();
     await _simulationSubscription?.cancel();
     await _stateController.close();
+    await _sampleController.close();
   }
 
   // ---------------------------------------------------------------------------
@@ -412,6 +419,7 @@ class RecordingEngine {
         grade: _latestGrade,
       );
       _readings.add(stamped);
+      _sampleController.add(stamped);
     }
 
     // Auto-save every 30 seconds.

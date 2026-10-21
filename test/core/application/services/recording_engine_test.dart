@@ -801,4 +801,31 @@ void main() {
       expect(ride.totalDistance.meters, 130);
     });
   });
+
+  // =========================================================================
+  // sampleStream
+  // =========================================================================
+
+  group('RecordingEngine — sampleStream', () {
+    test('emits each reading as it is recorded, none while paused',
+        () async {
+      final samples = <SensorReading>[];
+      engine.sampleStream.listen(samples.add);
+
+      await engine.start();
+      eventBus.fire(SensorEvent(
+        reading: SensorReading(timestamp: DateTime.now(), power: const Watts(180)),
+        deviceId: 'test-trainer',
+      ));
+      await Future<void>.delayed(const Duration(milliseconds: 2200));
+      engine.pause();
+      final atPause = samples.length;
+      await Future<void>.delayed(const Duration(milliseconds: 1200));
+
+      expect(atPause, 2);
+      expect(samples.length, atPause);
+      expect(samples.first.power, const Watts(180));
+      expect(samples, engine.liveRide!.readings);
+    });
+  });
 }

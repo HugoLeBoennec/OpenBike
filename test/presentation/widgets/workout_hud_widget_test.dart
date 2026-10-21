@@ -143,8 +143,8 @@ void main() {
     );
     await tester.pump();
 
-    // Setting state directly bypasses the ring buffer's ~1 Hz add()
-    // throttle, so each assertion below reflects its own value.
+    // Setting the whole buffer, so each 3-sample average below is exactly
+    // the value under test.
 
     // On target (200 W avg vs 200 W target) → "ON".
     container.read(powerHistoryProvider.notifier).state = [200, 200, 200];
