@@ -1,8 +1,10 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:go_router/go_router.dart';
 
 import '../state/providers.dart';
 import '../theme/app_theme.dart';
+import '../widgets/delete_ride_action.dart';
 import '../widgets/ride_summary_widgets.dart';
 
 /// Post-ride detail screen — metrics, power chart, zone distribution, export.
@@ -20,6 +22,24 @@ class RideDetailScreen extends ConsumerWidget {
     return Scaffold(
       appBar: AppBar(
         title: const Text('Ride Detail'),
+        actions: [
+          IconButton(
+            key: const Key('deleteRideButton'),
+            icon: const Icon(Icons.delete_outline),
+            tooltip: 'Delete ride',
+            onPressed: () async {
+              if (!await confirmAndDeleteRide(context, ref, rideId) ||
+                  !context.mounted) {
+                return;
+              }
+              if (context.canPop()) {
+                context.pop();
+              } else {
+                context.go('/history');
+              }
+            },
+          ),
+        ],
       ),
       body: rideAsync.when(
         loading: () => const Center(child: CircularProgressIndicator()),

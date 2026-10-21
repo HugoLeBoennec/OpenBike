@@ -102,7 +102,7 @@ void main() {
     expect(scheduled.single.workoutId, workout.id);
   });
 
-  testWidgets('a completed scheduled workout shows a check mark instead of Start',
+  testWidgets('a completed plan shows a check mark instead of Start, and can be removed',
       (tester) async {
     final workout = _testWorkout();
     await storage.saveWorkout(workout);
@@ -129,6 +129,14 @@ void main() {
 
     expect(find.text('Start'), findsNothing);
     expect(find.byIcon(Icons.check_circle), findsOneWidget);
+
+    // A done plan can be removed too; its ride stays and shows on its own.
+    await tester.tap(find.byTooltip('Remove from calendar'));
+    await tester.pumpAndSettle();
+
+    expect(await storage.getScheduledWorkouts(), isEmpty);
+    expect(await storage.getRide('ride-1'), isNotNull);
+    expect(find.byKey(const Key('calendarRide-ride-1')), findsOneWidget);
   });
 
   testWidgets('deleting a scheduled workout removes it from the day list',

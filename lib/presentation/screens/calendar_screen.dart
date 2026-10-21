@@ -532,10 +532,24 @@ class _ScheduledTile extends StatelessWidget {
                   style: TextStyle(color: context.tokens.textTertiary, fontSize: 12))
               : null,
           trailing: isDone
-              ? GestureDetector(
-                  onTap: () =>
-                      context.push('/history/${scheduled.completedRideId}'),
-                  child: const Icon(Icons.check_circle, color: Colors.green),
+              // Removing a done plan keeps its ride, which then shows on the
+              // day as a ride of its own.
+              ? Row(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    GestureDetector(
+                      onTap: () => context
+                          .push('/history/${scheduled.completedRideId}'),
+                      child:
+                          const Icon(Icons.check_circle, color: Colors.green),
+                    ),
+                    IconButton(
+                      icon: Icon(Icons.close,
+                          color: context.tokens.textDisabled, size: 18),
+                      tooltip: 'Remove from calendar',
+                      onPressed: onDelete,
+                    ),
+                  ],
                 )
               : Row(
                   mainAxisSize: MainAxisSize.min,
