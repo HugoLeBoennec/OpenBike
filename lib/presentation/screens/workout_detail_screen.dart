@@ -10,9 +10,9 @@ import '../../core/application/services/tss_estimator.dart';
 import '../../core/domain/entities/workout.dart';
 import '../../core/domain/entities/workout_step.dart';
 import '../../infrastructure/files/zwo_parser.dart';
-import '../models/ride_extra.dart';
 import '../state/providers.dart';
 import '../theme/app_theme.dart';
+import '../widgets/start_ride_actions.dart';
 
 /// Detail view for a single workout — power profile chart, stats, step list.
 class WorkoutDetailScreen extends ConsumerWidget {
@@ -141,9 +141,7 @@ class WorkoutDetailScreen extends ConsumerWidget {
               shape: RoundedRectangleBorder(
                   borderRadius: BorderRadius.circular(12)),
             ),
-            onPressed: () {
-              context.go('/ride', extra: RideExtra(workout: workout));
-            },
+            onPressed: () => startWorkoutRide(context, ref, workout),
             child: const Text('Start Workout',
                 style: TextStyle(fontSize: 16, fontWeight: FontWeight.w600)),
           ),

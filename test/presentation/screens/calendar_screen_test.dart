@@ -3,12 +3,16 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:go_router/go_router.dart';
+import 'package:mocktail/mocktail.dart';
 
 import 'package:open_bike/core/domain/entities/entities.dart';
+import 'package:open_bike/core/domain/ports/trainer_port.dart';
 import 'package:open_bike/infrastructure/persistence/app_database.dart';
 import 'package:open_bike/infrastructure/persistence/drift_storage.dart';
 import 'package:open_bike/presentation/screens/calendar_screen.dart';
 import 'package:open_bike/presentation/state/providers.dart';
+
+class MockTrainerPort extends Mock implements TrainerPort {}
 
 Workout _testWorkout({String id = 'w-1'}) => Workout(
       id: id,
@@ -37,6 +41,10 @@ Widget _wrap(DriftStorage storage, {List<Override> extraOverrides = const []}) {
       GoRoute(
         path: '/history/:id',
         builder: (_, __) => const Scaffold(body: Text('ride detail')),
+      ),
+      GoRoute(
+        path: '/scan',
+        builder: (_, __) => const Scaffold(body: Text('scan screen')),
       ),
     ],
   );
@@ -148,5 +156,62 @@ void main() {
 
     expect(find.text('Nothing scheduled.\nTap + to plan a workout.'), findsOneWidget);
     expect(await storage.getScheduledWorkouts(), isEmpty);
+  });
+
+  group('starting a scheduled workout', () {
+    Future<void> scheduleToday(Workout workout) async {
+      await storage.saveWorkout(workout);
+      final today = DateTime.now();
+      await storage.saveScheduledWorkout(ScheduledWorkout(
+        id: 'sched-1',
+        workoutId: workout.id,
+        date: DateTime(today.year, today.month, today.day),
+      ));
+    }
+
+    testWidgets('without a trainer asks to connect one instead of riding',
+        (tester) async {
+      final workout = _testWorkout();
+      await scheduleToday(workout);
+
+      await tester.pumpWidget(_wrap(
+        storage,
+        extraOverrides: [
+          workoutListProvider.overrideWith((ref) => [workout]),
+        ],
+      ));
+      await tester.pumpAndSettle();
+
+      await tester.tap(find.text('Start'));
+      await tester.pumpAndSettle();
+
+      expect(find.text('Connect a trainer'), findsOneWidget);
+      expect(find.text('ride screen'), findsNothing);
+
+      await tester.tap(find.text('Connect Device'));
+      await tester.pumpAndSettle();
+
+      expect(find.text('scan screen'), findsOneWidget);
+    });
+
+    testWidgets('with a trainer goes straight to the ride', (tester) async {
+      final workout = _testWorkout();
+      await scheduleToday(workout);
+
+      await tester.pumpWidget(_wrap(
+        storage,
+        extraOverrides: [
+          workoutListProvider.overrideWith((ref) => [workout]),
+          activeTrainerPortProvider.overrideWith((ref) => MockTrainerPort()),
+        ],
+      ));
+      await tester.pumpAndSettle();
+
+      await tester.tap(find.text('Start'));
+      await tester.pumpAndSettle();
+
+      expect(find.text('Connect a trainer'), findsNothing);
+      expect(find.text('ride screen'), findsOneWidget);
+    });
   });
 }

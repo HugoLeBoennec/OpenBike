@@ -3,8 +3,10 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:go_router/go_router.dart';
+import 'package:mocktail/mocktail.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
+import 'package:open_bike/core/domain/ports/trainer_port.dart';
 import 'package:open_bike/infrastructure/persistence/app_database.dart';
 import 'package:open_bike/infrastructure/persistence/drift_storage.dart';
 import 'package:open_bike/infrastructure/preferences/app_preferences.dart';
@@ -12,7 +14,14 @@ import 'package:open_bike/presentation/screens/home_screen.dart';
 import 'package:open_bike/presentation/state/providers.dart';
 import 'package:open_bike/presentation/theme/app_theme.dart';
 
-Widget _wrap(DriftStorage storage, AppPreferences appPrefs, ThemeData theme) {
+class MockTrainerPort extends Mock implements TrainerPort {}
+
+Widget _wrap(
+  DriftStorage storage,
+  AppPreferences appPrefs,
+  ThemeData theme, {
+  List<Override> extraOverrides = const [],
+}) {
   final router = GoRouter(
     initialLocation: '/',
     routes: [
@@ -23,12 +32,16 @@ Widget _wrap(DriftStorage storage, AppPreferences appPrefs, ThemeData theme) {
       GoRoute(
           path: '/ride',
           builder: (_, __) => const Scaffold(body: Text('ride screen'))),
+      GoRoute(
+          path: '/scan',
+          builder: (_, __) => const Scaffold(body: Text('scan screen'))),
     ],
   );
   return ProviderScope(
     overrides: [
       storageProvider.overrideWithValue(storage),
       appPreferencesProvider.overrideWithValue(appPrefs),
+      ...extraOverrides,
     ],
     child: MaterialApp.router(theme: theme, routerConfig: router),
   );
@@ -42,14 +55,16 @@ Future<void> _pumpHome(
   WidgetTester tester,
   DriftStorage storage,
   AppPreferences appPrefs,
-  ThemeData theme,
-) async {
+  ThemeData theme, {
+  List<Override> extraOverrides = const [],
+}) async {
   tester.view.physicalSize = const Size(1000, 2000);
   tester.view.devicePixelRatio = 1.0;
   addTearDown(tester.view.resetPhysicalSize);
   addTearDown(tester.view.resetDevicePixelRatio);
 
-  await tester.pumpWidget(_wrap(storage, appPrefs, theme));
+  await tester.pumpWidget(
+      _wrap(storage, appPrefs, theme, extraOverrides: extraOverrides));
   await tester.pumpAndSettle();
 }
 
@@ -108,5 +123,39 @@ void main() {
     await tester.pumpAndSettle();
 
     expect(find.text('settings screen'), findsOneWidget);
+  });
+
+  testWidgets('free ride without a trainer asks to connect one',
+      (tester) async {
+    await _pumpHome(tester, storage, appPrefs, AppTheme.dark);
+
+    await tester.tap(find.text('Free Ride'));
+    await tester.pumpAndSettle();
+
+    expect(find.text('Connect a trainer'), findsOneWidget);
+    expect(find.text('ride screen'), findsNothing);
+
+    await tester.tap(find.text('Connect Device'));
+    await tester.pumpAndSettle();
+
+    expect(find.text('scan screen'), findsOneWidget);
+  });
+
+  testWidgets('free ride with a trainer goes straight to the ride',
+      (tester) async {
+    await _pumpHome(
+      tester,
+      storage,
+      appPrefs,
+      AppTheme.dark,
+      extraOverrides: [
+        activeTrainerPortProvider.overrideWith((ref) => MockTrainerPort()),
+      ],
+    );
+
+    await tester.tap(find.text('Free Ride'));
+    await tester.pumpAndSettle();
+
+    expect(find.text('ride screen'), findsOneWidget);
   });
 }

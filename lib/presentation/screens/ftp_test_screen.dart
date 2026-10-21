@@ -1,15 +1,14 @@
 import 'package:fl_chart/fl_chart.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:go_router/go_router.dart';
 
 import '../../core/application/services/bundled_workouts.dart';
 import '../../core/application/services/ftp_test_planner.dart';
 import '../../core/domain/entities/entities.dart';
 import '../../core/domain/value_objects/value_objects.dart';
-import '../models/ride_extra.dart';
 import '../state/providers.dart';
 import '../theme/app_theme.dart';
+import '../widgets/start_ride_actions.dart';
 
 /// Guided FTP testing — explains what the test measures, recommends a
 /// protocol, walks through preparation, launches the test ride, and charts
@@ -102,42 +101,8 @@ class _FtpTestScreenState extends ConsumerState<FtpTestScreen> {
     );
   }
 
-  Future<void> _startTest(FtpTestProtocol protocol) async {
-    // The ramp holds you at a prescribed watt target that steps up every
-    // minute — without trainer control there is nothing to drive those steps,
-    // so the protocol simply doesn't work. The 20-minute test is a self-paced
-    // free ride and only needs a power source.
-    if (protocol == FtpTestProtocol.ramp &&
-        ref.read(activeTrainerPortProvider) == null) {
-      final connect = await showDialog<bool>(
-        context: context,
-        builder: (ctx) => AlertDialog(
-          title: const Text('Connect a trainer'),
-          content: const Text(
-            'The ramp test drives your trainer to a new target every minute, '
-            'so it needs a smart trainer. With a power meter only, use the '
-            '20-minute test instead — you set the pace yourself.',
-          ),
-          actions: [
-            TextButton(
-              onPressed: () => Navigator.of(ctx).pop(false),
-              child: const Text('Cancel'),
-            ),
-            TextButton(
-              onPressed: () => Navigator.of(ctx).pop(true),
-              child: const Text('Connect Device'),
-            ),
-          ],
-        ),
-      );
-      if (connect == true && mounted) context.push('/scan');
-      return;
-    }
-
-    final workout = _workoutFor(protocol);
-    if (!mounted) return;
-    context.go('/ride', extra: RideExtra(workout: workout));
-  }
+  Future<void> _startTest(FtpTestProtocol protocol) =>
+      startWorkoutRide(context, ref, _workoutFor(protocol));
 
   /// Prefers the saved copy so an edited protocol is honoured, falling back to
   /// the bundled definition when the list hasn't loaded (or the row was

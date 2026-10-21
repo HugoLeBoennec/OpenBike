@@ -4,9 +4,9 @@ import 'package:go_router/go_router.dart';
 import 'package:uuid/uuid.dart';
 
 import '../../core/domain/entities/entities.dart';
-import '../models/ride_extra.dart';
 import '../state/providers.dart';
 import '../theme/app_theme.dart';
+import '../widgets/start_ride_actions.dart';
 import '../widgets/workout_mini_profile.dart';
 
 /// Training calendar — month grid + day list. Tap a day to schedule a
@@ -72,7 +72,12 @@ class _CalendarScreenState extends ConsumerState<CalendarScreen> {
                   day: _selectedDay,
                   scheduled: byDay[_selectedDay] ?? const [],
                   workouts: workouts,
-                  onStartNow: (s, workout) => _startNow(context, s, workout),
+                  onStartNow: (s, workout) => startWorkoutRide(
+                    context,
+                    ref,
+                    workout,
+                    scheduledWorkoutId: s.id,
+                  ),
                   onDelete: (id) =>
                       ref.read(storageProvider).deleteScheduledWorkout(id).then(
                             (_) => ref.invalidate(scheduledWorkoutsProvider),
@@ -89,13 +94,6 @@ class _CalendarScreenState extends ConsumerState<CalendarScreen> {
         onPressed: workouts.isEmpty ? null : () => _showScheduleSheet(context),
         child: Icon(Icons.add, color: context.tokens.textPrimary),
       ),
-    );
-  }
-
-  void _startNow(BuildContext context, ScheduledWorkout scheduled, Workout workout) {
-    context.go(
-      '/ride',
-      extra: RideExtra(workout: workout, scheduledWorkoutId: scheduled.id),
     );
   }
 

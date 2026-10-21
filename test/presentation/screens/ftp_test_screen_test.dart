@@ -1,13 +1,18 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:go_router/go_router.dart';
+import 'package:mocktail/mocktail.dart';
 
 import 'package:open_bike/core/application/services/ftp_test_planner.dart';
 import 'package:open_bike/core/domain/entities/ftp_history_entry.dart';
 import 'package:open_bike/core/domain/entities/user_profile.dart';
+import 'package:open_bike/core/domain/ports/trainer_port.dart';
 import 'package:open_bike/core/domain/value_objects/value_objects.dart';
 import 'package:open_bike/presentation/screens/ftp_test_screen.dart';
 import 'package:open_bike/presentation/state/providers.dart';
+
+class MockTrainerPort extends Mock implements TrainerPort {}
 
 const _profile = UserProfile(
   name: 'A',
@@ -46,10 +51,24 @@ Future<ProviderContainer> _pump(
   addTearDown(tester.view.resetPhysicalSize);
   addTearDown(tester.view.resetDevicePixelRatio);
 
+  final router = GoRouter(
+    routes: [
+      GoRoute(path: '/', builder: (_, __) => const FtpTestScreen()),
+      GoRoute(
+        path: '/ride',
+        builder: (_, __) => const Scaffold(body: Text('ride screen')),
+      ),
+      GoRoute(
+        path: '/scan',
+        builder: (_, __) => const Scaffold(body: Text('scan screen')),
+      ),
+    ],
+  );
+
   await tester.pumpWidget(
     UncontrolledProviderScope(
       container: container,
-      child: const MaterialApp(home: FtpTestScreen()),
+      child: MaterialApp.router(routerConfig: router),
     ),
   );
   await tester.pumpAndSettle();
@@ -156,5 +175,42 @@ void main() {
     // Progress is measured test-to-test: 200 → 220, ignoring the 215 edit.
     expect(find.textContaining('+20 W since your previous test'),
         findsOneWidget);
+  });
+
+  // No trainer is connected in [_pump]'s container.
+  testWidgets('the ramp test asks for a trainer when none is connected',
+      (tester) async {
+    await _pump(tester, history: const []);
+
+    await tester.tap(find.text('Start Ramp Test'));
+    await tester.pumpAndSettle();
+
+    expect(find.text('Connect a trainer'), findsOneWidget);
+    expect(find.text('ride screen'), findsNothing);
+  });
+
+  testWidgets('the 20-minute test asks for a trainer too', (tester) async {
+    await _pump(tester, history: const []);
+
+    await tester.tap(find.byKey(const Key('protocol-twentyMinute')));
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('Start 20-Minute Test'));
+    await tester.pumpAndSettle();
+
+    expect(find.text('Connect a trainer'), findsOneWidget);
+    expect(find.text('ride screen'), findsNothing);
+  });
+
+  testWidgets('starts the test ride once a trainer is connected',
+      (tester) async {
+    final container = await _pump(tester, history: const []);
+    container.read(activeTrainerPortProvider.notifier).state =
+        MockTrainerPort();
+
+    await tester.tap(find.text('Start Ramp Test'));
+    await tester.pumpAndSettle();
+
+    expect(find.text('Connect a trainer'), findsNothing);
+    expect(find.text('ride screen'), findsOneWidget);
   });
 }
