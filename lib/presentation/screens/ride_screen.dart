@@ -71,6 +71,9 @@ class _RideScreenState extends ConsumerState<RideScreen> {
         final engine = ref.read(workoutEngineProvider);
         // A previous ride may have left the engine running or completed.
         if (engine.state != WorkoutEngineState.idle) engine.stop();
+        // Listening before the start, so the trace has every second, and
+        // empty of the last workout's power.
+        ref.read(workoutPowerTraceProvider.notifier).clear();
         engine.start(workout, ftp);
         _startRecording();
       });
@@ -289,13 +292,21 @@ class _RideScreenState extends ConsumerState<RideScreen> {
 
   // ─── Bottom pane — workout HUD / route profile / live chart ───────
 
-  /// Picks the bottom pane by mode: a workout HUD when a structured workout
-  /// is driving the ride, the GPX elevation profile for a route simulation,
-  /// or the default live power/HR chart otherwise.
+  /// Picks the bottom pane by mode: a workout HUD (with the power ridden
+  /// drawn over the workout profile) when a structured workout is driving
+  /// the ride, the GPX elevation profile above the live power/HR chart for a
+  /// route simulation, or just the live chart otherwise.
   Widget _buildBottomPane(BuildContext context, WidgetRef ref) {
     final hasWorkout = ref.watch(currentWorkoutProvider) != null;
     if (hasWorkout) return const WorkoutHudWidget();
-    if (widget.extra?.route != null) return const RouteProfilePane();
+    if (widget.extra?.route != null) {
+      return const Column(
+        children: [
+          Expanded(flex: 3, child: RouteProfilePane()),
+          Expanded(flex: 2, child: LiveChart()),
+        ],
+      );
+    }
     return const LiveChart();
   }
 

@@ -10,7 +10,9 @@ import '../theme/app_theme.dart';
 import 'workout_mini_profile.dart';
 
 /// In-ride HUD for a structured workout: current step + target, countdown,
-/// next-step preview, ERG compliance, and a whole-workout mini profile.
+/// next-step preview, ERG compliance, and the whole-workout profile with the
+/// power ridden so far drawn over it. The profile takes whatever height the
+/// pane has left.
 ///
 /// Shown on the ride screen whenever a workout is active. Renders nothing
 /// when there is no current workout or no progress has been emitted yet.
@@ -42,6 +44,12 @@ class _WorkoutHudContent extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final ftp = ref.watch(ftpProvider);
     final avgPower = ref.watch(threeSecondAvgPowerProvider);
+    final trace = ftp.value > 0
+        ? [
+            for (final p in ref.watch(workoutPowerTraceProvider))
+              (second: p.second, percent: p.power.value / ftp.value * 100),
+          ]
+        : const <ProfileTracePoint>[];
 
     final step = progress.currentStep;
     final targetPct = ftp.value > 0
@@ -56,7 +64,6 @@ class _WorkoutHudContent extends ConsumerWidget {
       color: context.tokens.rideSurfaceDeep,
       padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
       child: Column(
-        mainAxisSize: MainAxisSize.min,
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Stack(
@@ -152,27 +159,26 @@ class _WorkoutHudContent extends ConsumerWidget {
             style: const TextStyle(color: Colors.white38, fontSize: 12),
           ),
 
+          if (progress.textEvent != null) ...[
+            const SizedBox(height: 8),
+            _TextEventToast(message: progress.textEvent!.message),
+          ],
+
           const SizedBox(height: 8),
 
-          // Whole-workout mini profile with position cursor.
-          SizedBox(
-            height: 28,
-            width: double.infinity,
+          // Whole-workout profile with position cursor and power trace.
+          Expanded(
             child: LayoutBuilder(
               builder: (context, constraints) {
                 return WorkoutMiniProfile(
                   steps: workout.steps,
                   progressFraction: progress.overallProgress,
+                  trace: trace,
                   size: Size(constraints.maxWidth, constraints.maxHeight),
                 );
               },
             ),
           ),
-
-          if (progress.textEvent != null) ...[
-            const SizedBox(height: 8),
-            _TextEventToast(message: progress.textEvent!.message),
-          ],
         ],
       ),
     );

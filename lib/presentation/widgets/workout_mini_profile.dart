@@ -6,12 +6,13 @@ import '../../core/domain/entities/workout_step.dart';
 ///
 /// Used by the workout builder/detail screens (static preview) and the
 /// in-ride [WorkoutHudWidget] (with [progressFraction] drawing a cursor at
-/// the current position in the workout).
+/// the current position in the workout, and [trace] the power ridden so far).
 class WorkoutMiniProfile extends StatelessWidget {
   const WorkoutMiniProfile({
     super.key,
     required this.steps,
     this.progressFraction,
+    this.trace = const [],
     this.size = const Size(48, 32),
   });
 
@@ -20,17 +21,24 @@ class WorkoutMiniProfile extends StatelessWidget {
   /// 0.0-1.0 position cursor. Null hides the cursor.
   final double? progressFraction;
 
+  /// Power ridden, by second of the workout timeline, drawn as a line over
+  /// the target blocks.
+  final List<ProfileTracePoint> trace;
+
   final Size size;
 
   @override
   Widget build(BuildContext context) {
     if (steps.isEmpty) return const SizedBox.shrink();
     return CustomPaint(
-      painter: _MiniProfilePainter(steps, progressFraction),
+      painter: _MiniProfilePainter(steps, progressFraction, trace),
       size: size,
     );
   }
 }
+
+/// Power ridden at one second of the workout, as % FTP.
+typedef ProfileTracePoint = ({int second, double percent});
 
 /// One straight-line piece of the power profile: power runs from
 /// [startPercent] to [endPercent] (% FTP) between [startSeconds] and
@@ -130,9 +138,10 @@ List<ProfileSegment> profileSegments(List<WorkoutStep> steps) {
 }
 
 class _MiniProfilePainter extends CustomPainter {
-  _MiniProfilePainter(this.steps, this.progressFraction);
+  _MiniProfilePainter(this.steps, this.progressFraction, this.trace);
   final List<WorkoutStep> steps;
   final double? progressFraction;
+  final List<ProfileTracePoint> trace;
 
   @override
   void paint(Canvas canvas, Size size) {
@@ -141,12 +150,19 @@ class _MiniProfilePainter extends CustomPainter {
     final segments = profileSegments(steps);
     if (segments.isEmpty) return;
 
-    final maxPower = segments.fold<double>(
+    final targetMax = segments.fold<double>(
       0,
       (prev, s) => [prev, s.startPercent, s.endPercent]
           .reduce((a, b) => a > b ? a : b),
     );
-    if (maxPower <= 0) return;
+    if (targetMax <= 0) return;
+    // Room for riding over target, but a sprint spike mustn't flatten the
+    // whole profile: anything past 1.5× the hardest target is clipped.
+    final traceMax = trace.fold<double>(
+        0, (prev, p) => p.percent > prev ? p.percent : prev);
+    final maxPower = traceMax > targetMax
+        ? (traceMax < targetMax * 1.5 ? traceMax : targetMax * 1.5)
+        : targetMax;
 
     final totalDur = segments.last.endSeconds;
     if (totalDur <= 0) return;
@@ -166,9 +182,32 @@ class _MiniProfilePainter extends CustomPainter {
         ..close();
 
       final color = workoutStepColor(seg.type);
+      // Dimmed under a trace so the ridden line reads on top.
+      final alpha = (seg.isRest ? 0.45 : 1.0) * (trace.isEmpty ? 1.0 : 0.55);
+      canvas.drawPath(path, Paint()..color = color.withValues(alpha: alpha));
+    }
+
+    if (trace.isNotEmpty) {
+      final line = Path();
+      int? previous;
+      for (final p in trace) {
+        final x = xAt(p.second);
+        final y = yAt(p.percent.clamp(0.0, maxPower));
+        // A skip jumps the timeline: start a new piece instead of bridging.
+        if (previous == null || p.second - previous > 2) {
+          line.moveTo(x, y);
+        } else {
+          line.lineTo(x, y);
+        }
+        previous = p.second;
+      }
       canvas.drawPath(
-        path,
-        Paint()..color = seg.isRest ? color.withValues(alpha: 0.45) : color,
+        line,
+        Paint()
+          ..color = Colors.white.withValues(alpha: 0.9)
+          ..style = PaintingStyle.stroke
+          ..strokeWidth = 1.5
+          ..strokeJoin = StrokeJoin.round,
       );
     }
 
@@ -186,7 +225,9 @@ class _MiniProfilePainter extends CustomPainter {
 
   @override
   bool shouldRepaint(covariant _MiniProfilePainter old) =>
-      old.steps != steps || old.progressFraction != progressFraction;
+      old.steps != steps ||
+      old.progressFraction != progressFraction ||
+      old.trace != trace;
 }
 
 /// Color for a step of [type] in workout profiles and step lists.

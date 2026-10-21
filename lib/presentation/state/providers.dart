@@ -662,6 +662,41 @@ final workoutProgressProvider = StreamProvider<WorkoutProgress>((ref) {
   return ref.watch(workoutEngineProvider).progressStream;
 });
 
+/// Power ridden at one second of the workout timeline.
+typedef WorkoutTracePoint = ({int second, Watts power});
+
+/// The rider's power over the running workout's timeline, for the HUD to
+/// draw over the target profile. Each engine tick records the live power at
+/// that workout second; a new workout (progress back at 0) starts afresh,
+/// and a skip leaves a gap where the timeline jumped.
+///
+/// Fed from [WorkoutEngine.progressStream] rather than recomputed by the UI,
+/// so it keeps up while the app draws no frames — see
+/// [powerHistoryUpdaterProvider].
+final workoutPowerTraceProvider =
+    StateNotifierProvider<WorkoutTraceNotifier, List<WorkoutTracePoint>>(
+        (ref) {
+  final notifier = WorkoutTraceNotifier();
+  // workoutEngineProvider throws without a trainer, and without one no
+  // workout runs — stay empty rather than throw into the HUD's build.
+  if (ref.watch(activeTrainerPortProvider) == null) return notifier;
+  final sub = ref.watch(workoutEngineProvider).progressStream.listen((p) {
+    if (p.totalElapsed == Duration.zero) notifier.clear();
+    notifier.add(p.totalElapsed.inSeconds, ref.read(livePowerProvider));
+  });
+  ref.onDispose(sub.cancel);
+  return notifier;
+});
+
+class WorkoutTraceNotifier extends StateNotifier<List<WorkoutTracePoint>> {
+  WorkoutTraceNotifier() : super(const []);
+
+  void add(int second, Watts power) =>
+      state = [...state, (second: second, power: power)];
+
+  void clear() => state = const [];
+}
+
 /// Which bundled FTP test protocol (if any) is driving the ride currently
 /// starting. Set by [RideScreen] when the started workout's id matches one
 /// of [BundledWorkouts.rampTestId] / [BundledWorkouts.twentyMinTestId];

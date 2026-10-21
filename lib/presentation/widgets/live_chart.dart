@@ -12,6 +12,7 @@ import '../theme/app_theme.dart';
 /// Real-time area chart showing power (zone-colored) with optional HR overlay.
 ///
 /// Displays the last 5 minutes (300 samples at 1 Hz) as a scrolling chart.
+/// The dashed yellow line marks FTP; HR is scaled so 200 bpm is the top.
 class LiveChart extends ConsumerWidget {
   const LiveChart({super.key});
 
@@ -49,46 +50,76 @@ class LiveChart extends ConsumerWidget {
     return Container(
       color: context.tokens.rideSurfaceDeep,
       padding: const EdgeInsets.only(top: 8, right: 8, bottom: 4),
-      child: LineChart(
-        LineChartData(
-          minX: 0,
-          maxX: (_windowSize - 1).toDouble(),
-          minY: 0,
-          maxY: maxY,
-          clipData: FlClipData.all(),
-          gridData: FlGridData(
-            show: true,
-            drawVerticalLine: false,
-            horizontalInterval: ftp.value > 0 ? ftp.value / 2 : 50,
-            getDrawingHorizontalLine: (_) => FlLine(
-              color: context.tokens.rideSurfaceLine,
-              strokeWidth: 0.5,
+      child: Stack(
+        children: [
+          Positioned.fill(
+            child: LineChart(
+              LineChartData(
+                minX: 0,
+                maxX: (_windowSize - 1).toDouble(),
+                minY: 0,
+                maxY: maxY,
+                clipData: FlClipData.all(),
+                gridData: FlGridData(
+                  show: true,
+                  drawVerticalLine: false,
+                  horizontalInterval: ftp.value > 0 ? ftp.value / 2 : 50,
+                  getDrawingHorizontalLine: (_) => FlLine(
+                    color: context.tokens.rideSurfaceLine,
+                    strokeWidth: 0.5,
+                  ),
+                ),
+                titlesData: FlTitlesData(show: false),
+                borderData: FlBorderData(show: false),
+                lineTouchData: LineTouchData(enabled: false),
+                extraLinesData: ExtraLinesData(
+                  horizontalLines: [
+                    // FTP reference line
+                    if (ftp.value > 0)
+                      HorizontalLine(
+                        y: ftp.value,
+                        color: Colors.yellow.withValues(alpha: 0.4),
+                        strokeWidth: 1,
+                        dashArray: [4, 4],
+                        label: HorizontalLineLabel(
+                          show: true,
+                          alignment: Alignment.topRight,
+                          style: TextStyle(
+                            color: Colors.yellow.withValues(alpha: 0.7),
+                            fontSize: 10,
+                          ),
+                          labelResolver: (_) => 'FTP ${ftp.value.round()} W',
+                        ),
+                      ),
+                  ],
+                ),
+                lineBarsData: [
+                  // Power area chart
+                  _buildPowerLine(displayPower, maxY, zones, ftp),
+                  // HR overlay
+                  if (displayHr.isNotEmpty) _buildHrLine(displayHr, maxY),
+                ],
+              ),
+              duration: Duration.zero, // no animation for real-time
             ),
           ),
-          titlesData: FlTitlesData(show: false),
-          borderData: FlBorderData(show: false),
-          lineTouchData: LineTouchData(enabled: false),
-          extraLinesData: ExtraLinesData(
-            horizontalLines: [
-              // FTP reference line
-              if (ftp.value > 0)
-                HorizontalLine(
-                  y: ftp.value,
-                  color: Colors.yellow.withValues(alpha: 0.4),
-                  strokeWidth: 1,
-                  dashArray: [4, 4],
-                ),
-            ],
+          Positioned(
+            top: 0,
+            left: 8,
+            child: Row(
+              children: [
+                const _LegendItem(color: Colors.blue, label: 'Power'),
+                if (displayHr.isNotEmpty) ...[
+                  const SizedBox(width: 10),
+                  _LegendItem(
+                    color: Colors.red.withValues(alpha: 0.8),
+                    label: 'HR',
+                  ),
+                ],
+              ],
+            ),
           ),
-          lineBarsData: [
-            // Power area chart
-            _buildPowerLine(displayPower, maxY, zones, ftp),
-            // HR overlay
-            if (displayHr.isNotEmpty)
-              _buildHrLine(displayHr, maxY),
-          ],
-        ),
-        duration: Duration.zero, // no animation for real-time
+        ],
       ),
     );
   }
@@ -174,6 +205,25 @@ class LiveChart extends ConsumerWidget {
       isStrokeCapRound: false,
       dotData: FlDotData(show: false),
       belowBarData: BarAreaData(show: false),
+    );
+  }
+}
+
+class _LegendItem extends StatelessWidget {
+  const _LegendItem({required this.color, required this.label});
+
+  final Color color;
+  final String label;
+
+  @override
+  Widget build(BuildContext context) {
+    return Row(
+      mainAxisSize: MainAxisSize.min,
+      children: [
+        Container(width: 10, height: 2, color: color),
+        const SizedBox(width: 4),
+        Text(label, style: TextStyle(color: color, fontSize: 10)),
+      ],
     );
   }
 }
