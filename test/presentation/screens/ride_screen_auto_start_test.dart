@@ -12,6 +12,7 @@ import 'package:open_bike/core/application/services/trainer_mode_controller.dart
 import 'package:open_bike/core/application/services/workout_engine.dart';
 import 'package:open_bike/core/domain/entities/entities.dart';
 import 'package:open_bike/core/domain/value_objects/value_objects.dart';
+import 'package:open_bike/core/events/app_event.dart';
 import 'package:open_bike/core/events/event_bus.dart';
 import 'package:open_bike/infrastructure/preferences/app_preferences.dart';
 import 'package:open_bike/presentation/models/ride_extra.dart';
@@ -115,6 +116,23 @@ void main() {
 
     expect(find.byType(RouteProfilePane), findsOneWidget);
     expect(find.byType(LiveChart), findsOneWidget);
+  });
+
+  testWidgets('follows how far an FTP test gets, for the post-ride prompt',
+      (tester) async {
+    await pumpRideScreen(tester, RideExtra(workout: BundledWorkouts.rampTest));
+    final container =
+        ProviderScope.containerOf(tester.element(find.byType(RideScreen)));
+    expect(container.read(ftpTestProgressProvider),
+        (furthestStep: 0, testBlockStep: null));
+
+    final bus = container.read(eventBusProvider);
+    final step = BundledWorkouts.rampTest.steps[9];
+    bus.fire(WorkoutEvent.stepChanged(step, 9));
+    bus.fire(WorkoutEvent.stepChanged(step, 4)); // never goes back
+    await tester.pump();
+
+    expect(container.read(ftpTestProgressProvider)?.furthestStep, 9);
   });
 
   testWidgets('a free ride still waits for the play button', (tester) async {

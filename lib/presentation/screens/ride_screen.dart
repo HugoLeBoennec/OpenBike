@@ -11,6 +11,8 @@ import '../../core/application/services/ftp_test_planner.dart';
 import '../../core/application/services/recording_engine.dart';
 import '../../core/application/services/route_simulator.dart';
 import '../../core/application/services/workout_engine.dart';
+import '../../core/domain/entities/workout.dart';
+import '../../core/domain/entities/workout_step.dart';
 import '../../core/events/app_event.dart';
 import '../models/data_field_type.dart';
 import '../models/ride_extra.dart';
@@ -46,6 +48,7 @@ class RideScreen extends ConsumerStatefulWidget {
 
 class _RideScreenState extends ConsumerState<RideScreen> {
   StreamSubscription<SimulationEvent>? _simCompletionSub;
+  StreamSubscription<WorkoutEvent>? _ftpTestStepSub;
   Timer? _autoPauseTimer;
   final _autoPauseDetector = AutoPauseDetector();
   bool _autoPauseDialogShowing = false;
@@ -62,11 +65,13 @@ class _RideScreenState extends ConsumerState<RideScreen> {
       Future.microtask(() {
         final workout = widget.extra!.workout!;
         ref.read(currentWorkoutProvider.notifier).state = workout;
-        ref.read(activeFtpTestProvider.notifier).state = switch (workout.id) {
+        final ftpTest = switch (workout.id) {
           BundledWorkouts.rampTestId => FtpTestProtocol.ramp,
           BundledWorkouts.twentyMinTestId => FtpTestProtocol.twentyMinute,
           _ => null,
         };
+        ref.read(activeFtpTestProvider.notifier).state = ftpTest;
+        _trackFtpTestProgress(ftpTest == null ? null : workout);
         final ftp = ref.read(ftpProvider);
         final engine = ref.read(workoutEngineProvider);
         // A previous ride may have left the engine running or completed.
@@ -110,6 +115,29 @@ class _RideScreenState extends ConsumerState<RideScreen> {
         Timer.periodic(const Duration(seconds: 1), (_) => _checkAutoPause());
   }
 
+  /// Follows how far an FTP test [workout] gets, for the post-ride prompt to
+  /// judge whether the test counts. Subscribes before the engine starts, so
+  /// the first step is seen too. A null [workout] (not a test) clears it.
+  void _trackFtpTestProgress(Workout? workout) {
+    final progress = ref.read(ftpTestProgressProvider.notifier);
+    if (workout == null) {
+      progress.state = null;
+      return;
+    }
+    final block = workout.steps.indexWhere((s) => s.type == StepType.freeRide);
+    progress.state = (furthestStep: 0, testBlockStep: block < 0 ? null : block);
+    _ftpTestStepSub =
+        ref.read(eventBusProvider).on<WorkoutEvent>().listen((event) {
+      if (event is! WorkoutStepChanged) return;
+      final current = progress.state;
+      if (current == null || event.index <= current.furthestStep) return;
+      progress.state = (
+        furthestStep: event.index,
+        testBlockStep: current.testBlockStep,
+      );
+    });
+  }
+
   /// Starts recording alongside a workout or route, which drive the trainer
   /// from the moment the screen opens — otherwise their timeline runs while
   /// the ride timer sits at zero until the rider finds the play button.
@@ -121,6 +149,7 @@ class _RideScreenState extends ConsumerState<RideScreen> {
   @override
   void dispose() {
     _simCompletionSub?.cancel();
+    _ftpTestStepSub?.cancel();
     _autoPauseTimer?.cancel();
     WakelockPlus.disable();
     super.dispose();

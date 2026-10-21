@@ -7,6 +7,7 @@ import 'package:open_bike/core/application/services/ftp_test_planner.dart';
 import 'package:open_bike/core/domain/entities/ftp_history_entry.dart';
 import 'package:open_bike/core/domain/entities/ride.dart';
 import 'package:open_bike/core/domain/entities/sensor_reading.dart';
+import 'package:open_bike/core/domain/entities/user_profile.dart';
 import 'package:open_bike/core/domain/value_objects/value_objects.dart';
 import 'package:open_bike/infrastructure/persistence/app_database.dart';
 import 'package:open_bike/infrastructure/persistence/drift_storage.dart';
@@ -42,6 +43,8 @@ void main() {
     final container = ProviderContainer(overrides: [
       storageProvider.overrideWithValue(storage),
       activeFtpTestProvider.overrideWith((ref) => FtpTestProtocol.ramp),
+      ftpTestProgressProvider.overrideWith(
+          (ref) => (furthestStep: 9, testBlockStep: null)),
       rideDetailProvider(ride.id).overrideWith((ref) async => ride),
     ]);
     addTearDown(container.dispose);
@@ -96,5 +99,81 @@ void main() {
     await tester.pumpAndSettle();
 
     expect(find.textContaining('New FTP'), findsNothing);
+  });
+
+  Future<ProviderContainer> pumpPrompt(
+    WidgetTester tester, {
+    required FtpTestProgress progress,
+    UserProfile? profile,
+  }) async {
+    final db = AppDatabase(NativeDatabase.memory());
+    addTearDown(db.close);
+    final ride = _rampTestRide();
+    final container = ProviderContainer(overrides: [
+      storageProvider.overrideWithValue(DriftStorage(db)),
+      activeFtpTestProvider.overrideWith((ref) => FtpTestProtocol.ramp),
+      ftpTestProgressProvider.overrideWith((ref) => progress),
+      userProfileProvider.overrideWith((ref) => profile),
+      rideDetailProvider(ride.id).overrideWith((ref) async => ride),
+    ]);
+    addTearDown(container.dispose);
+    await tester.pumpWidget(
+      UncontrolledProviderScope(
+        container: container,
+        child: MaterialApp(home: Scaffold(body: FtpTestPrompt(rideId: ride.id))),
+      ),
+    );
+    await tester.pumpAndSettle();
+    return container;
+  }
+
+  testWidgets('a ramp stopped before step 8 offers no FTP, and says why',
+      (tester) async {
+    final container = await pumpPrompt(
+      tester,
+      progress: (furthestStep: 2, testBlockStep: null),
+    );
+
+    expect(find.text('Test not complete'), findsOneWidget);
+    expect(find.textContaining('New FTP'), findsNothing);
+    expect(container.read(ftpTestProgressProvider), isNull);
+  });
+
+  testWidgets('warns when the result is far below the current FTP',
+      (tester) async {
+    await pumpPrompt(
+      tester,
+      progress: (furthestStep: 9, testBlockStep: null),
+      // 225 W detected against 300 W: a 25% drop.
+      profile: const UserProfile(
+        name: 'A',
+        ftp: Watts(300),
+        maxHr: HeartRate(180),
+        restingHr: HeartRate(60),
+        weight: 70,
+        height: 1.75,
+      ),
+    );
+
+    expect(find.textContaining('New FTP: 225 W'), findsOneWidget);
+    expect(find.byKey(const Key('ftpBigDropWarning')), findsOneWidget);
+  });
+
+  testWidgets('no warning for an ordinary change', (tester) async {
+    await pumpPrompt(
+      tester,
+      progress: (furthestStep: 9, testBlockStep: null),
+      profile: const UserProfile(
+        name: 'A',
+        ftp: Watts(240),
+        maxHr: HeartRate(180),
+        restingHr: HeartRate(60),
+        weight: 70,
+        height: 1.75,
+      ),
+    );
+
+    expect(find.textContaining('New FTP: 225 W'), findsOneWidget);
+    expect(find.byKey(const Key('ftpBigDropWarning')), findsNothing);
   });
 }

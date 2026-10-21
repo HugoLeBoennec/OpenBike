@@ -704,6 +704,17 @@ class WorkoutTraceNotifier extends StateNotifier<List<WorkoutTracePoint>> {
 /// clears it back to null after showing the update-profile prompt.
 final activeFtpTestProvider = StateProvider<FtpTestProtocol?>((ref) => null);
 
+/// How far the FTP test ride got: the furthest workout step reached, and the
+/// index of its free-ride test block (the 20-minute effort; null for the
+/// ramp).
+typedef FtpTestProgress = ({int furthestStep, int? testBlockStep});
+
+/// Tracked by [RideScreen] alongside [activeFtpTestProvider], so the
+/// post-ride prompt only offers a result for a test ridden far enough — see
+/// [FtpEstimator.isCompleteTest].
+final ftpTestProgressProvider =
+    StateProvider<FtpTestProgress?>((ref) => null);
+
 /// Every dated FTP value on record, oldest first — the raw material for the
 /// FTP test screen's progression chart and retest reminder.
 final ftpHistoryProvider = FutureProvider<List<FtpHistoryEntry>>((ref) async {

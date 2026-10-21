@@ -94,7 +94,11 @@ class _FtpTestScreenState extends ConsumerState<FtpTestScreen> {
               'Couldn\'t load FTP history: $e',
               style: const TextStyle(color: Colors.red, fontSize: 13),
             ),
-            data: (history) => _FtpProgression(history: history, plan: plan),
+            data: (history) => _FtpProgression(
+              history: history,
+              plan: plan,
+              onRemove: _removeTest,
+            ),
           ),
         ],
       ),
@@ -103,6 +107,59 @@ class _FtpTestScreenState extends ConsumerState<FtpTestScreen> {
 
   Future<void> _startTest(FtpTestProtocol protocol) =>
       startWorkoutRide(context, ref, _workoutFor(protocol));
+
+  /// Removes a test result the rider doesn't trust — a ramp cut short, a
+  /// power meter that dropped out. Removing the latest entry also puts the
+  /// profile FTP back to the one before it, and the retest reminder goes
+  /// back to counting from the previous real test.
+  Future<void> _removeTest(FtpHistoryEntry entry) async {
+    final history = ref.read(ftpHistoryProvider).valueOrNull ?? const [];
+    final remaining = [
+      for (final e in history)
+        if (e.effectiveDate != entry.effectiveDate) e,
+    ];
+    final isLatest =
+        history.isNotEmpty && history.last.effectiveDate == entry.effectiveDate;
+    final revertTo =
+        isLatest && remaining.isNotEmpty ? remaining.last.ftp : null;
+    final date = _HistoryRow.formatDate(entry.effectiveDate);
+
+    final confirmed = await showDialog<bool>(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        title: const Text('Remove this test result?'),
+        content: Text(
+          '${entry.ftp.value.round()} W from $date will no longer count as '
+          'a test.${revertTo != null ? ' Your FTP goes back to '
+              '${revertTo.value.round()} W.' : ''}',
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.of(ctx).pop(false),
+            child: const Text('Cancel'),
+          ),
+          TextButton(
+            key: const Key('confirmRemoveFtpTestButton'),
+            onPressed: () => Navigator.of(ctx).pop(true),
+            child: const Text('Remove',
+                style: TextStyle(color: Colors.redAccent)),
+          ),
+        ],
+      ),
+    );
+    if (confirmed != true) return;
+
+    final storage = ref.read(storageProvider);
+    await storage.deleteFtpHistoryEntry(entry.effectiveDate);
+    final profile = ref.read(userProfileProvider);
+    if (revertTo != null && profile != null) {
+      final updated = profile.copyWith(ftp: revertTo);
+      ref.read(userProfileProvider.notifier).state = updated;
+      // Matches the (now) latest entry, so no new history entry is added.
+      await storage.saveProfile(updated);
+    }
+    ref.invalidate(ftpHistoryProvider);
+  }
 
   /// Prefers the saved copy so an edited protocol is honoured, falling back to
   /// the bundled definition when the list hasn't loaded (or the row was
@@ -546,10 +603,15 @@ class _PrepChecklist extends StatelessWidget {
 // ---------------------------------------------------------------------------
 
 class _FtpProgression extends StatelessWidget {
-  const _FtpProgression({required this.history, required this.plan});
+  const _FtpProgression({
+    required this.history,
+    required this.plan,
+    required this.onRemove,
+  });
 
   final List<FtpHistoryEntry> history;
   final FtpTestPlan? plan;
+  final ValueChanged<FtpHistoryEntry> onRemove;
 
   @override
   Widget build(BuildContext context) {
@@ -592,7 +654,11 @@ class _FtpProgression extends StatelessWidget {
           SizedBox(height: tokens.spacingMd),
         ],
         for (final entry in tests.reversed)
-          _HistoryRow(entry: entry, tests: tests),
+          _HistoryRow(
+            entry: entry,
+            tests: tests,
+            onRemove: () => onRemove(entry),
+          ),
       ],
     );
   }
@@ -715,10 +781,15 @@ class _ChangeSummary extends StatelessWidget {
 }
 
 class _HistoryRow extends StatelessWidget {
-  const _HistoryRow({required this.entry, required this.tests});
+  const _HistoryRow({
+    required this.entry,
+    required this.tests,
+    required this.onRemove,
+  });
 
   final FtpHistoryEntry entry;
   final List<FtpHistoryEntry> tests;
+  final VoidCallback onRemove;
 
   @override
   Widget build(BuildContext context) {
@@ -762,15 +833,23 @@ class _HistoryRow extends StatelessWidget {
               ),
             ),
           Text(
-            _formatDate(entry.effectiveDate),
+            formatDate(entry.effectiveDate),
             style: TextStyle(color: tokens.textDisabled, fontSize: 12),
+          ),
+          IconButton(
+            key: Key(
+                'removeFtpTest-${entry.effectiveDate.millisecondsSinceEpoch}'),
+            icon: Icon(Icons.close, size: 16, color: tokens.textDisabled),
+            tooltip: 'Remove this result',
+            visualDensity: VisualDensity.compact,
+            onPressed: onRemove,
           ),
         ],
       ),
     );
   }
 
-  static String _formatDate(DateTime date) {
+  static String formatDate(DateTime date) {
     const months = [
       'Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun',
       'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec',
