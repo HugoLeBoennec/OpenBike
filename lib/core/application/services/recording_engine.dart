@@ -106,6 +106,12 @@ class RecordingEngine {
   int _lastLapStartIndex = 0;
   DateTime? _lastLapStartTime;
 
+  // Distance ridden since start. Trainers report a running counter that
+  // started when they powered on or connected, not when the ride did, so
+  // readings carry the sum of its increments instead of the raw value.
+  double _distanceRidden = 0;
+  double? _lastTrainerDistance;
+
   // ---------------------------------------------------------------------------
   // start
   // ---------------------------------------------------------------------------
@@ -132,6 +138,8 @@ class RecordingEngine {
     _lastLapStartIndex = 0;
     _lastLapStartTime = now;
     _latestReading = null;
+    _distanceRidden = 0;
+    _lastTrainerDistance = null;
 
     // Listen to sensor events — buffer the latest reading.
     _latestGrade = null;
@@ -179,6 +187,9 @@ class RecordingEngine {
     }
 
     _pauseStartTime = DateTime.now();
+    // Distance pedalled while paused isn't part of the ride: the first
+    // reading after resuming becomes the new baseline.
+    _lastTrainerDistance = null;
     _setState(RecordingState.paused);
     _eventBus.fire(RideEvent.paused(_currentRide!.id));
     _log.info('Recording paused');
@@ -393,8 +404,11 @@ class RecordingEngine {
         cadence: reading.cadence,
         heartRate: reading.heartRate,
         speed: reading.speed,
-        distance: reading.distance ??
-            (_latestSimDistance != null ? Distance(_latestSimDistance!) : null),
+        distance: reading.distance != null
+            ? Distance(_addTrainerDistance(reading.distance!.meters))
+            : (_latestSimDistance != null
+                ? Distance(_latestSimDistance!)
+                : null),
         grade: _latestGrade,
       );
       _readings.add(stamped);
@@ -406,6 +420,18 @@ class RecordingEngine {
       _ticksSinceLastSave = 0;
       _autoSave();
     }
+  }
+
+  /// Adds the trainer counter's increase since the last sample and returns
+  /// the distance ridden so far. A counter that went backwards was reset (the
+  /// trainer reconnected), so everything it reports counts as new distance.
+  double _addTrainerDistance(double counter) {
+    final last = _lastTrainerDistance;
+    if (last != null) {
+      _distanceRidden += counter >= last ? counter - last : counter;
+    }
+    _lastTrainerDistance = counter;
+    return _distanceRidden;
   }
 
   Future<void> _autoSave() async {

@@ -99,7 +99,8 @@ void main() {
       final live = engine.liveRide!;
       expect(live.readings.length, greaterThanOrEqualTo(2));
       expect(live.averagePower, const Watts(200));
-      expect(live.totalDistance.meters, 1500);
+      // The trainer's counter never moved, so nothing was ridden.
+      expect(live.totalDistance.meters, 0);
       // The ride as created at start stays empty.
       expect(engine.currentRide!.readings, isEmpty);
     });
@@ -661,7 +662,9 @@ void main() {
       await Future<void>.delayed(const Duration(milliseconds: 1200));
 
       final ride = await engine.stop();
-      expect(ride.readings.first.distance?.meters, 999);
+      // The trainer's distance (from the start of the ride, so 0 on the
+      // first sample), not the simulator's 123.4.
+      expect(ride.readings.first.distance?.meters, 0);
     });
 
     test('stop persists the latest simulator elevation gain on the ride',
@@ -737,6 +740,65 @@ void main() {
       // The default engine's calculator sees far fewer than 5 readings in
       // this short test, so no duration bucket has enough data.
       verifyNever(() => storage.savePersonalRecords(any()));
+    });
+  });
+
+  // =========================================================================
+  // Distance — ridden since start, not the trainer's running counter
+  // =========================================================================
+
+  group('RecordingEngine — distance', () {
+    void trainerAt(double meters) => eventBus.fire(SensorEvent(
+          reading: SensorReading(
+            timestamp: DateTime.now(),
+            power: const Watts(200),
+            distance: Distance(meters),
+          ),
+          deviceId: 'test-trainer',
+        ));
+
+    test('counts from the start of the ride, not the trainer counter',
+        () async {
+      await engine.start();
+      // The trainer has been on for a while: its counter is far from 0.
+      trainerAt(10000);
+      await Future<void>.delayed(const Duration(milliseconds: 1200));
+      trainerAt(10250);
+      await Future<void>.delayed(const Duration(milliseconds: 1000));
+
+      final ride = await engine.stop();
+      expect(ride.readings.map((r) => r.distance?.meters), [0, 250]);
+      expect(ride.totalDistance.meters, 250);
+    });
+
+    test('leaves out distance pedalled while paused', () async {
+      await engine.start();
+      trainerAt(10000);
+      await Future<void>.delayed(const Duration(milliseconds: 1200));
+      engine.pause();
+      trainerAt(10500);
+      await Future<void>.delayed(const Duration(milliseconds: 1000));
+      engine.resume();
+      await Future<void>.delayed(const Duration(milliseconds: 1000));
+      trainerAt(10600);
+      await Future<void>.delayed(const Duration(milliseconds: 1000));
+
+      final ride = await engine.stop();
+      expect(ride.totalDistance.meters, 100);
+    });
+
+    test('keeps counting when the trainer counter resets', () async {
+      await engine.start();
+      trainerAt(5000);
+      await Future<void>.delayed(const Duration(milliseconds: 1200));
+      trainerAt(5100);
+      await Future<void>.delayed(const Duration(milliseconds: 1000));
+      // Reconnected: the counter starts again from 0.
+      trainerAt(30);
+      await Future<void>.delayed(const Duration(milliseconds: 1000));
+
+      final ride = await engine.stop();
+      expect(ride.totalDistance.meters, 130);
     });
   });
 }
