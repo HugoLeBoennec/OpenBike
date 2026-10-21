@@ -28,11 +28,13 @@ class MockStoragePort extends Mock implements StoragePort {}
 class MockConnectivity extends Mock implements Connectivity {}
 
 class FakeExportPlugin implements ExportPlugin {
-  FakeExportPlugin(this.id, {bool authenticated = true})
+  FakeExportPlugin(this.id,
+      {bool authenticated = true, this.capabilities = const []})
       : _authenticated = authenticated;
 
   final String id;
   final bool _authenticated;
+  final List<String> capabilities;
 
   @override
   PluginManifest get manifest => PluginManifest(
@@ -40,6 +42,7 @@ class FakeExportPlugin implements ExportPlugin {
         name: id,
         version: '1.0.0',
         type: PluginType.export,
+        capabilities: capabilities,
       );
 
   @override
@@ -158,6 +161,23 @@ void main() {
       ..registerExport(FakeExportPlugin('fake-target', authenticated: false));
     final prefs = await _fakePrefs({
       'auto_upload_targets': ['fake-target'],
+    });
+    final container = makeContainer(registry, prefs);
+
+    container.read(autoUploadProvider);
+    eventBus.fire(RideEvent.stopped(_testRide('ride-1')));
+    await Future<void>.delayed(const Duration(milliseconds: 300));
+
+    final items = await container.read(exportQueueServiceProvider).getAll();
+    expect(items, isEmpty);
+  });
+
+  test('ignores a local file export left enabled from before', () async {
+    final registry = PluginRegistry()
+      ..registerExport(
+          FakeExportPlugin('tcx-file-export', capabilities: const ['file-export']));
+    final prefs = await _fakePrefs({
+      'auto_upload_targets': ['tcx-file-export'],
     });
     final container = makeContainer(registry, prefs);
 

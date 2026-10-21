@@ -27,7 +27,7 @@ import 'infrastructure/persistence/app_database.dart';
 import 'infrastructure/persistence/drift_storage.dart';
 import 'infrastructure/preferences/app_preferences.dart';
 import 'infrastructure/simulator/simulator.dart';
-import 'plugins/exports/garmin_export_plugin.dart';
+import 'plugins/exports/fit_file_export_plugin.dart';
 import 'plugins/exports/strava_export_plugin.dart';
 import 'plugins/exports/tcx_file_export_plugin.dart';
 import 'plugins/plugin_registry.dart';
@@ -166,8 +166,9 @@ void _registerPlugins(
 
   // ---- Export plugins ----
 
-  // Garmin Connect — local FIT file export (always available).
-  registry.registerExport(GarminConnectExportPlugin());
+  // FIT — local file export for Garmin Connect, Strava, etc. (always
+  // available).
+  registry.registerExport(FitFileExportPlugin());
 
   // TCX — local file export (always available).
   registry.registerExport(TcxFileExportPlugin());

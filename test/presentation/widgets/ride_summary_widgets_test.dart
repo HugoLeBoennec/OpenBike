@@ -4,6 +4,7 @@ import 'package:connectivity_plus/connectivity_plus.dart';
 import 'package:drift/drift.dart' show Value;
 import 'package:drift/native.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:mocktail/mocktail.dart';
@@ -168,6 +169,64 @@ void main() {
       await tester.pumpAndSettle();
 
       expect(find.text('Uploaded'), findsOneWidget);
+    });
+  });
+
+  group('ExportButton — local file exports', () {
+    const shareChannel = MethodChannel('dev.fluttercommunity.plus/share');
+    late List<MethodCall> shareCalls;
+
+    setUp(() {
+      shareCalls = [];
+      when(() => plugin.manifest).thenReturn(const PluginManifest(
+        id: 'fake-export',
+        name: 'Fake File',
+        version: '1.0.0',
+        type: PluginType.export,
+        capabilities: ['file-export'],
+      ));
+      when(() => plugin.export(any(), format: any(named: 'format')))
+          .thenAnswer((_) async => '/exports/ride-1.tcx');
+    });
+
+    tearDown(() {
+      TestDefaultBinaryMessengerBinding.instance.defaultBinaryMessenger
+          .setMockMethodCallHandler(shareChannel, null);
+    });
+
+    testWidgets('saving opens the share sheet anchored to the button',
+        (tester) async {
+      TestDefaultBinaryMessengerBinding.instance.defaultBinaryMessenger
+          .setMockMethodCallHandler(shareChannel, (call) async {
+        shareCalls.add(call);
+        return 'dev.fluttercommunity.plus/share/unavailable';
+      });
+
+      await pump(tester);
+      await tester.tap(find.text('Fake File'));
+      await tester.pumpAndSettle();
+
+      expect(find.text('Saved'), findsOneWidget);
+      expect(shareCalls, hasLength(1));
+      final args = shareCalls.single.arguments as Map;
+      expect(args['paths'], ['/exports/ride-1.tcx']);
+      // iPad popovers need a non-empty anchor rect or share_plus errors out.
+      expect(args['originWidth'], greaterThan(0));
+      expect(args['originHeight'], greaterThan(0));
+    });
+
+    testWidgets('a share failure is reported instead of swallowed',
+        (tester) async {
+      TestDefaultBinaryMessengerBinding.instance.defaultBinaryMessenger
+          .setMockMethodCallHandler(shareChannel, (call) async {
+        throw PlatformException(code: 'error', message: 'no anchor');
+      });
+
+      await pump(tester);
+      await tester.tap(find.text('Fake File'));
+      await tester.pumpAndSettle();
+
+      expect(find.textContaining("Couldn't share Fake File file"), findsOneWidget);
     });
   });
 }

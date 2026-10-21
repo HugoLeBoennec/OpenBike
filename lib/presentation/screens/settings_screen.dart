@@ -77,10 +77,13 @@ class SettingsScreen extends ConsumerWidget {
           const SizedBox(height: 8),
 
           // ----- Connections -----
-          _SectionHeader('CONNECTIONS'),
-          const ConnectionsSection(),
-
-          const SizedBox(height: 8),
+          // Hidden when there's no account to connect (e.g. a build without
+          // Strava credentials) rather than showing an empty section.
+          if (ref.watch(connectablePluginsProvider).isNotEmpty) ...[
+            _SectionHeader('CONNECTIONS'),
+            const ConnectionsSection(),
+            const SizedBox(height: 8),
+          ],
 
           // ----- Display -----
           _SectionHeader('DISPLAY'),

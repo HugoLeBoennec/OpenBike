@@ -56,7 +56,8 @@ class _RideScreenState extends ConsumerState<RideScreen> {
     WakelockPlus.enable();
 
     // If a workout was passed, set it as the current workout and start the
-    // ERG-driving engine against the connected trainer.
+    // ERG-driving engine against the connected trainer, along with the
+    // recording.
     if (widget.extra?.workout != null) {
       Future.microtask(() {
         final workout = widget.extra!.workout!;
@@ -71,6 +72,7 @@ class _RideScreenState extends ConsumerState<RideScreen> {
         // A previous ride may have left the engine running or completed.
         if (engine.state != WorkoutEngineState.idle) engine.stop();
         engine.start(workout, ftp);
+        _startRecording();
       });
     } else {
       Future.microtask(() {
@@ -85,14 +87,15 @@ class _RideScreenState extends ConsumerState<RideScreen> {
       });
     }
 
-    // If a route was passed, start the route simulator and watch for
-    // completion so we can prompt to stop & save.
+    // If a route was passed, start the route simulator and the recording,
+    // and watch for completion so we can prompt to stop & save.
     if (widget.extra?.route != null) {
       Future.microtask(() {
         final simulator = ref.read(routeSimulatorProvider);
         // A previous ride may have left the simulator running or completed.
         if (simulator.state != SimulationState.idle) simulator.stop();
         simulator.start(widget.extra!.route!);
+        _startRecording();
       });
       _simCompletionSub =
           ref.read(eventBusProvider).on<SimulationEvent>().listen((event) {
@@ -102,6 +105,14 @@ class _RideScreenState extends ConsumerState<RideScreen> {
 
     _autoPauseTimer =
         Timer.periodic(const Duration(seconds: 1), (_) => _checkAutoPause());
+  }
+
+  /// Starts recording alongside a workout or route, which drive the trainer
+  /// from the moment the screen opens — otherwise their timeline runs while
+  /// the ride timer sits at zero until the rider finds the play button.
+  void _startRecording() {
+    final recorder = ref.read(recordingEngineProvider);
+    if (recorder.state == RecordingState.idle) recorder.start();
   }
 
   @override
