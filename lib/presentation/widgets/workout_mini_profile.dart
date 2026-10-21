@@ -68,8 +68,8 @@ const double _freeRidePlaceholderPercent = 30;
 /// `WorkoutEngine` derives its target power: warm-up/cool-down/ramp go from
 /// `powerLowPercent` to `powerHighPercent`, intervals alternate
 /// `powerTargetPercent` (on) and `powerLowPercent` (off). Segment durations
-/// add up to `Workout.totalDuration`.
-@visibleForTesting
+/// add up to `Workout.totalDuration`. Also drives the workout detail chart,
+/// so every profile in the app draws the same shape.
 List<ProfileSegment> profileSegments(List<WorkoutStep> steps) {
   final segments = <ProfileSegment>[];
   var t = 0;
@@ -165,7 +165,7 @@ class _MiniProfilePainter extends CustomPainter {
         ..lineTo(x1, size.height)
         ..close();
 
-      final color = _stepColor(seg.type);
+      final color = workoutStepColor(seg.type);
       canvas.drawPath(
         path,
         Paint()..color = seg.isRest ? color.withValues(alpha: 0.45) : color,
@@ -184,24 +184,25 @@ class _MiniProfilePainter extends CustomPainter {
     }
   }
 
-  Color _stepColor(StepType type) {
-    switch (type) {
-      case StepType.warmup:
-        return Colors.blue;
-      case StepType.cooldown:
-        return Colors.blue;
-      case StepType.steadyState:
-        return Colors.green;
-      case StepType.interval:
-        return Colors.orange;
-      case StepType.freeRide:
-        return Colors.grey;
-      case StepType.ramp:
-        return Colors.teal;
-    }
-  }
-
   @override
   bool shouldRepaint(covariant _MiniProfilePainter old) =>
       old.steps != steps || old.progressFraction != progressFraction;
+}
+
+/// Color for a step of [type] in workout profiles and step lists.
+Color workoutStepColor(StepType type) {
+  switch (type) {
+    case StepType.warmup:
+      return Colors.blue;
+    case StepType.cooldown:
+      return Colors.blue;
+    case StepType.steadyState:
+      return Colors.green;
+    case StepType.interval:
+      return Colors.orange;
+    case StepType.freeRide:
+      return Colors.grey;
+    case StepType.ramp:
+      return Colors.teal;
+  }
 }
