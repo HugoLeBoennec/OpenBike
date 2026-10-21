@@ -18,6 +18,31 @@ and this project adheres to [Semantic Versioning](https://semver.org/).
 - **FTP retest reminder** — the Home card flags a retest once the interval
   since the last measured test has elapsed. Defaults to six weeks, adjustable
   from four to sixteen in Settings.
+- During a workout, the power you ride is drawn over the workout profile;
+  route rides show the live power/HR chart under the elevation profile.
+- The training calendar shows finished rides on their day, with dots for
+  done (green), missed (red) and planned (blue) workouts. Riding a planned
+  workout from the library ticks it off.
+- An ⓘ on Home and Trends explains CTL (fitness), ATL (fatigue) and TSB
+  (form).
+- Rides can be deleted from their History page; completed calendar entries
+  and FTP test results can be removed (removing the latest test restores the
+  FTP before it).
+
+### Changed
+- Every ride (workouts, FTP tests, Free Ride and routes) needs a connected
+  trainer; without one, the app offers to connect it.
+- Skip ends one phase at a time: in an interval set, one effort or one
+  recovery rather than the whole set.
+- The ride screen shows all 12 data fields when there's room for them (Mac
+  windows, iPads), and the live chart labels its FTP line and its power and
+  HR lines.
+- FTP tests only offer a result once ridden far enough (8 steps of the ramp,
+  or the full 20-minute effort), and warn when the result is far below the
+  current FTP.
+- The Garmin Connect export is now called FIT File. File exports open the
+  share sheet once saved and are no longer offered for auto-upload.
+- Power is written in W everywhere, personal records included.
 
 ### Fixed
 - The first Bluetooth scan always came back empty; devices now appear on
@@ -26,6 +51,19 @@ and this project adheres to [Semantic Versioning](https://semver.org/).
   connection failures instead of silently staying put. When Bluetooth is
   unavailable, onboarding and the Devices screen say why (access denied,
   radio off, unsupported) and offer Open Settings.
+- Workouts and routes start the recording with them, instead of running
+  while the ride timer sat at zero.
+- FIT and TCX exports work offline and on iPad, where the share button did
+  nothing.
+- Ride distance counts from the start of the ride, not from the trainer's
+  own counter; FIT and TCX exports carry the corrected distance.
+- The live chart and 3-second power kept going while the app was hidden or
+  the screen off, instead of freezing.
+- Skipping a workout step moves the timeline and the HUD at once.
+- The workout detail chart showed a single bar and step targets read 0% for
+  ramps; Share as .zwo failed on phones.
+- CTL, ATL and TSB stopped at the last ride's day and only refreshed after
+  a restart; they now run to today and update after each ride.
 
 ## [1.0.0] - 2026-07-10
 
