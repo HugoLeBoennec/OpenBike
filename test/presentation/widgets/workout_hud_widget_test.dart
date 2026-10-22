@@ -5,6 +5,9 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:mocktail/mocktail.dart';
 
+import 'package:open_bike/core/application/services/bundled_workouts.dart';
+import 'package:open_bike/core/application/services/ftp_test_planner.dart';
+import 'package:open_bike/core/application/services/recording_engine.dart';
 import 'package:open_bike/core/application/services/workout_engine.dart';
 import 'package:open_bike/core/domain/entities/workout.dart';
 import 'package:open_bike/core/domain/entities/workout_step.dart';
@@ -16,6 +19,8 @@ import 'package:open_bike/presentation/widgets/workout_hud_widget.dart';
 import 'package:open_bike/presentation/widgets/workout_mini_profile.dart';
 
 class MockTrainerPort extends Mock implements TrainerPort {}
+
+class MockRecordingEngine extends Mock implements RecordingEngine {}
 
 final _workout = Workout(
   id: 'w1',
@@ -122,6 +127,43 @@ void main() {
     // Cancel the engine's periodic timer before the test ends — flutter_test
     // fails the test if a Timer is still pending when it completes, and
     // addTearDown callbacks run after that check.
+    engine.dispose();
+  });
+
+  testWidgets("during a ramp test, I'm done replaces skip and ends the ramp",
+      (tester) async {
+    final eventBus = EventBus();
+    addTearDown(eventBus.dispose);
+    final trainer = MockTrainerPort();
+    when(() => trainer.setTargetPower(any())).thenAnswer((_) async {});
+    final recorder = MockRecordingEngine();
+    when(() => recorder.liveRide).thenReturn(null);
+
+    final ramp = BundledWorkouts.rampTest;
+    final engine = WorkoutEngine(trainerPort: trainer, eventBus: eventBus);
+    engine.start(ramp, const Watts(200));
+
+    await tester.pumpWidget(_wrap(const WorkoutHudWidget(), [
+      currentWorkoutProvider.overrideWith((ref) => ramp),
+      workoutEngineProvider.overrideWithValue(engine),
+      workoutProgressProvider.overrideWith((ref) => engine.progressStream),
+      ftpProvider.overrideWithValue(const Watts(200)),
+      activeFtpTestProvider.overrideWith((ref) => FtpTestProtocol.ramp),
+      recordingEngineProvider.overrideWithValue(recorder),
+    ]));
+    await tester.pump(const Duration(seconds: 1));
+
+    expect(find.byIcon(Icons.skip_next), findsNothing);
+    await tester.tap(find.byKey(const Key('rampDoneButton')));
+    await tester.pump();
+
+    expect(engine.currentStepIndex, ramp.steps.length - 1);
+    expect(find.text('COOL DOWN'), findsOneWidget);
+    // The cooldown can be skipped like any step.
+    expect(find.byKey(const Key('rampDoneButton')), findsNothing);
+    expect(find.byIcon(Icons.skip_next), findsOneWidget);
+    expect(find.textContaining('Spin easy to cool down'), findsOneWidget);
+
     engine.dispose();
   });
 

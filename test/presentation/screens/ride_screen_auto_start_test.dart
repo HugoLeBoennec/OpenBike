@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart' hide Route;
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
@@ -37,6 +39,7 @@ void main() {
   late _MockRecordingEngine recorder;
   late _MockWorkoutEngine workoutEngine;
   late _MockRouteSimulator simulator;
+  late StreamController<SensorReading> samples;
 
   setUpAll(() {
     registerFallbackValue(_FakeWorkout());
@@ -48,7 +51,11 @@ void main() {
     recorder = _MockRecordingEngine();
     workoutEngine = _MockWorkoutEngine();
     simulator = _MockRouteSimulator();
+    samples = StreamController<SensorReading>.broadcast();
+    addTearDown(samples.close);
     when(() => recorder.state).thenReturn(RecordingState.idle);
+    when(() => recorder.sampleStream).thenAnswer((_) => samples.stream);
+    when(() => recorder.liveRide).thenReturn(null);
     when(() => recorder.start()).thenAnswer(
       (_) async => Ride(id: 'r', startTime: DateTime(2026), status: RideStatus.active),
     );
@@ -130,9 +137,42 @@ void main() {
     final step = BundledWorkouts.rampTest.steps[9];
     bus.fire(WorkoutEvent.stepChanged(step, 9));
     bus.fire(WorkoutEvent.stepChanged(step, 4)); // never goes back
+    // The rider stopped at step 10: the jump to the cooldown isn't a step
+    // ridden.
+    final steps = BundledWorkouts.rampTest.steps;
+    bus.fire(WorkoutEvent.stepChanged(steps.last, steps.length - 1));
     await tester.pump();
 
     expect(container.read(ftpTestProgressProvider)?.furthestStep, 9);
+  });
+
+  testWidgets('ends a ramp test the rider can no longer hold', (tester) async {
+    final ramp = BundledWorkouts.rampTest;
+    when(() => workoutEngine.currentWorkout).thenReturn(ramp);
+    when(() => workoutEngine.currentStepIndex).thenReturn(14);
+    when(() => workoutEngine.targetPower).thenReturn(const Watts(285));
+    await pumpRideScreen(tester, RideExtra(workout: ramp));
+    when(() => workoutEngine.state).thenReturn(WorkoutEngineState.running);
+
+    // Cadence collapsed while ERG held the watts.
+    Future<void> second() async {
+      samples.add(SensorReading(
+        timestamp: DateTime.now(),
+        power: const Watts(280),
+        cadence: const Cadence(40),
+      ));
+      await tester.pump();
+    }
+
+    for (var i = 0; i < 9; i++) {
+      await second();
+    }
+    verifyNever(() => workoutEngine.skipToCooldown());
+
+    await second();
+    verify(() => workoutEngine.skipToCooldown()).called(1);
+    await tester.pump();
+    expect(find.textContaining('too early to estimate'), findsOneWidget);
   });
 
   testWidgets('a free ride still waits for the play button', (tester) async {

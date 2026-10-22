@@ -8,9 +8,11 @@ import 'package:wakelock_plus/wakelock_plus.dart';
 import '../../core/application/services/auto_pause_detector.dart';
 import '../../core/application/services/bundled_workouts.dart';
 import '../../core/application/services/ftp_test_planner.dart';
+import '../../core/application/services/ramp_failure_detector.dart';
 import '../../core/application/services/recording_engine.dart';
 import '../../core/application/services/route_simulator.dart';
 import '../../core/application/services/workout_engine.dart';
+import '../../core/domain/entities/sensor_reading.dart';
 import '../../core/domain/entities/workout.dart';
 import '../../core/domain/entities/workout_step.dart';
 import '../../core/events/app_event.dart';
@@ -49,6 +51,7 @@ class RideScreen extends ConsumerStatefulWidget {
 class _RideScreenState extends ConsumerState<RideScreen> {
   StreamSubscription<SimulationEvent>? _simCompletionSub;
   StreamSubscription<WorkoutEvent>? _ftpTestStepSub;
+  StreamSubscription<SensorReading>? _rampFailureSub;
   Timer? _autoPauseTimer;
   final _autoPauseDetector = AutoPauseDetector();
   bool _autoPauseDialogShowing = false;
@@ -71,7 +74,8 @@ class _RideScreenState extends ConsumerState<RideScreen> {
           _ => null,
         };
         ref.read(activeFtpTestProvider.notifier).state = ftpTest;
-        _trackFtpTestProgress(ftpTest == null ? null : workout);
+        _trackFtpTestProgress(ftpTest, workout);
+        if (ftpTest == FtpTestProtocol.ramp) _watchRampFailure();
         final ftp = ref.read(ftpProvider);
         final engine = ref.read(workoutEngineProvider);
         // A previous ride may have left the engine running or completed.
@@ -117,10 +121,10 @@ class _RideScreenState extends ConsumerState<RideScreen> {
 
   /// Follows how far an FTP test [workout] gets, for the post-ride prompt to
   /// judge whether the test counts. Subscribes before the engine starts, so
-  /// the first step is seen too. A null [workout] (not a test) clears it.
-  void _trackFtpTestProgress(Workout? workout) {
+  /// the first step is seen too. A null [protocol] (not a test) clears it.
+  void _trackFtpTestProgress(FtpTestProtocol? protocol, Workout workout) {
     final progress = ref.read(ftpTestProgressProvider.notifier);
-    if (workout == null) {
+    if (protocol == null) {
       progress.state = null;
       return;
     }
@@ -129,12 +133,42 @@ class _RideScreenState extends ConsumerState<RideScreen> {
     _ftpTestStepSub =
         ref.read(eventBusProvider).on<WorkoutEvent>().listen((event) {
       if (event is! WorkoutStepChanged) return;
+      // The ramp jumps to its cooldown from wherever the rider stopped, so
+      // reaching it says nothing about the steps in between.
+      if (protocol == FtpTestProtocol.ramp &&
+          event.step.type == StepType.cooldown) {
+        return;
+      }
       final current = progress.state;
       if (current == null || event.index <= current.furthestStep) return;
       progress.state = (
         furthestStep: event.index,
         testBlockStep: current.testBlockStep,
       );
+    });
+  }
+
+  /// Ends the ramp once the rider can no longer hold it — see
+  /// [RampFailureDetector]. Fed by the recording's samples, which keep
+  /// coming while the screen is off and stop while the ride is paused.
+  void _watchRampFailure() {
+    final detector = RampFailureDetector();
+    _rampFailureSub =
+        ref.read(recordingEngineProvider).sampleStream.listen((sample) {
+      final engine = ref.read(workoutEngineProvider);
+      final workout = engine.currentWorkout;
+      if (engine.state != WorkoutEngineState.running || workout == null) {
+        return;
+      }
+      final step = workout.steps[engine.currentStepIndex];
+      if (step.type == StepType.cooldown) return;
+      final over = detector.addSecond(
+        stepIndex: engine.currentStepIndex,
+        target: engine.targetPower,
+        power: sample.power,
+        cadence: sample.cadence,
+      );
+      if (over && mounted) endRampTest(context, ref);
     });
   }
 
@@ -150,6 +184,7 @@ class _RideScreenState extends ConsumerState<RideScreen> {
   void dispose() {
     _simCompletionSub?.cancel();
     _ftpTestStepSub?.cancel();
+    _rampFailureSub?.cancel();
     _autoPauseTimer?.cancel();
     WakelockPlus.disable();
     super.dispose();
