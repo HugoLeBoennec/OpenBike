@@ -38,7 +38,9 @@ flutter analyze     # must be clean — CI fails on any issue
 flutter test        # must be green
 ```
 
-Both run on every push. If you touched generated-code inputs (`freezed`
+Both run on every push. The platform builds only run for a store build tag
+(`ios-*`, `android-*`) or a manual run of the CI workflow. If you touched
+generated-code inputs (`freezed`
 classes, Drift tables), re-run `build_runner` and commit the regenerated
 files.
 

@@ -1,8 +1,13 @@
 name: CI
 
+# Analyze and tests run on every push and PR. The platform builds only run
+# for a store build tag, one platform per tag (ios-<version>-build<N>,
+# android-<version>-build<N>), or all five on a manual run. Tagged v*
+# releases are built by release.yml.
 on:
   push:
     branches: ['**']
+    tags: ['ios-*', 'android-*']
   pull_request:
   workflow_dispatch:
 
@@ -71,6 +76,7 @@ jobs:
     name: Build Android (debug APK)
     runs-on: ubuntu-latest
     needs: [analyze, test]
+    if: startsWith(github.ref, 'refs/tags/android-') || github.event_name == 'workflow_dispatch'
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-java@v4
@@ -89,6 +95,7 @@ jobs:
     name: Build iOS (no codesign)
     runs-on: macos-latest
     needs: [analyze, test]
+    if: startsWith(github.ref, 'refs/tags/ios-') || github.event_name == 'workflow_dispatch'
     steps:
       - uses: actions/checkout@v4
       - uses: subosito/flutter-action@v2
@@ -103,6 +110,8 @@ jobs:
     name: Build macOS
     runs-on: macos-latest
     needs: [analyze, test]
+    # No store build tags for desktop: manual runs only.
+    if: github.event_name == 'workflow_dispatch'
     steps:
       - uses: actions/checkout@v4
       - uses: subosito/flutter-action@v2
@@ -117,6 +126,8 @@ jobs:
     name: Build Windows
     runs-on: windows-latest
     needs: [analyze, test]
+    # No store build tags for desktop: manual runs only.
+    if: github.event_name == 'workflow_dispatch'
     steps:
       - uses: actions/checkout@v4
       - uses: subosito/flutter-action@v2
@@ -132,6 +143,8 @@ jobs:
     runs-on: ubuntu-latest
     needs: [analyze, test]
     continue-on-error: true
+    # No store build tags for desktop: manual runs only.
+    if: github.event_name == 'workflow_dispatch'
     steps:
       - uses: actions/checkout@v4
       - name: Install Linux build dependencies
@@ -155,9 +168,7 @@ jobs:
           path: OpenBike-linux-x64.tar.gz
           if-no-files-found: error
 
-  # Tag-triggered release packaging (signed AAB/IPA/DMG/MSIX + Linux
-  # tar.gz, attached to a GitHub Release) lives in its own workflow now —
-  # see .github/workflows/release.yml and docs/release/checklist.md. It was
-  # dead code here: this workflow's `push.branches` trigger never fires for
-  # tag pushes in the first place, so the old `if: startsWith(github.ref,
-  # 'refs/tags/')` jobs never actually ran.
+  # Release packaging for v* tags (signed AAB/IPA/DMG/MSIX + Linux tar.gz,
+  # attached to a GitHub Release) lives in its own workflow — see
+  # .github/workflows/release.yml and docs/release/checklist.md. The builds
+  # above are debug builds that check a tagged store build compiles on CI.
