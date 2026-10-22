@@ -27,6 +27,8 @@ abstract class StoragePort {
 
   // --- Sensor readings ---
 
+  /// Appends [readings] to the ride's. A reading at a timestamp the ride
+  /// already has is skipped, so saving the same reading twice keeps one copy.
   Future<void> saveSensorReadings(String rideId, List<SensorReading> readings);
   Future<List<SensorReading>> getSensorReadings(String rideId);
 

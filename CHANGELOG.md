@@ -67,6 +67,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/).
 - On Android 12 and newer, Bluetooth was always refused ("OpenBike isn't
   allowed to use Bluetooth") even with Nearby devices allowed, so no
   trainer or sensor could be found or connected.
+- Every 30-second auto-save stored all the ride's readings again, so a
+  17-minute ride held its first minutes up to 35 times. FIT and TCX exports
+  and Strava uploads carried the copies, average power read low, and FTP
+  test results read high (the ramp test took a few seconds for its best
+  minute). Rides already recorded are cleaned up the first time the app
+  opens.
 
 ## [1.0.0] - 2026-07-10
 

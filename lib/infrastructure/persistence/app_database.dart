@@ -251,6 +251,9 @@ class AppDatabase extends _$AppDatabase {
           }
           await createIndices();
         },
+        beforeOpen: (details) async {
+          await removeDuplicateReadings();
+        },
       );
 
   // -------------------------------------------------------------------------
@@ -265,11 +268,7 @@ class AppDatabase extends _$AppDatabase {
       'rides',
       'CREATE INDEX IF NOT EXISTS idx_rides_start_time ON rides (start_time)',
     );
-    await _createIndexIfTableExists(
-      'sensor_readings',
-      'CREATE INDEX IF NOT EXISTS idx_sensor_readings_ride_ts '
-      'ON sensor_readings (ride_id, timestamp)',
-    );
+    // sensor_readings gets its unique index from [removeDuplicateReadings].
     await _createIndexIfTableExists(
       'laps',
       'CREATE INDEX IF NOT EXISTS idx_laps_ride ON laps (ride_id)',
@@ -293,6 +292,38 @@ class AppDatabase extends _$AppDatabase {
       'CREATE INDEX IF NOT EXISTS idx_ftp_history_date '
       'ON ftp_history (effective_date)',
     );
+  }
+
+  static const _uniqueReadingsIndex = 'idx_sensor_readings_ride_ts_unique';
+
+  /// Rides recorded before this fix hold each reading many times over: every
+  /// 30-second auto-save wrote all the readings recorded so far again. Keeps
+  /// the first copy of each, then swaps the plain (ride_id, timestamp) index
+  /// for a unique one so a ride can't store the same moment twice. Runs on
+  /// every open but stops at the index lookup once done.
+  Future<void> removeDuplicateReadings() async {
+    final done = await customSelect(
+      "SELECT name FROM sqlite_master WHERE type = 'index' AND name = ?",
+      variables: [Variable.withString(_uniqueReadingsIndex)],
+    ).getSingleOrNull();
+    if (done != null) return;
+
+    final removed = await transaction(() async {
+      final removed = await customUpdate(
+        'DELETE FROM sensor_readings WHERE id NOT IN '
+        '(SELECT MIN(id) FROM sensor_readings GROUP BY ride_id, timestamp)',
+        updates: {sensorReadings},
+        updateKind: UpdateKind.delete,
+      );
+      await customStatement('DROP INDEX IF EXISTS idx_sensor_readings_ride_ts');
+      await customStatement(
+        'CREATE UNIQUE INDEX $_uniqueReadingsIndex '
+        'ON sensor_readings (ride_id, timestamp)',
+      );
+      return removed;
+    });
+    // An hour's ride held about 200,000 rows; give the space back.
+    if (removed > 0) await customStatement('VACUUM');
   }
 
   /// Guards index creation against tables that don't exist yet — relevant

@@ -135,6 +135,8 @@ class DriftStorage implements StoragePort {
             gradePercent: Value(r.grade?.percent),
           ),
         ),
+        // The unique (ride_id, timestamp) index turns a repeat into a no-op.
+        mode: InsertMode.insertOrIgnore,
       );
     });
   }
