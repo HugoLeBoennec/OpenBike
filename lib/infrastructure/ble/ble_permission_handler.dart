@@ -1,5 +1,7 @@
 import 'dart:io';
 
+import 'package:flutter/foundation.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_blue_plus/flutter_blue_plus.dart';
 import 'package:logging/logging.dart';
 import 'package:permission_handler/permission_handler.dart';
@@ -25,7 +27,8 @@ enum BleAvailability {
 
 /// Handles platform-specific BLE permission requests.
 ///
-/// - **Android**: Bluetooth, BluetoothScan, BluetoothConnect, Location.
+/// - **Android 12+**: BluetoothScan, BluetoothConnect ("Nearby devices").
+/// - **Android 11 and older**: Location.
 /// - **iOS**: Bluetooth (via Info.plist, prompted automatically).
 /// - **Desktop** (macOS/Linux/Windows): no runtime permissions needed.
 class BlePermissionHandler {
@@ -52,15 +55,47 @@ class BlePermissionHandler {
   // Android
   // ---------------------------------------------------------------------------
 
-  Future<BleAvailability> _requestAndroidPermissions() async {
-    final permissions = <Permission>[
-      Permission.bluetooth,
-      Permission.bluetoothScan,
-      Permission.bluetoothConnect,
-      Permission.locationWhenInUse,
-    ];
+  /// Android 12 (API 31) replaced Bluetooth's location permission with the
+  /// "Nearby devices" ones.
+  static const _android12 = 31;
 
-    final statuses = await permissions.request();
+  static const _platformChannel =
+      MethodChannel('run.records.openbike/platform');
+
+  /// Runtime permissions BLE needs on Android API level [sdkInt].
+  ///
+  /// Only permissions the manifest declares for that level may be listed:
+  /// BLUETOOTH and ACCESS_FINE_LOCATION are capped at API 30 there, and on
+  /// Android 12+ permission_handler reports such a permission denied without
+  /// ever prompting — which would refuse Bluetooth no matter what the user
+  /// allowed.
+  @visibleForTesting
+  static List<Permission> androidPermissionsFor(int sdkInt) =>
+      sdkInt >= _android12
+          ? [Permission.bluetoothScan, Permission.bluetoothConnect]
+          : [Permission.locationWhenInUse];
+
+  /// The device's Android API level, from MainActivity. It never changes
+  /// while the app runs, so it is asked for once.
+  static final Future<int> _androidSdkInt = _queryAndroidSdkInt();
+
+  static Future<int> _queryAndroidSdkInt() async {
+    try {
+      final sdkInt =
+          await _platformChannel.invokeMethod<int>('androidSdkInt');
+      if (sdkInt != null) return sdkInt;
+    } on Exception catch (e) {
+      _log.warning('Could not read the Android API level: $e');
+    }
+    // Fall back to the permissions every current device uses.
+    return _android12;
+  }
+
+  Future<BleAvailability> _requestAndroidPermissions() async {
+    final sdkInt = await _androidSdkInt;
+    _log.fine('Android API level $sdkInt');
+
+    final statuses = await androidPermissionsFor(sdkInt).request();
 
     for (final entry in statuses.entries) {
       _log.fine('${entry.key}: ${entry.value}');
