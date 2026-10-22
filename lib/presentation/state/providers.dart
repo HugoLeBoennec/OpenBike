@@ -896,14 +896,37 @@ final physicsEngineProvider = Provider<CyclingPhysicsEngine>((ref) {
   return CyclingPhysicsEngine();
 });
 
-/// Provides the active [TrainerPort] from [activeTrainerPortProvider].
-/// Throws if no trainer is connected — only access when a device is connected.
+/// Provides the active [TrainerPort] from [activeTrainerPortProvider], behind
+/// its [ErgCadenceGuard]. Throws if no trainer is connected — only access
+/// when a device is connected.
 final trainerPortProvider = Provider<TrainerPort>((ref) {
-  final port = ref.watch(activeTrainerPortProvider);
-  if (port == null) {
+  final guard = ref.watch(ergCadenceGuardProvider);
+  if (guard == null) {
     throw StateError('No trainer connected — connect a device first');
   }
-  return port;
+  return guard;
+});
+
+/// Wraps the connected trainer so ERG eases off when cadence collapses —
+/// see [ErgCadenceGuard]. Both writers of ERG targets go through the same
+/// one: the workout engine (via [trainerPortProvider]) and manual ERG (via
+/// [trainerModeControllerProvider]). Null without a trainer.
+final ergCadenceGuardProvider = Provider<ErgCadenceGuard?>((ref) {
+  final port = ref.watch(activeTrainerPortProvider);
+  if (port == null) return null;
+  final guard = ErgCadenceGuard(
+    trainer: port,
+    eventBus: ref.watch(eventBusProvider),
+  );
+  ref.onDispose(guard.dispose);
+  return guard;
+});
+
+/// Whether ERG is eased for a collapsed cadence right now.
+final ergEasingProvider = StreamProvider<bool>((ref) {
+  final guard = ref.watch(ergCadenceGuardProvider);
+  if (guard == null) return Stream.value(false);
+  return guard.easingStream;
 });
 
 final routeSimulatorProvider = Provider<RouteSimulator>((ref) {
@@ -983,9 +1006,11 @@ final trainerModeControllerProvider =
     getDefaultResistance: () => ref.read(resistanceLevelProvider),
   );
 
-  controller.setTrainerPort(ref.read(activeTrainerPortProvider));
+  controller.setTrainerPort(ref.read(ergCadenceGuardProvider));
+  ref.listen(ergCadenceGuardProvider, (_, guard) {
+    controller.setTrainerPort(guard);
+  });
   ref.listen(activeTrainerPortProvider, (_, port) {
-    controller.setTrainerPort(port);
     // Propagate current difficulty immediately to any new FTMS adapter.
     if (port is FtmsTrainerAdapter) {
       port.difficulty = ref.read(trainerDifficultyProvider);
@@ -998,7 +1023,8 @@ final trainerModeControllerProvider =
     if (port is FtmsTrainerAdapter) port.difficulty = difficulty;
   });
 
-  ref.onDispose(controller.dispose);
+  // StateNotifierProvider disposes the controller itself; doing it here too
+  // threw when the container was disposed.
   return controller;
 });
 

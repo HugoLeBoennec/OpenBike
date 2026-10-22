@@ -1,12 +1,14 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
+import '../../core/application/services/ftp_test_planner.dart';
 import '../../core/application/services/workout_engine.dart';
 import '../../core/domain/entities/workout.dart';
 import '../../core/domain/entities/workout_step.dart';
 import '../../core/domain/value_objects/value_objects.dart';
 import '../state/providers.dart';
 import '../theme/app_theme.dart';
+import 'ride_pause_actions.dart';
 import 'workout_mini_profile.dart';
 
 /// In-ride HUD for a structured workout: current step + target, countdown,
@@ -59,6 +61,8 @@ class _WorkoutHudContent extends ConsumerWidget {
     final nextStep = progress.currentStepIndex + 1 < workout.steps.length
         ? workout.steps[progress.currentStepIndex + 1]
         : null;
+    final inRamp = ref.watch(activeFtpTestProvider) == FtpTestProtocol.ramp &&
+        step.type != StepType.cooldown;
 
     return Container(
       color: context.tokens.rideSurfaceDeep,
@@ -115,7 +119,10 @@ class _WorkoutHudContent extends ConsumerWidget {
                     targetPower: progress.targetPower,
                   ),
                   const SizedBox(width: 8),
-                  _SkipButton(),
+                  if (inRamp)
+                    const _RampDoneButton()
+                  else
+                    const _SkipButton(),
                 ],
               ),
             ],
@@ -308,6 +315,30 @@ class _SkipButton extends ConsumerWidget {
           engine.skip();
         }
       },
+    );
+  }
+}
+
+// ---------------------------------------------------------------------------
+// "I'm done" button — replaces skip during a ramp test
+// ---------------------------------------------------------------------------
+
+/// On a ramp, skipping only moves to a harder step; this ends the ramp and
+/// drops to the cooldown instead — see [endRampTest].
+class _RampDoneButton extends ConsumerWidget {
+  const _RampDoneButton();
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    return FilledButton(
+      key: const Key('rampDoneButton'),
+      style: FilledButton.styleFrom(
+        minimumSize: const Size(0, 48),
+        padding: const EdgeInsets.symmetric(horizontal: 18),
+        textStyle: const TextStyle(fontSize: 15, fontWeight: FontWeight.bold),
+      ),
+      onPressed: () => endRampTest(context, ref),
+      child: const Text("I'm done"),
     );
   }
 }

@@ -3,6 +3,9 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:wakelock_plus/wakelock_plus.dart';
 
+import '../../core/application/services/ftp_estimator.dart';
+import '../../core/application/services/ftp_test_planner.dart';
+import '../../core/application/services/ramp_failure_detector.dart';
 import '../../core/application/services/recording_engine.dart';
 import '../../core/application/services/route_simulator.dart';
 import '../../core/application/services/workout_engine.dart';
@@ -50,6 +53,43 @@ void endRideSession(WidgetRef ref) {
 
   ref.read(powerHistoryProvider.notifier).clear();
   ref.read(hrHistoryProvider.notifier).clear();
+}
+
+/// Ends an FTP ramp test: drops the trainer to the cooldown and tells the
+/// rider where their test landed. Shared by the HUD's "I'm done" button and
+/// the ride screen's [RampFailureDetector], so stopping by hand and being
+/// stopped behave the same. The post-ride prompt still offers the result.
+void endRampTest(BuildContext context, WidgetRef ref) {
+  final engine = ref.read(workoutEngineProvider);
+  if (engine.state != WorkoutEngineState.running &&
+      engine.state != WorkoutEngineState.paused) {
+    return;
+  }
+  engine.skipToCooldown();
+
+  final readings =
+      ref.read(recordingEngineProvider).liveRide?.readings ?? const [];
+  final progress = ref.read(ftpTestProgressProvider);
+  final complete = progress != null &&
+      FtpEstimator.isCompleteTest(
+        FtpTestProtocol.ramp,
+        furthestStep: progress.furthestStep,
+        testBlockStep: progress.testBlockStep,
+        recordedSeconds: readings.length,
+      );
+  final message = complete
+      ? 'Ramp done — your FTP is about '
+          '${FtpEstimator.estimateFromRamp(readings).value.round()} W. '
+          'Spin easy to cool down, then end the ride to save it.'
+      : 'Ramp stopped before step ${FtpEstimator.minRampSteps}, too early '
+          'to estimate your FTP. Spin easy to cool down.';
+  ScaffoldMessenger.of(context).showSnackBar(
+    SnackBar(
+      content: Text(message),
+      duration: const Duration(seconds: 10),
+      backgroundColor: context.tokens.surfaceTier2,
+    ),
+  );
 }
 
 /// Marks a lap on the active recording and shows a summary snackbar —

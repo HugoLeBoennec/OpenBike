@@ -8,9 +8,11 @@ import 'package:wakelock_plus/wakelock_plus.dart';
 import '../../core/application/services/auto_pause_detector.dart';
 import '../../core/application/services/bundled_workouts.dart';
 import '../../core/application/services/ftp_test_planner.dart';
+import '../../core/application/services/ramp_failure_detector.dart';
 import '../../core/application/services/recording_engine.dart';
 import '../../core/application/services/route_simulator.dart';
 import '../../core/application/services/workout_engine.dart';
+import '../../core/domain/entities/sensor_reading.dart';
 import '../../core/domain/entities/workout.dart';
 import '../../core/domain/entities/workout_step.dart';
 import '../../core/events/app_event.dart';
@@ -20,6 +22,7 @@ import '../state/providers.dart';
 import '../theme/app_theme.dart';
 import '../widgets/connection_banner.dart';
 import '../widgets/data_field_grid.dart';
+import '../widgets/erg_easing_banner.dart';
 import '../widgets/live_chart.dart';
 import '../widgets/manual_trainer_controls.dart';
 import '../widgets/power_gauge.dart';
@@ -49,6 +52,7 @@ class RideScreen extends ConsumerStatefulWidget {
 class _RideScreenState extends ConsumerState<RideScreen> {
   StreamSubscription<SimulationEvent>? _simCompletionSub;
   StreamSubscription<WorkoutEvent>? _ftpTestStepSub;
+  StreamSubscription<SensorReading>? _rampFailureSub;
   Timer? _autoPauseTimer;
   final _autoPauseDetector = AutoPauseDetector();
   bool _autoPauseDialogShowing = false;
@@ -71,7 +75,8 @@ class _RideScreenState extends ConsumerState<RideScreen> {
           _ => null,
         };
         ref.read(activeFtpTestProvider.notifier).state = ftpTest;
-        _trackFtpTestProgress(ftpTest == null ? null : workout);
+        _trackFtpTestProgress(ftpTest, workout);
+        if (ftpTest == FtpTestProtocol.ramp) _watchRampFailure();
         final ftp = ref.read(ftpProvider);
         final engine = ref.read(workoutEngineProvider);
         // A previous ride may have left the engine running or completed.
@@ -117,10 +122,10 @@ class _RideScreenState extends ConsumerState<RideScreen> {
 
   /// Follows how far an FTP test [workout] gets, for the post-ride prompt to
   /// judge whether the test counts. Subscribes before the engine starts, so
-  /// the first step is seen too. A null [workout] (not a test) clears it.
-  void _trackFtpTestProgress(Workout? workout) {
+  /// the first step is seen too. A null [protocol] (not a test) clears it.
+  void _trackFtpTestProgress(FtpTestProtocol? protocol, Workout workout) {
     final progress = ref.read(ftpTestProgressProvider.notifier);
-    if (workout == null) {
+    if (protocol == null) {
       progress.state = null;
       return;
     }
@@ -129,6 +134,12 @@ class _RideScreenState extends ConsumerState<RideScreen> {
     _ftpTestStepSub =
         ref.read(eventBusProvider).on<WorkoutEvent>().listen((event) {
       if (event is! WorkoutStepChanged) return;
+      // The ramp jumps to its cooldown from wherever the rider stopped, so
+      // reaching it says nothing about the steps in between.
+      if (protocol == FtpTestProtocol.ramp &&
+          event.step.type == StepType.cooldown) {
+        return;
+      }
       final current = progress.state;
       if (current == null || event.index <= current.furthestStep) return;
       progress.state = (
@@ -136,6 +147,60 @@ class _RideScreenState extends ConsumerState<RideScreen> {
         testBlockStep: current.testBlockStep,
       );
     });
+  }
+
+  /// Ends the ramp once the rider can no longer hold it — see
+  /// [RampFailureDetector]. Fed by the recording's samples, which keep
+  /// coming while the screen is off and stop while the ride is paused.
+  void _watchRampFailure() {
+    final detector = RampFailureDetector();
+    _rampFailureSub =
+        ref.read(recordingEngineProvider).sampleStream.listen((sample) {
+      final engine = ref.read(workoutEngineProvider);
+      final workout = engine.currentWorkout;
+      if (engine.state != WorkoutEngineState.running || workout == null) {
+        return;
+      }
+      final step = workout.steps[engine.currentStepIndex];
+      if (step.type == StepType.cooldown) return;
+      final over = detector.addSecond(
+        stepIndex: engine.currentStepIndex,
+        target: engine.targetPower,
+        power: sample.power,
+        cadence: sample.cadence,
+      );
+      if (over && mounted) endRampTest(context, ref);
+    });
+  }
+
+  /// A pause in the hard part of an FTP test lets the rider recover, so
+  /// the result reads high — say so when it happens, whichever way the ride
+  /// was paused.
+  void _warnIfTestPaused(RecordingState? previous, RecordingState? next) {
+    if (next != RecordingState.paused || previous == RecordingState.paused) {
+      return;
+    }
+    final test = ref.read(activeFtpTestProvider);
+    if (test == null) return;
+    final engine = ref.read(workoutEngineProvider);
+    final workout = engine.currentWorkout;
+    if (workout == null) return;
+    final type = workout.steps[engine.currentStepIndex].type;
+    final inEffort = switch (test) {
+      FtpTestProtocol.ramp => type != StepType.cooldown,
+      FtpTestProtocol.twentyMinute => type == StepType.freeRide,
+    };
+    if (!inEffort) return;
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: const Text(
+          'Paused mid-test. Resting lets you recover, so the result will '
+          'read high. Resume as soon as you can.',
+        ),
+        duration: const Duration(seconds: 8),
+        backgroundColor: context.tokens.surfaceTier2,
+      ),
+    );
   }
 
   /// Starts recording alongside a workout or route, which drive the trainer
@@ -150,6 +215,7 @@ class _RideScreenState extends ConsumerState<RideScreen> {
   void dispose() {
     _simCompletionSub?.cancel();
     _ftpTestStepSub?.cancel();
+    _rampFailureSub?.cancel();
     _autoPauseTimer?.cancel();
     WakelockPlus.disable();
     super.dispose();
@@ -266,6 +332,11 @@ class _RideScreenState extends ConsumerState<RideScreen> {
     ref.watch(scheduledWorkoutLinkerProvider);
     // Auto-enqueues exports for any service with auto-upload enabled.
     ref.watch(autoUploadProvider);
+    ref.listen(
+      recordingStateProvider,
+      (previous, next) =>
+          _warnIfTestPaused(previous?.valueOrNull, next.valueOrNull),
+    );
 
     return PopScope(
       canPop: false,
@@ -279,6 +350,7 @@ class _RideScreenState extends ConsumerState<RideScreen> {
             child: Column(
               children: [
                 const ConnectionBanner(),
+                const ErgEasingBanner(),
                 Expanded(
                   child: LayoutBuilder(
                     builder: (context, constraints) {

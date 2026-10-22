@@ -372,6 +372,49 @@ void main() {
     });
   });
 
+  // =========================================================================
+  // Skip to cooldown
+  // =========================================================================
+
+  group('WorkoutEngine — skipToCooldown', () {
+    test('jumps from the warmup past the main set to the cooldown', () async {
+      final progresses = <WorkoutProgress>[];
+      engine.progressStream.listen(progresses.add);
+
+      engine.start(simpleWorkout, const Watts(250));
+      engine.skipToCooldown();
+
+      await Future<void>.delayed(Duration.zero);
+      final p = progresses.last;
+      expect(p.currentStepIndex, 2);
+      expect(p.currentStep.type, StepType.cooldown);
+      // The timeline is at the start of the cooldown: 2 s warmup + 3 s set.
+      expect(p.totalElapsed, const Duration(seconds: 5));
+      // Cooldown starts at 75% of FTP.
+      verify(() => trainer.setTargetPower(const Watts(188))).called(1);
+      engine.stop();
+    });
+
+    test('completes a workout with no cooldown left', () {
+      engine.start(intervalWorkout, const Watts(250));
+      engine.skipToCooldown();
+
+      expect(engine.state, WorkoutEngineState.completed);
+    });
+
+    test('completes the workout when already in the cooldown', () {
+      engine.start(simpleWorkout, const Watts(250));
+      engine.skipToCooldown();
+      engine.skipToCooldown();
+
+      expect(engine.state, WorkoutEngineState.completed);
+    });
+
+    test('when idle throws', () {
+      expect(() => engine.skipToCooldown(), throwsStateError);
+    });
+  });
+
   group('WorkoutEngine — start', () {
     test('emits progress right away, before the first tick', () async {
       final progresses = <WorkoutProgress>[];

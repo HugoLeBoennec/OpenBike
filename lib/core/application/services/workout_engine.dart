@@ -220,6 +220,34 @@ class WorkoutEngine {
     _emitProgress();
   }
 
+  /// Ends the main set: jumps to the next cooldown step, or completes the
+  /// workout when none follows. A ramp test has no set end — it's over when
+  /// the rider can't hold the step — and what comes next should be easy
+  /// spinning, not the following step's harder target, which is all [skip]
+  /// can offer.
+  void skipToCooldown() {
+    if (_state != WorkoutEngineState.running &&
+        _state != WorkoutEngineState.paused) {
+      throw StateError('Cannot skip to cooldown: engine is $_state');
+    }
+
+    final steps = _currentWorkout!.steps;
+    final cooldown = steps.indexWhere(
+      (s) => s.type == StepType.cooldown,
+      _currentStepIndex + 1,
+    );
+    if (cooldown < 0) {
+      _complete();
+      return;
+    }
+
+    _totalElapsed = steps
+        .take(cooldown)
+        .fold(0, (sum, s) => sum + s.totalDurationSeconds);
+    _beginStep(cooldown);
+    _emitProgress();
+  }
+
   // ---------------------------------------------------------------------------
   // stop
   // ---------------------------------------------------------------------------

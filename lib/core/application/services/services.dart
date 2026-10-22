@@ -1,10 +1,12 @@
 export 'auto_pause_detector.dart';
+export 'erg_cadence_guard.dart';
 export 'fitness_calculator.dart';
 export 'ftp_estimator.dart';
 export 'ftp_test_planner.dart';
 export 'personal_records_calculator.dart';
 export 'personal_records_backfill.dart';
 export 'physics_engine.dart';
+export 'ramp_failure_detector.dart';
 export 'recording_engine.dart';
 export 'route_simulator.dart';
 export 'trainer_mode_controller.dart';
