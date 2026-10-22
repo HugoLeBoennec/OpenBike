@@ -28,6 +28,14 @@ and this project adheres to [Semantic Versioning](https://semver.org/).
 - Rides can be deleted from their History page; completed calendar entries
   and FTP test results can be removed (removing the latest test restores the
   FTP before it).
+- ERG eases off when your cadence collapses: under 50 rpm for 3 seconds,
+  the trainer drops to half the target until you're back above 60 rpm for
+  3 seconds, and a banner says why. Works in workouts and manual ERG, and
+  makes restarting from a standstill bearable.
+- The ramp test ends by itself once you can't hold it (10 seconds under
+  60 rpm or under 80% of the target, from the 8th step), or when you tap the
+  new **I'm done** button that replaces skip during the ramp. Either drops
+  to a new 5-minute cooldown and shows your FTP estimate.
 
 ### Changed
 - Every ride (workouts, FTP tests, Free Ride and routes) needs a connected
@@ -40,6 +48,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/).
 - FTP tests only offer a result once ridden far enough (8 steps of the ramp,
   or the full 20-minute effort), and warn when the result is far below the
   current FTP.
+- Pausing during the hard part of an FTP test warns that the rest makes the
+  result read high.
 - The Garmin Connect export is now called FIT File. File exports open the
   share sheet once saved and are no longer offered for auto-upload.
 - Power is written in W everywhere, personal records included.
