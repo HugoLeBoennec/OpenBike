@@ -64,6 +64,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/).
   ramps; Share as .zwo failed on phones.
 - CTL, ATL and TSB stopped at the last ride's day and only refreshed after
   a restart; they now run to today and update after each ride.
+- On Android 12 and newer, Bluetooth was always refused ("OpenBike isn't
+  allowed to use Bluetooth") even with Nearby devices allowed, so no
+  trainer or sensor could be found or connected.
 
 ## [1.0.0] - 2026-07-10
 
