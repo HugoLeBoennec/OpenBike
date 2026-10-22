@@ -34,6 +34,11 @@ class Ride with _$Ride {
     double? cachedTss,
     double? cachedIntensityFactor,
 
+    // The FTP the ride was scored against when it was saved (TSS, IF), so
+    // an export reports the same threshold rather than today's FTP or a
+    // default. Null for a ride saved without one.
+    Watts? ftpAtTime,
+
     // Elevation climbed during a route-simulated ride. There's no way to
     // compute this from readings (no elevation source besides the route
     // itself) — it's set once from RouteSimulator's live total on stop and

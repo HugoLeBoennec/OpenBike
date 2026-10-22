@@ -65,6 +65,7 @@ void main() {
   setUpAll(() {
     registerFallbackValue(FakeRide());
     registerFallbackValue(ExportFormat.fit);
+    registerFallbackValue(Watts.zero);
   });
 
   setUp(() async {
@@ -155,6 +156,20 @@ void main() {
 
       verify(() => stravaPlugin.export(any(), format: any(named: 'format')))
           .called(greaterThanOrEqualTo(1));
+    });
+
+    test('exports with the FTP the ride was scored against', () async {
+      when(() => storage.getRide('ride-001')).thenAnswer(
+          (_) async => _testRide().copyWith(ftpAtTime: const Watts(209)));
+      when(() => stravaPlugin.export(any(),
+              format: any(named: 'format'), ftp: any(named: 'ftp')))
+          .thenAnswer((_) async => 'activity-123');
+
+      await service.enqueue('ride-001', 'strava-export');
+      await Future<void>.delayed(const Duration(milliseconds: 500));
+
+      verify(() => stravaPlugin.export(any(),
+          format: any(named: 'format'), ftp: const Watts(209))).called(1);
     });
 
     test('marks item as success after successful upload', () async {

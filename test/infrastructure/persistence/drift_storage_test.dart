@@ -51,6 +51,15 @@ void main() {
   // ===========================================================================
 
   group('DriftStorage — rides', () {
+    test('a ride saved with an FTP reads it back as ftpAtTime', () async {
+      await storage.saveRide(_testRide(), ftp: const Watts(209));
+      await storage.saveRide(_testRide(id: 'ride-002'));
+
+      expect((await storage.getRide('ride-001'))!.ftpAtTime,
+          const Watts(209));
+      expect((await storage.getRide('ride-002'))!.ftpAtTime, isNull);
+    });
+
     test('saveRide then getRide round-trips core fields', () async {
       final ride = _testRide();
       await storage.saveRide(ride);

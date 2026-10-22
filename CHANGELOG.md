@@ -88,6 +88,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/).
   just as often: the trainer's raw readings reached the recording between
   the merged ones. The recording, route simulation and ERG cadence
   safeguard now all use the merged reading the ride screen shows.
+- FIT exports and Strava uploads reported a 200 W FTP whatever yours was,
+  so their TSS and IF disagreed with the app's; they now use the FTP the
+  ride was scored against.
 
 ## [1.0.0] - 2026-07-10
 
