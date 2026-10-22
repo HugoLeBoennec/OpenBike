@@ -18,17 +18,29 @@ class BundledWorkouts {
   /// Fixed ID for the 20-minute FTP test.
   static const twentyMinTestId = 'bundled-ftp-20min-test';
 
-  /// Inserts every bundled workout that isn't already present (by id).
-  /// Idempotent — safe to call on every app start; never overwrites a
+  /// Inserts every bundled workout that isn't already present (by id), and
+  /// brings a saved copy still equal to an earlier bundled version up to
+  /// date. Idempotent — safe to call on every app start; never overwrites a
   /// workout a user has since edited under the same id.
   static Future<void> seedIfNeeded(StoragePort storage) async {
-    final existingIds = (await storage.getWorkouts()).map((w) => w.id).toSet();
+    final saved = {for (final w in await storage.getWorkouts()) w.id: w};
     for (final workout in all) {
-      if (!existingIds.contains(workout.id)) {
+      final copy = saved[workout.id];
+      if (copy == null || _isUneditedEarlierVersion(copy)) {
         await storage.saveWorkout(workout);
       }
     }
   }
+
+  /// Bundled definitions earlier builds seeded, by id.
+  static final _earlierVersions = {
+    rampTestId: [_rampTestWithoutCooldown],
+  };
+
+  static bool _isUneditedEarlierVersion(Workout copy) =>
+      (_earlierVersions[copy.id] ?? const <Workout>[])
+          // The source isn't stored, so a saved copy never has one.
+          .any((earlier) => copy.copyWith(source: earlier.source) == earlier);
 
   static List<Workout> get all => [
         _recoverySpin,
@@ -238,17 +250,29 @@ class BundledWorkouts {
   // FTP tests
   // ---------------------------------------------------------------------------
 
-  /// Ramp test: ~1-minute steps rising by a fixed increment until failure.
+  /// Ramp test: ~1-minute steps rising by a fixed increment until failure,
+  /// then an easy cooldown.
   ///
   /// The spec is stated in absolute terms (start 100 W, +20 W/min) — since
   /// [WorkoutStep] targets are %FTP, the steps below express that same ramp
   /// relative to the app's default 200 W FTP fallback (50% start, +10%/min);
   /// at any other current FTP the ramp scales proportionally, which is the
   /// expected behavior for an ERG target expressed as %FTP. 25 one-minute
-  /// steps (up to 290%) comfortably outlasts any rider — they stop the ride
-  /// when they fail, and post-ride FTP detection uses their best 1-minute
-  /// power regardless of which step they reached.
-  static final Workout rampTest = () {
+  /// steps (up to 290%) comfortably outlast any rider. The ramp ends when
+  /// they can't hold it — detected by `RampFailureDetector`, or their "I'm
+  /// done" — and jumps to the cooldown; post-ride FTP detection uses their
+  /// best 1-minute power regardless of which step they reached.
+  static final Workout rampTest = _rampSteps()
+      .cooldown(duration: 300, fromPercent: 50, toPercent: 40)
+      .build()
+      .copyWith(id: rampTestId);
+
+  /// [rampTest] as builds before the cooldown seeded it, which left the only
+  /// way out of the ramp through ever harder steps.
+  static final _rampTestWithoutCooldown =
+      _rampSteps().build().copyWith(id: rampTestId);
+
+  static WorkoutBuilder _rampSteps() {
     var builder = WorkoutBuilder(
       'Ramp Test',
       description: 'Steps up every minute until you can no longer hold cadence.',
@@ -256,8 +280,8 @@ class BundledWorkouts {
     for (var i = 0; i < 25; i++) {
       builder = builder.steady(duration: 60, percent: 50 + i * 10);
     }
-    return builder.build().copyWith(id: rampTestId);
-  }();
+    return builder;
+  }
 
   static final Workout twentyMinTest = WorkoutBuilder(
     '20-Minute Test',
