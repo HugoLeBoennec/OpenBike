@@ -166,8 +166,8 @@ class FakeTrainer implements TrainerPort {
       distance: Distance(_accumulatedDistance),
     );
 
+    // Fusion puts it on the bus, as for a real trainer — see SensorEvent.
     _dataController.add(reading);
-    _eventBus.fire(SensorEvent(reading: reading, deviceId: _deviceId));
   }
 
   // ---------------------------------------------------------------------------

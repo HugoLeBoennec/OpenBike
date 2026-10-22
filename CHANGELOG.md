@@ -83,6 +83,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/).
   test results read high (the ramp test took a few seconds for its best
   minute). Rides already recorded are cleaned up the first time the app
   opens.
+- Rides recorded heart rate for only about half their seconds with an HR
+  strap paired, and a paired power meter lost to the trainer's own power
+  just as often: the trainer's raw readings reached the recording between
+  the merged ones. The recording, route simulation and ERG cadence
+  safeguard now all use the merged reading the ride screen shows.
 
 ## [1.0.0] - 2026-07-10
 
