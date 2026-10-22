@@ -172,6 +172,36 @@ class _RideScreenState extends ConsumerState<RideScreen> {
     });
   }
 
+  /// A pause in the hard part of an FTP test lets the rider recover, so
+  /// the result reads high — say so when it happens, whichever way the ride
+  /// was paused.
+  void _warnIfTestPaused(RecordingState? previous, RecordingState? next) {
+    if (next != RecordingState.paused || previous == RecordingState.paused) {
+      return;
+    }
+    final test = ref.read(activeFtpTestProvider);
+    if (test == null) return;
+    final engine = ref.read(workoutEngineProvider);
+    final workout = engine.currentWorkout;
+    if (workout == null) return;
+    final type = workout.steps[engine.currentStepIndex].type;
+    final inEffort = switch (test) {
+      FtpTestProtocol.ramp => type != StepType.cooldown,
+      FtpTestProtocol.twentyMinute => type == StepType.freeRide,
+    };
+    if (!inEffort) return;
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: const Text(
+          'Paused mid-test. Resting lets you recover, so the result will '
+          'read high. Resume as soon as you can.',
+        ),
+        duration: const Duration(seconds: 8),
+        backgroundColor: context.tokens.surfaceTier2,
+      ),
+    );
+  }
+
   /// Starts recording alongside a workout or route, which drive the trainer
   /// from the moment the screen opens — otherwise their timeline runs while
   /// the ride timer sits at zero until the rider finds the play button.
@@ -301,6 +331,11 @@ class _RideScreenState extends ConsumerState<RideScreen> {
     ref.watch(scheduledWorkoutLinkerProvider);
     // Auto-enqueues exports for any service with auto-upload enabled.
     ref.watch(autoUploadProvider);
+    ref.listen(
+      recordingStateProvider,
+      (previous, next) =>
+          _warnIfTestPaused(previous?.valueOrNull, next.valueOrNull),
+    );
 
     return PopScope(
       canPop: false,

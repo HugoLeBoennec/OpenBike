@@ -63,7 +63,11 @@ void main() {
     when(() => simulator.state).thenReturn(SimulationState.idle);
   });
 
-  Future<void> pumpRideScreen(WidgetTester tester, RideExtra? extra) async {
+  Future<void> pumpRideScreen(
+    WidgetTester tester,
+    RideExtra? extra, {
+    Stream<RecordingState>? recordingStates,
+  }) async {
     SharedPreferences.setMockInitialValues({});
     final prefs = AppPreferences(await SharedPreferences.getInstance());
 
@@ -73,8 +77,8 @@ void main() {
         recordingEngineProvider.overrideWithValue(recorder),
         workoutEngineProvider.overrideWithValue(workoutEngine),
         routeSimulatorProvider.overrideWithValue(simulator),
-        recordingStateProvider
-            .overrideWith((ref) => Stream.value(RecordingState.idle)),
+        recordingStateProvider.overrideWith((ref) =>
+            recordingStates ?? Stream.value(RecordingState.idle)),
         workoutEngineStateProvider
             .overrideWith((ref) => Stream.value(WorkoutEngineState.running)),
         workoutProgressProvider.overrideWith((ref) => const Stream.empty()),
@@ -173,6 +177,58 @@ void main() {
     verify(() => workoutEngine.skipToCooldown()).called(1);
     await tester.pump();
     expect(find.textContaining('too early to estimate'), findsOneWidget);
+  });
+
+  group('pausing an FTP test', () {
+    late StreamController<RecordingState> states;
+    const warning = 'Paused mid-test';
+
+    setUp(() {
+      states = StreamController<RecordingState>();
+      addTearDown(states.close);
+    });
+
+    Future<void> pauseAt(
+      WidgetTester tester,
+      Workout workout,
+      int stepIndex,
+    ) async {
+      when(() => workoutEngine.currentWorkout).thenReturn(workout);
+      when(() => workoutEngine.currentStepIndex).thenReturn(stepIndex);
+      await pumpRideScreen(tester, RideExtra(workout: workout),
+          recordingStates: states.stream);
+      states.add(RecordingState.recording);
+      await tester.pump();
+      states.add(RecordingState.paused);
+      await tester.pump();
+      await tester.pump(); // builds the snackbar
+    }
+
+    testWidgets('warns during the ramp', (tester) async {
+      await pauseAt(tester, BundledWorkouts.rampTest, 12);
+      expect(find.textContaining(warning), findsOneWidget);
+    });
+
+    testWidgets('stays quiet in the cooldown', (tester) async {
+      final ramp = BundledWorkouts.rampTest;
+      await pauseAt(tester, ramp, ramp.steps.length - 1);
+      expect(find.textContaining(warning), findsNothing);
+    });
+
+    testWidgets('warns in the 20-minute block, not the warmup',
+        (tester) async {
+      final test = BundledWorkouts.twentyMinTest;
+      await pauseAt(tester, test, 0);
+      expect(find.textContaining(warning), findsNothing);
+
+      when(() => workoutEngine.currentStepIndex).thenReturn(1);
+      states.add(RecordingState.recording);
+      await tester.pump();
+      states.add(RecordingState.paused);
+      await tester.pump();
+      await tester.pump();
+      expect(find.textContaining(warning), findsOneWidget);
+    });
   });
 
   testWidgets('a free ride still waits for the play button', (tester) async {
