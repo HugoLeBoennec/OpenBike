@@ -524,9 +524,13 @@ void main() {
       verify(() => storage.saveLaps(any(), any())).called(1);
     });
 
-    test('auto-save triggers after 30 ticks', () async {
+    test('auto-saves on its interval and stores each reading once', () async {
+      final engine = RecordingEngine(
+        eventBus: eventBus,
+        storage: storage,
+        autoSaveInterval: const Duration(seconds: 2),
+      );
       await engine.start();
-
       eventBus.fire(SensorEvent(
         reading: SensorReading(
           timestamp: DateTime.now(),
@@ -534,18 +538,46 @@ void main() {
         ),
         deviceId: 'test',
       ));
+      await Future<void>.delayed(const Duration(milliseconds: 5200));
+      final ride = await engine.stop();
+      await engine.dispose();
 
-      // Wait 31 seconds for the auto-save to fire.
-      // Using fakeAsync isn't available without flutter_test, so we verify
-      // the auto-save counter logic indirectly by checking that the save
-      // methods are called more than once over a 31-second window.
-      // (This test is intentionally light to avoid slow wall-clock waits.)
-      //
-      // The unit test for auto-save timing is a design-level test:
-      // RecordingEngine._autoSaveIntervalTicks = 30 is verified by constant.
-      expect(RecordingEngine, isNotNull); // placeholder for integration test
+      final saved = verify(
+        () => storage.saveSensorReadings(any(), captureAny()),
+      ).captured.cast<List<SensorReading>>();
+      // Auto-saves after 2 and 4 s, then the stop saves the 5th second.
+      expect(saved.map((chunk) => chunk.length), [2, 2, 1]);
+      expect(saved.expand((chunk) => chunk), ride.readings);
+    });
 
+    test('a failed auto-save is retried by the next save', () async {
+      var calls = 0;
+      when(() => storage.saveSensorReadings(any(), any())).thenAnswer((_) {
+        calls++;
+        if (calls == 1) throw Exception('disk full');
+        return Future<void>.value();
+      });
+      final engine = RecordingEngine(
+        eventBus: eventBus,
+        storage: storage,
+        autoSaveInterval: const Duration(seconds: 2),
+      );
+      await engine.start();
+      eventBus.fire(SensorEvent(
+        reading: SensorReading(
+          timestamp: DateTime.now(),
+          power: const Watts(200),
+        ),
+        deviceId: 'test',
+      ));
+      await Future<void>.delayed(const Duration(milliseconds: 3200));
       await engine.stop();
+      await engine.dispose();
+
+      final saved = verify(
+        () => storage.saveSensorReadings(any(), captureAny()),
+      ).captured.cast<List<SensorReading>>();
+      expect(saved.map((chunk) => chunk.length), [2, 3]);
     });
   });
 

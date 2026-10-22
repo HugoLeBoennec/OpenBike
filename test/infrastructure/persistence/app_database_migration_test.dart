@@ -12,6 +12,8 @@ import 'package:open_bike/infrastructure/persistence/generated_migrations/schema
     as v4;
 import 'package:open_bike/infrastructure/persistence/generated_migrations/schema_v5.dart'
     as v5;
+import 'package:open_bike/infrastructure/persistence/generated_migrations/schema_v6.dart'
+    as v6;
 
 void main() {
   final verifier = SchemaVerifier(GeneratedHelper());
@@ -153,6 +155,55 @@ void main() {
     await db.close();
   });
 
+  test('opening a v6 database keeps one copy of each duplicated reading',
+      () async {
+    // Every 30-second auto-save wrote all of a ride's readings again, so a
+    // v6 database holds the start of each ride many times over.
+    final schema = await verifier.schemaAt(6);
+    final oldDb = v6.DatabaseAtV6(schema.newConnection());
+    await oldDb.customStatement(
+      'CREATE INDEX idx_sensor_readings_ride_ts '
+      'ON sensor_readings (ride_id, timestamp)',
+    );
+    await oldDb.customStatement(
+      "INSERT INTO rides (id, start_time, status) "
+      "VALUES ('ride-dup', 0, 'finished')",
+    );
+    Future<void> insertReading(int timestamp, double power) =>
+        oldDb.customStatement(
+          'INSERT INTO sensor_readings (ride_id, timestamp, power_watts) '
+          "VALUES ('ride-dup', $timestamp, $power)",
+        );
+    // Three auto-saves of a growing ride: 1 s, then 2 s, then 3 s recorded.
+    await insertReading(0, 100);
+    await insertReading(0, 100);
+    await insertReading(1000, 110);
+    await insertReading(0, 100);
+    await insertReading(1000, 110);
+    await insertReading(2000, 120);
+    await oldDb.close();
+
+    final db = AppDatabase(schema.newConnection());
+    await verifier.migrateAndValidate(db, 6);
+
+    final readings = await (db.select(db.sensorReadings)
+          ..orderBy([(t) => OrderingTerm.asc(t.timestamp)]))
+        .get();
+    expect(readings.map((r) => r.timestamp), [0, 1000, 2000]);
+    expect(readings.map((r) => r.powerWatts), [100, 110, 120]);
+
+    final indexNames = await db
+        .customSelect(
+          "SELECT name FROM sqlite_master WHERE type = 'index' "
+          "AND tbl_name = 'sensor_readings' AND name LIKE 'idx_%'",
+        )
+        .map((row) => row.read<String>('name'))
+        .get();
+    expect(indexNames, ['idx_sensor_readings_ride_ts_unique']);
+
+    await db.close();
+  });
+
   test('indices exist after a fresh create', () async {
     final db = AppDatabase(NativeDatabase.memory());
     // Force schema creation (onCreate is lazy until the first query).
@@ -167,7 +218,7 @@ void main() {
 
     expect(indexNames, containsAll(<String>[
       'idx_rides_start_time',
-      'idx_sensor_readings_ride_ts',
+      'idx_sensor_readings_ride_ts_unique',
       'idx_laps_ride',
       'idx_export_queue_ride',
       'idx_scheduled_workouts_date',

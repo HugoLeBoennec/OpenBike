@@ -26,10 +26,12 @@ class RecordingEngine {
     required StoragePort storage,
     Uuid? uuid,
     PersonalRecordsCalculator? personalRecordsCalculator,
+    Duration autoSaveInterval = const Duration(seconds: 30),
   })  : _eventBus = eventBus,
         _storage = storage,
         _uuid = uuid ?? Uuid(),
-        _personalRecords = personalRecordsCalculator ?? PersonalRecordsCalculator();
+        _personalRecords = personalRecordsCalculator ?? PersonalRecordsCalculator(),
+        _autoSaveIntervalTicks = autoSaveInterval.inSeconds;
 
   final EventBus _eventBus;
   final StoragePort _storage;
@@ -104,9 +106,15 @@ class RecordingEngine {
   DateTime? _pauseStartTime;
   Duration _totalPauseDuration = Duration.zero;
 
-  // Auto-save counter (ticks at 1 Hz, saves every 30 ticks).
+  // Auto-save counter (ticks at 1 Hz, saves every 30 ticks by default).
   int _ticksSinceLastSave = 0;
-  static const int _autoSaveIntervalTicks = 30;
+  final int _autoSaveIntervalTicks;
+
+  // Readings already written to storage — each save appends only the ones
+  // after them. Writing the whole list on every auto-save stored the start of
+  // a ride once per save, 35 times over by the end of a 17-minute ride.
+  int _savedReadingCount = 0;
+  Future<void>? _pendingAutoSave;
 
   // Lap tracking.
   int _lastLapStartIndex = 0;
@@ -141,6 +149,7 @@ class RecordingEngine {
     _laps.clear();
     _totalPauseDuration = Duration.zero;
     _ticksSinceLastSave = 0;
+    _savedReadingCount = 0;
     _lastLapStartIndex = 0;
     _lastLapStartTime = now;
     _latestReading = null;
@@ -291,6 +300,10 @@ class RecordingEngine {
     _sensorSubscription = null;
     await _simulationSubscription?.cancel();
     _simulationSubscription = null;
+    // Let an auto-save still writing finish first, so the final save starts
+    // after the readings it stored.
+    await _pendingAutoSave;
+    _pendingAutoSave = null;
 
     final now = DateTime.now();
 
@@ -321,9 +334,7 @@ class RecordingEngine {
     } else {
       await _storage.saveRide(finalRide);
     }
-    if (_readings.isNotEmpty) {
-      await _storage.saveSensorReadings(finalRide.id, _readings);
-    }
+    await _saveNewReadings(finalRide.id);
     if (_laps.isNotEmpty) {
       await _storage.saveLaps(finalRide.id, _laps);
     }
@@ -369,6 +380,9 @@ class RecordingEngine {
     _sensorSubscription = null;
     await _simulationSubscription?.cancel();
     _simulationSubscription = null;
+    // An auto-save finishing after the delete would leave orphan readings.
+    await _pendingAutoSave;
+    _pendingAutoSave = null;
 
     final rideId = _currentRide!.id;
     _pauseStartTime = null;
@@ -426,7 +440,7 @@ class RecordingEngine {
     _ticksSinceLastSave++;
     if (_ticksSinceLastSave >= _autoSaveIntervalTicks) {
       _ticksSinceLastSave = 0;
-      _autoSave();
+      _pendingAutoSave = _autoSave();
     }
   }
 
@@ -451,11 +465,23 @@ class RecordingEngine {
         pauseDuration: _totalPauseDuration,
       );
       await _storage.saveRide(snapshot);
-      await _storage.saveSensorReadings(snapshot.id, _readings);
-      _log.fine('Auto-saved ${_readings.length} readings');
+      await _saveNewReadings(snapshot.id);
+      _log.fine('Auto-saved $_savedReadingCount readings');
     } catch (e) {
       _log.warning('Auto-save failed: $e');
     }
+  }
+
+  /// Appends the readings recorded since the last successful save. A failed
+  /// save leaves the count alone, so the next one retries those readings.
+  Future<void> _saveNewReadings(String rideId) async {
+    final end = _readings.length;
+    if (end == _savedReadingCount) return;
+    await _storage.saveSensorReadings(
+      rideId,
+      _readings.sublist(_savedReadingCount, end),
+    );
+    _savedReadingCount = end;
   }
 
   void _setState(RecordingState newState) {

@@ -120,6 +120,17 @@ void main() {
       expect(readings.single.grade, isNull);
     });
 
+    test('saving readings already stored keeps one copy of each', () async {
+      final ride = _testRide();
+      await storage.saveRide(ride);
+      await storage.saveSensorReadings(ride.id, ride.readings.sublist(0, 1));
+      await storage.saveSensorReadings(ride.id, ride.readings);
+
+      final readings = await storage.getSensorReadings(ride.id);
+      expect(readings.map((r) => r.timestamp.millisecondsSinceEpoch),
+          ride.readings.map((r) => r.timestamp.millisecondsSinceEpoch));
+    });
+
     test('other fields round-trip alongside grade', () async {
       final ride = _testRide();
       await storage.saveRide(ride);
