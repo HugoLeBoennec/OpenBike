@@ -205,7 +205,9 @@ class ExportQueueService {
         return;
       }
 
-      final result = await plugin.export(ride);
+      // The FTP the ride was scored against, so a FIT file's threshold power,
+      // TSS and IF match the app's rather than the encoder's 200 W default.
+      final result = await plugin.export(ride, ftp: ride.ftpAtTime);
 
       // Success! Only file-export plugins return a local path worth
       // keeping around (e.g. for a share action) — Strava returns a

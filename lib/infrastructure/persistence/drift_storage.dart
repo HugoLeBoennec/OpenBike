@@ -106,6 +106,7 @@ class DriftStorage implements StoragePort {
           row.totalDistance != null ? Distance(row.totalDistance!) : null,
       cachedTss: row.tss,
       cachedIntensityFactor: row.intensityFactor,
+      ftpAtTime: row.ftpAtTime != null ? Watts(row.ftpAtTime!) : null,
       cachedElevationGain:
           row.elevationGainM != null ? Distance(row.elevationGainM!) : null,
     );

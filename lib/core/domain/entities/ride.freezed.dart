@@ -35,6 +35,10 @@ mixin _$Ride {
   Distance? get cachedTotalDistance => throw _privateConstructorUsedError;
   double? get cachedTss => throw _privateConstructorUsedError;
   double? get cachedIntensityFactor =>
+      throw _privateConstructorUsedError; // The FTP the ride was scored against when it was saved (TSS, IF), so
+  // an export reports the same threshold rather than today's FTP or a
+  // default. Null for a ride saved without one.
+  Watts? get ftpAtTime =>
       throw _privateConstructorUsedError; // Elevation climbed during a route-simulated ride. There's no way to
   // compute this from readings (no elevation source besides the route
   // itself) — it's set once from RouteSimulator's live total on stop and
@@ -69,6 +73,7 @@ abstract class $RideCopyWith<$Res> {
     Distance? cachedTotalDistance,
     double? cachedTss,
     double? cachedIntensityFactor,
+    Watts? ftpAtTime,
     Distance? cachedElevationGain,
   });
 
@@ -79,6 +84,7 @@ abstract class $RideCopyWith<$Res> {
   $HeartRateCopyWith<$Res>? get cachedAvgHr;
   $HeartRateCopyWith<$Res>? get cachedMaxHr;
   $DistanceCopyWith<$Res>? get cachedTotalDistance;
+  $WattsCopyWith<$Res>? get ftpAtTime;
   $DistanceCopyWith<$Res>? get cachedElevationGain;
 }
 
@@ -113,6 +119,7 @@ class _$RideCopyWithImpl<$Res, $Val extends Ride>
     Object? cachedTotalDistance = freezed,
     Object? cachedTss = freezed,
     Object? cachedIntensityFactor = freezed,
+    Object? ftpAtTime = freezed,
     Object? cachedElevationGain = freezed,
   }) {
     return _then(
@@ -181,6 +188,10 @@ class _$RideCopyWithImpl<$Res, $Val extends Ride>
                 ? _value.cachedIntensityFactor
                 : cachedIntensityFactor // ignore: cast_nullable_to_non_nullable
                       as double?,
+            ftpAtTime: freezed == ftpAtTime
+                ? _value.ftpAtTime
+                : ftpAtTime // ignore: cast_nullable_to_non_nullable
+                      as Watts?,
             cachedElevationGain: freezed == cachedElevationGain
                 ? _value.cachedElevationGain
                 : cachedElevationGain // ignore: cast_nullable_to_non_nullable
@@ -292,6 +303,20 @@ class _$RideCopyWithImpl<$Res, $Val extends Ride>
   /// with the given fields replaced by the non-null parameter values.
   @override
   @pragma('vm:prefer-inline')
+  $WattsCopyWith<$Res>? get ftpAtTime {
+    if (_value.ftpAtTime == null) {
+      return null;
+    }
+
+    return $WattsCopyWith<$Res>(_value.ftpAtTime!, (value) {
+      return _then(_value.copyWith(ftpAtTime: value) as $Val);
+    });
+  }
+
+  /// Create a copy of Ride
+  /// with the given fields replaced by the non-null parameter values.
+  @override
+  @pragma('vm:prefer-inline')
   $DistanceCopyWith<$Res>? get cachedElevationGain {
     if (_value.cachedElevationGain == null) {
       return null;
@@ -328,6 +353,7 @@ abstract class _$$RideImplCopyWith<$Res> implements $RideCopyWith<$Res> {
     Distance? cachedTotalDistance,
     double? cachedTss,
     double? cachedIntensityFactor,
+    Watts? ftpAtTime,
     Distance? cachedElevationGain,
   });
 
@@ -345,6 +371,8 @@ abstract class _$$RideImplCopyWith<$Res> implements $RideCopyWith<$Res> {
   $HeartRateCopyWith<$Res>? get cachedMaxHr;
   @override
   $DistanceCopyWith<$Res>? get cachedTotalDistance;
+  @override
+  $WattsCopyWith<$Res>? get ftpAtTime;
   @override
   $DistanceCopyWith<$Res>? get cachedElevationGain;
 }
@@ -377,6 +405,7 @@ class __$$RideImplCopyWithImpl<$Res>
     Object? cachedTotalDistance = freezed,
     Object? cachedTss = freezed,
     Object? cachedIntensityFactor = freezed,
+    Object? ftpAtTime = freezed,
     Object? cachedElevationGain = freezed,
   }) {
     return _then(
@@ -445,6 +474,10 @@ class __$$RideImplCopyWithImpl<$Res>
             ? _value.cachedIntensityFactor
             : cachedIntensityFactor // ignore: cast_nullable_to_non_nullable
                   as double?,
+        ftpAtTime: freezed == ftpAtTime
+            ? _value.ftpAtTime
+            : ftpAtTime // ignore: cast_nullable_to_non_nullable
+                  as Watts?,
         cachedElevationGain: freezed == cachedElevationGain
             ? _value.cachedElevationGain
             : cachedElevationGain // ignore: cast_nullable_to_non_nullable
@@ -474,6 +507,7 @@ class _$RideImpl extends _Ride {
     this.cachedTotalDistance,
     this.cachedTss,
     this.cachedIntensityFactor,
+    this.ftpAtTime,
     this.cachedElevationGain,
   }) : _readings = readings,
        _laps = laps,
@@ -529,6 +563,11 @@ class _$RideImpl extends _Ride {
   final double? cachedTss;
   @override
   final double? cachedIntensityFactor;
+  // The FTP the ride was scored against when it was saved (TSS, IF), so
+  // an export reports the same threshold rather than today's FTP or a
+  // default. Null for a ride saved without one.
+  @override
+  final Watts? ftpAtTime;
   // Elevation climbed during a route-simulated ride. There's no way to
   // compute this from readings (no elevation source besides the route
   // itself) — it's set once from RouteSimulator's live total on stop and
@@ -538,7 +577,7 @@ class _$RideImpl extends _Ride {
 
   @override
   String toString() {
-    return 'Ride(id: $id, startTime: $startTime, endTime: $endTime, status: $status, readings: $readings, laps: $laps, pauseDuration: $pauseDuration, cachedAvgPower: $cachedAvgPower, cachedNormalizedPower: $cachedNormalizedPower, cachedMaxPower: $cachedMaxPower, cachedAvgCadence: $cachedAvgCadence, cachedAvgHr: $cachedAvgHr, cachedMaxHr: $cachedMaxHr, cachedTotalDistance: $cachedTotalDistance, cachedTss: $cachedTss, cachedIntensityFactor: $cachedIntensityFactor, cachedElevationGain: $cachedElevationGain)';
+    return 'Ride(id: $id, startTime: $startTime, endTime: $endTime, status: $status, readings: $readings, laps: $laps, pauseDuration: $pauseDuration, cachedAvgPower: $cachedAvgPower, cachedNormalizedPower: $cachedNormalizedPower, cachedMaxPower: $cachedMaxPower, cachedAvgCadence: $cachedAvgCadence, cachedAvgHr: $cachedAvgHr, cachedMaxHr: $cachedMaxHr, cachedTotalDistance: $cachedTotalDistance, cachedTss: $cachedTss, cachedIntensityFactor: $cachedIntensityFactor, ftpAtTime: $ftpAtTime, cachedElevationGain: $cachedElevationGain)';
   }
 
   @override
@@ -573,6 +612,8 @@ class _$RideImpl extends _Ride {
                 other.cachedTss == cachedTss) &&
             (identical(other.cachedIntensityFactor, cachedIntensityFactor) ||
                 other.cachedIntensityFactor == cachedIntensityFactor) &&
+            (identical(other.ftpAtTime, ftpAtTime) ||
+                other.ftpAtTime == ftpAtTime) &&
             (identical(other.cachedElevationGain, cachedElevationGain) ||
                 other.cachedElevationGain == cachedElevationGain));
   }
@@ -596,6 +637,7 @@ class _$RideImpl extends _Ride {
     cachedTotalDistance,
     cachedTss,
     cachedIntensityFactor,
+    ftpAtTime,
     cachedElevationGain,
   );
 
@@ -626,6 +668,7 @@ abstract class _Ride extends Ride {
     final Distance? cachedTotalDistance,
     final double? cachedTss,
     final double? cachedIntensityFactor,
+    final Watts? ftpAtTime,
     final Distance? cachedElevationGain,
   }) = _$RideImpl;
   const _Ride._() : super._();
@@ -662,7 +705,11 @@ abstract class _Ride extends Ride {
   @override
   double? get cachedTss;
   @override
-  double? get cachedIntensityFactor; // Elevation climbed during a route-simulated ride. There's no way to
+  double? get cachedIntensityFactor; // The FTP the ride was scored against when it was saved (TSS, IF), so
+  // an export reports the same threshold rather than today's FTP or a
+  // default. Null for a ride saved without one.
+  @override
+  Watts? get ftpAtTime; // Elevation climbed during a route-simulated ride. There's no way to
   // compute this from readings (no elevation source besides the route
   // itself) — it's set once from RouteSimulator's live total on stop and
   // persisted verbatim, same as the other cached fields above.
