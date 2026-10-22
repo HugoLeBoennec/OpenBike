@@ -22,6 +22,7 @@ import '../state/providers.dart';
 import '../theme/app_theme.dart';
 import '../widgets/connection_banner.dart';
 import '../widgets/data_field_grid.dart';
+import '../widgets/erg_easing_banner.dart';
 import '../widgets/live_chart.dart';
 import '../widgets/manual_trainer_controls.dart';
 import '../widgets/power_gauge.dart';
@@ -349,6 +350,7 @@ class _RideScreenState extends ConsumerState<RideScreen> {
             child: Column(
               children: [
                 const ConnectionBanner(),
+                const ErgEasingBanner(),
                 Expanded(
                   child: LayoutBuilder(
                     builder: (context, constraints) {

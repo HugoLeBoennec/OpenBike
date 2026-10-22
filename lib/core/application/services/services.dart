@@ -1,4 +1,5 @@
 export 'auto_pause_detector.dart';
+export 'erg_cadence_guard.dart';
 export 'fitness_calculator.dart';
 export 'ftp_estimator.dart';
 export 'ftp_test_planner.dart';
