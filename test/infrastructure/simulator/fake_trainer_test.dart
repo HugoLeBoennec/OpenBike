@@ -92,15 +92,19 @@ void main() {
       }
     });
 
-    test('fires SensorEvent on EventBus each tick', () async {
+    test('emits readings on its dataStream only, leaving the bus to fusion',
+        () async {
       final sensorEvents = <SensorEvent>[];
       eventBus.on<SensorEvent>().listen(sensorEvents.add);
+      final readings = <SensorReading>[];
+      final sub = trainer.dataStream.listen(readings.add);
 
       await trainer.initialize();
       await Future<void>.delayed(const Duration(seconds: 2, milliseconds: 500));
+      await sub.cancel();
 
-      expect(sensorEvents.length, greaterThanOrEqualTo(2));
-      expect(sensorEvents.first.deviceId, 'test-sim-0');
+      expect(readings.length, greaterThanOrEqualTo(2));
+      expect(sensorEvents, isEmpty);
     });
 
     test('distance accumulates monotonically', () async {

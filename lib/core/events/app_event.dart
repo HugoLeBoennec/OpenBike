@@ -8,6 +8,11 @@ part 'app_event.freezed.dart';
 // Sensor
 // ---------------------------------------------------------------------------
 
+/// The reading of every paired device merged by `SensorFusion`, once a
+/// second. Device ports only emit on their own `dataStream`, which fusion
+/// reads; a port putting its raw readings here too would interleave with
+/// the merged ones and drop the fields it lacks (a trainer's readings have
+/// no heart rate from a paired strap) from whatever kept the latest event.
 @freezed
 class SensorEvent with _$SensorEvent {
   const factory SensorEvent({

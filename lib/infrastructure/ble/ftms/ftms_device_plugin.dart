@@ -210,8 +210,9 @@ class FtmsTrainerAdapter implements TrainerPort {
         'cadence=${reading.cadence}, speed=${reading.speed}, '
         'hr=${reading.heartRate}');
 
+    // Fusion merges this with the other paired devices and puts the result
+    // on the bus — see SensorEvent.
     _dataController.add(reading);
-    _eventBus.fire(SensorEvent(reading: reading, deviceId: _device.id));
   }
 
   // ---------------------------------------------------------------------------

@@ -5,7 +5,9 @@ import 'package:flutter_blue_plus/flutter_blue_plus.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:mocktail/mocktail.dart';
 import 'package:open_bike/core/domain/entities/trainer_device.dart';
+import 'package:open_bike/core/domain/entities/sensor_reading.dart';
 import 'package:open_bike/core/domain/value_objects/value_objects.dart';
+import 'package:open_bike/core/events/app_event.dart';
 import 'package:open_bike/core/events/event_bus.dart';
 import 'package:open_bike/infrastructure/ble/ble_connection.dart';
 import 'package:open_bike/infrastructure/ble/ble_constants.dart';
@@ -84,6 +86,48 @@ void main() {
     await statusController.close();
     await connStateController.close();
     eventBus.dispose();
+  });
+
+  test('Indoor Bike Data goes to dataStream, leaving the bus to fusion',
+      () async {
+    final bikeData = StreamController<List<int>>.broadcast();
+    addTearDown(bikeData.close);
+    when(() => mockConnection.subscribe(
+          BleConstants.ftmsService,
+          BleConstants.ftmsIndoorBikeData,
+        )).thenAnswer((_) async => bikeData.stream);
+    final adapter = FtmsTrainerAdapter(
+      connection: mockConnection,
+      device: const TrainerDevice(
+        id: 'dev1',
+        name: 'Test Trainer',
+        protocol: DeviceProtocol.bleFtms,
+      ),
+      eventBus: eventBus,
+    );
+    final sensorEvents = <SensorEvent>[];
+    eventBus.on<SensorEvent>().listen(sensorEvents.add);
+    final readings = <SensorReading>[];
+    adapter.dataStream.listen(readings.add);
+
+    Future<void>.delayed(const Duration(milliseconds: 10), () {
+      cpController.add(cpResponse(0x00)); // requestControl
+    });
+    Future<void>.delayed(const Duration(milliseconds: 20), () {
+      cpController.add(cpResponse(0x07)); // startOrResume
+    });
+    await adapter.initialize();
+
+    bikeData.add([
+      0x44, 0x00, // flags: speed + cadence + power
+      0xB8, 0x0B, // speed: 30.00 km/h
+      0xB4, 0x00, // cadence: 90 rpm
+      0xC8, 0x00, // power: 200 W
+    ]);
+    await Future<void>.delayed(Duration.zero);
+
+    expect(readings.single.power, const Watts(200));
+    expect(sensorEvents, isEmpty);
   });
 
   test('setSimulationParams applies the default 0.5 difficulty to grade',
