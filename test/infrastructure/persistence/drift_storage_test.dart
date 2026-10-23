@@ -685,4 +685,103 @@ void main() {
       expect(await storage.getPersonalRecords(), isEmpty);
     });
   });
+
+  // ===========================================================================
+  // Saved routes
+  // ===========================================================================
+
+  group('DriftStorage — saved routes', () {
+    SavedRoute route({String id = 'route-1', String name = 'Galibier'}) =>
+        SavedRoute(
+          id: id,
+          name: name,
+          fingerprint: '{"d":18100,"p":[]}',
+          distance: const Distance(18100),
+          ascent: 1245,
+          profile: const [1200, 1650.5, 2642],
+          createdAt: DateTime.utc(2026, 10, 1),
+        );
+
+    test('a saved route reads back with its summary and GPX', () async {
+      await storage.saveRoute(route(), '<gpx/>');
+
+      final saved = (await storage.getSavedRoutes()).single;
+      expect(saved.name, 'Galibier');
+      expect(saved.source, SavedRoute.importSource);
+      expect(saved.distance, const Distance(18100));
+      expect(saved.ascent, 1245);
+      expect(saved.profile, [1200, 1650.5, 2642]);
+      expect(saved.createdAt, DateTime.utc(2026, 10, 1).toLocal());
+      expect(saved.rideCount, 0);
+      expect(saved.lastRiddenAt, isNull);
+      expect(await storage.getRouteGpx('route-1'), '<gpx/>');
+      expect(await storage.getRouteGpx('missing'), isNull);
+    });
+
+    test('newest routes come first', () async {
+      await storage.saveRoute(route(id: 'old'), '<gpx/>');
+      await storage.saveRoute(
+        route(id: 'new').copyWith(createdAt: DateTime.utc(2026, 10, 20)),
+        '<gpx/>',
+      );
+
+      expect((await storage.getSavedRoutes()).map((r) => r.id),
+          ['new', 'old']);
+    });
+
+    test('ride count and last ridden come from linked rides', () async {
+      await storage.saveRoute(route(), '<gpx/>');
+      final first = _testRide(id: 'ride-a');
+      final second = _testRide(id: 'ride-b').copyWith(
+        startTime: first.startTime.add(const Duration(days: 2)),
+      );
+      await storage.saveRide(first);
+      await storage.saveRide(second);
+      await storage.saveRide(_testRide(id: 'free-ride'));
+      await storage.linkRideToRoute('ride-a', 'route-1');
+      await storage.linkRideToRoute('ride-b', 'route-1');
+
+      final saved = (await storage.getSavedRoutes()).single;
+      expect(saved.rideCount, 2);
+      expect(saved.lastRiddenAt, second.startTime.toLocal());
+      expect((await storage.getRide('ride-a'))!.routeId, 'route-1');
+      expect((await storage.getRide('free-ride'))!.routeId, isNull);
+    });
+
+    test('saving a ride again keeps its route link', () async {
+      await storage.saveRoute(route(), '<gpx/>');
+      final ride = _testRide();
+      await storage.saveRide(ride);
+      await storage.linkRideToRoute(ride.id, 'route-1');
+
+      // The recording engine's copy never carries a routeId.
+      await storage.saveRide(ride, ftp: const Watts(250));
+
+      expect((await storage.getRide(ride.id))!.routeId, 'route-1');
+    });
+
+    test('renameRoute changes only the name', () async {
+      await storage.saveRoute(route(), '<gpx/>');
+      await storage.renameRoute('route-1', 'Col du Galibier');
+
+      final saved = (await storage.getSavedRoutes()).single;
+      expect(saved.name, 'Col du Galibier');
+      expect(saved.distance, const Distance(18100));
+      expect(await storage.getRouteGpx('route-1'), '<gpx/>');
+    });
+
+    test('deleteRoute keeps its rides and clears their link', () async {
+      await storage.saveRoute(route(), '<gpx/>');
+      await storage.saveRide(_testRide());
+      await storage.linkRideToRoute('ride-001', 'route-1');
+
+      await storage.deleteRoute('route-1');
+
+      expect(await storage.getSavedRoutes(), isEmpty);
+      expect(await storage.getRouteGpx('route-1'), isNull);
+      final ride = await storage.getRide('ride-001');
+      expect(ride, isNotNull);
+      expect(ride!.routeId, isNull);
+    });
+  });
 }

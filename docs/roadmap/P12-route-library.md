@@ -42,8 +42,9 @@ Settled with the maintainer before implementation (2026-10-23):
 - **"Use once"** routes are not stored at all, and their rides carry no route
   link. The ride summary offers **Save this route to library** while the route
   is still in memory, which also links that ride.
-- **Duplicate detection** compares the route's shape (rounded coordinates), not
-  the file's bytes, so the same route exported by two tools still matches. A
+- **Duplicate detection** compares the route's shape — its length and five
+  points along it, within a tolerance — not the file's bytes, so the same
+  route exported by two tools still matches. A
   duplicate import says "Already in your library as …", hides the switch, and
   rides the saved copy so the ride is linked.
 - **Sort:** last ridden (default; never-ridden routes by date added), date added,
@@ -61,7 +62,7 @@ Settled with the maintainer before implementation (2026-10-23):
 - New `saved_routes` table: `id`, `name`, `source` (`import` today; P13 adds
   `records`), `external_ref` (source-side id, null for imports), `gpx` (raw GPX
   text — kept so a better parser later improves every saved route), `fingerprint`
-  (duplicate detection), cached `distance_m` / `ascent_m`, `profile_json`
+  (the encoded `RouteShape` duplicate detection compares), cached `distance_m` / `ascent_m`, `profile_json`
   (~64 elevation samples for list thumbnails), `created_at`.
 - `rides.route_id` — nullable, no FK constraint (SQLite doesn't enforce them
   here; `deleteRoute` clears it by hand, as `deleteRide` already does for
@@ -73,16 +74,16 @@ Settled with the maintainer before implementation (2026-10-23):
 ## Tasks
 
 ### 1. Data
-- [ ] `SavedRoute` entity (summary only — no GPX text, so the list never loads
+- [x] `SavedRoute` entity (summary only — no GPX text, so the list never loads
       every file) and `Ride.routeId`.
       (`lib/core/domain/entities/`)
-- [ ] `saved_routes` table + `rides.route_id`, schema v7, `from6To7` migration,
+- [x] `saved_routes` table + `rides.route_id`, schema v7, `from6To7` migration,
       `drift_schema_v7.json` + generated `schema_v7.dart` / `schema_versions.dart`.
       (`lib/infrastructure/persistence/app_database.dart`)
-- [ ] `StoragePort` + `DriftStorage`: save / list (with ride count and last
+- [x] `StoragePort` + `DriftStorage`: save / list (with ride count and last
       ridden) / load GPX / rename / delete (clears `rides.route_id`) / link a
       ride to a route.
-- [ ] `RouteLibrary` service: turns GPX text into a draft (parsed `Route`,
+- [x] `RouteLibrary` service: turns GPX text into a draft (parsed `Route`,
       fingerprint, summary, default name with file-name fallback), finds a
       duplicate, saves a draft. `GpxRouteParser.parse` gains a `fallbackName`.
       (`lib/core/application/services/route_library.dart`)

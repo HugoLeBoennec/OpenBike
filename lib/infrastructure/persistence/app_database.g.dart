@@ -213,6 +213,17 @@ class $RidesTable extends Rides with TableInfo<$RidesTable, RideRow> {
     type: DriftSqlType.double,
     requiredDuringInsert: false,
   );
+  static const VerificationMeta _routeIdMeta = const VerificationMeta(
+    'routeId',
+  );
+  @override
+  late final GeneratedColumn<String> routeId = GeneratedColumn<String>(
+    'route_id',
+    aliasedName,
+    true,
+    type: DriftSqlType.string,
+    requiredDuringInsert: false,
+  );
   @override
   List<GeneratedColumn> get $columns => [
     id,
@@ -235,6 +246,7 @@ class $RidesTable extends Rides with TableInfo<$RidesTable, RideRow> {
     intensityFactor,
     ftpAtTime,
     elevationGainM,
+    routeId,
   ];
   @override
   String get aliasedName => _alias ?? actualTableName;
@@ -389,6 +401,12 @@ class $RidesTable extends Rides with TableInfo<$RidesTable, RideRow> {
         ),
       );
     }
+    if (data.containsKey('route_id')) {
+      context.handle(
+        _routeIdMeta,
+        routeId.isAcceptableOrUnknown(data['route_id']!, _routeIdMeta),
+      );
+    }
     return context;
   }
 
@@ -478,6 +496,10 @@ class $RidesTable extends Rides with TableInfo<$RidesTable, RideRow> {
         DriftSqlType.double,
         data['${effectivePrefix}elevation_gain_m'],
       ),
+      routeId: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}route_id'],
+      ),
     );
   }
 
@@ -508,6 +530,10 @@ class RideRow extends DataClass implements Insertable<RideRow> {
   final double? intensityFactor;
   final double? ftpAtTime;
   final double? elevationGainM;
+
+  /// [SavedRoutes] row this ride followed. No FK constraint: SQLite doesn't
+  /// enforce them here, and deleting a route clears this by hand instead.
+  final String? routeId;
   const RideRow({
     required this.id,
     required this.startTime,
@@ -529,6 +555,7 @@ class RideRow extends DataClass implements Insertable<RideRow> {
     this.intensityFactor,
     this.ftpAtTime,
     this.elevationGainM,
+    this.routeId,
   });
   @override
   Map<String, Expression> toColumns(bool nullToAbsent) {
@@ -587,6 +614,9 @@ class RideRow extends DataClass implements Insertable<RideRow> {
     if (!nullToAbsent || elevationGainM != null) {
       map['elevation_gain_m'] = Variable<double>(elevationGainM);
     }
+    if (!nullToAbsent || routeId != null) {
+      map['route_id'] = Variable<String>(routeId);
+    }
     return map;
   }
 
@@ -644,6 +674,9 @@ class RideRow extends DataClass implements Insertable<RideRow> {
       elevationGainM: elevationGainM == null && nullToAbsent
           ? const Value.absent()
           : Value(elevationGainM),
+      routeId: routeId == null && nullToAbsent
+          ? const Value.absent()
+          : Value(routeId),
     );
   }
 
@@ -675,6 +708,7 @@ class RideRow extends DataClass implements Insertable<RideRow> {
       intensityFactor: serializer.fromJson<double?>(json['intensityFactor']),
       ftpAtTime: serializer.fromJson<double?>(json['ftpAtTime']),
       elevationGainM: serializer.fromJson<double?>(json['elevationGainM']),
+      routeId: serializer.fromJson<String?>(json['routeId']),
     );
   }
   @override
@@ -701,6 +735,7 @@ class RideRow extends DataClass implements Insertable<RideRow> {
       'intensityFactor': serializer.toJson<double?>(intensityFactor),
       'ftpAtTime': serializer.toJson<double?>(ftpAtTime),
       'elevationGainM': serializer.toJson<double?>(elevationGainM),
+      'routeId': serializer.toJson<String?>(routeId),
     };
   }
 
@@ -725,6 +760,7 @@ class RideRow extends DataClass implements Insertable<RideRow> {
     Value<double?> intensityFactor = const Value.absent(),
     Value<double?> ftpAtTime = const Value.absent(),
     Value<double?> elevationGainM = const Value.absent(),
+    Value<String?> routeId = const Value.absent(),
   }) => RideRow(
     id: id ?? this.id,
     startTime: startTime ?? this.startTime,
@@ -758,6 +794,7 @@ class RideRow extends DataClass implements Insertable<RideRow> {
     elevationGainM: elevationGainM.present
         ? elevationGainM.value
         : this.elevationGainM,
+    routeId: routeId.present ? routeId.value : this.routeId,
   );
   RideRow copyWithCompanion(RidesCompanion data) {
     return RideRow(
@@ -795,6 +832,7 @@ class RideRow extends DataClass implements Insertable<RideRow> {
       elevationGainM: data.elevationGainM.present
           ? data.elevationGainM.value
           : this.elevationGainM,
+      routeId: data.routeId.present ? data.routeId.value : this.routeId,
     );
   }
 
@@ -820,13 +858,14 @@ class RideRow extends DataClass implements Insertable<RideRow> {
           ..write('tss: $tss, ')
           ..write('intensityFactor: $intensityFactor, ')
           ..write('ftpAtTime: $ftpAtTime, ')
-          ..write('elevationGainM: $elevationGainM')
+          ..write('elevationGainM: $elevationGainM, ')
+          ..write('routeId: $routeId')
           ..write(')'))
         .toString();
   }
 
   @override
-  int get hashCode => Object.hash(
+  int get hashCode => Object.hashAll([
     id,
     startTime,
     endTime,
@@ -847,7 +886,8 @@ class RideRow extends DataClass implements Insertable<RideRow> {
     intensityFactor,
     ftpAtTime,
     elevationGainM,
-  );
+    routeId,
+  ]);
   @override
   bool operator ==(Object other) =>
       identical(this, other) ||
@@ -871,7 +911,8 @@ class RideRow extends DataClass implements Insertable<RideRow> {
           other.tss == this.tss &&
           other.intensityFactor == this.intensityFactor &&
           other.ftpAtTime == this.ftpAtTime &&
-          other.elevationGainM == this.elevationGainM);
+          other.elevationGainM == this.elevationGainM &&
+          other.routeId == this.routeId);
 }
 
 class RidesCompanion extends UpdateCompanion<RideRow> {
@@ -895,6 +936,7 @@ class RidesCompanion extends UpdateCompanion<RideRow> {
   final Value<double?> intensityFactor;
   final Value<double?> ftpAtTime;
   final Value<double?> elevationGainM;
+  final Value<String?> routeId;
   final Value<int> rowid;
   const RidesCompanion({
     this.id = const Value.absent(),
@@ -917,6 +959,7 @@ class RidesCompanion extends UpdateCompanion<RideRow> {
     this.intensityFactor = const Value.absent(),
     this.ftpAtTime = const Value.absent(),
     this.elevationGainM = const Value.absent(),
+    this.routeId = const Value.absent(),
     this.rowid = const Value.absent(),
   });
   RidesCompanion.insert({
@@ -940,6 +983,7 @@ class RidesCompanion extends UpdateCompanion<RideRow> {
     this.intensityFactor = const Value.absent(),
     this.ftpAtTime = const Value.absent(),
     this.elevationGainM = const Value.absent(),
+    this.routeId = const Value.absent(),
     this.rowid = const Value.absent(),
   }) : id = Value(id),
        startTime = Value(startTime),
@@ -965,6 +1009,7 @@ class RidesCompanion extends UpdateCompanion<RideRow> {
     Expression<double>? intensityFactor,
     Expression<double>? ftpAtTime,
     Expression<double>? elevationGainM,
+    Expression<String>? routeId,
     Expression<int>? rowid,
   }) {
     return RawValuesInsertable({
@@ -989,6 +1034,7 @@ class RidesCompanion extends UpdateCompanion<RideRow> {
       if (intensityFactor != null) 'intensity_factor': intensityFactor,
       if (ftpAtTime != null) 'ftp_at_time': ftpAtTime,
       if (elevationGainM != null) 'elevation_gain_m': elevationGainM,
+      if (routeId != null) 'route_id': routeId,
       if (rowid != null) 'rowid': rowid,
     });
   }
@@ -1014,6 +1060,7 @@ class RidesCompanion extends UpdateCompanion<RideRow> {
     Value<double?>? intensityFactor,
     Value<double?>? ftpAtTime,
     Value<double?>? elevationGainM,
+    Value<String?>? routeId,
     Value<int>? rowid,
   }) {
     return RidesCompanion(
@@ -1037,6 +1084,7 @@ class RidesCompanion extends UpdateCompanion<RideRow> {
       intensityFactor: intensityFactor ?? this.intensityFactor,
       ftpAtTime: ftpAtTime ?? this.ftpAtTime,
       elevationGainM: elevationGainM ?? this.elevationGainM,
+      routeId: routeId ?? this.routeId,
       rowid: rowid ?? this.rowid,
     );
   }
@@ -1104,6 +1152,9 @@ class RidesCompanion extends UpdateCompanion<RideRow> {
     if (elevationGainM.present) {
       map['elevation_gain_m'] = Variable<double>(elevationGainM.value);
     }
+    if (routeId.present) {
+      map['route_id'] = Variable<String>(routeId.value);
+    }
     if (rowid.present) {
       map['rowid'] = Variable<int>(rowid.value);
     }
@@ -1133,6 +1184,7 @@ class RidesCompanion extends UpdateCompanion<RideRow> {
           ..write('intensityFactor: $intensityFactor, ')
           ..write('ftpAtTime: $ftpAtTime, ')
           ..write('elevationGainM: $elevationGainM, ')
+          ..write('routeId: $routeId, ')
           ..write('rowid: $rowid')
           ..write(')'))
         .toString();
@@ -5175,6 +5227,630 @@ class FtpHistoryCompanion extends UpdateCompanion<FtpHistoryRow> {
   }
 }
 
+class $SavedRoutesTable extends SavedRoutes
+    with TableInfo<$SavedRoutesTable, SavedRouteRow> {
+  @override
+  final GeneratedDatabase attachedDatabase;
+  final String? _alias;
+  $SavedRoutesTable(this.attachedDatabase, [this._alias]);
+  static const VerificationMeta _idMeta = const VerificationMeta('id');
+  @override
+  late final GeneratedColumn<String> id = GeneratedColumn<String>(
+    'id',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _nameMeta = const VerificationMeta('name');
+  @override
+  late final GeneratedColumn<String> name = GeneratedColumn<String>(
+    'name',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _sourceMeta = const VerificationMeta('source');
+  @override
+  late final GeneratedColumn<String> source = GeneratedColumn<String>(
+    'source',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _externalRefMeta = const VerificationMeta(
+    'externalRef',
+  );
+  @override
+  late final GeneratedColumn<String> externalRef = GeneratedColumn<String>(
+    'external_ref',
+    aliasedName,
+    true,
+    type: DriftSqlType.string,
+    requiredDuringInsert: false,
+  );
+  static const VerificationMeta _gpxMeta = const VerificationMeta('gpx');
+  @override
+  late final GeneratedColumn<String> gpx = GeneratedColumn<String>(
+    'gpx',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _fingerprintMeta = const VerificationMeta(
+    'fingerprint',
+  );
+  @override
+  late final GeneratedColumn<String> fingerprint = GeneratedColumn<String>(
+    'fingerprint',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _distanceMMeta = const VerificationMeta(
+    'distanceM',
+  );
+  @override
+  late final GeneratedColumn<double> distanceM = GeneratedColumn<double>(
+    'distance_m',
+    aliasedName,
+    false,
+    type: DriftSqlType.double,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _ascentMMeta = const VerificationMeta(
+    'ascentM',
+  );
+  @override
+  late final GeneratedColumn<double> ascentM = GeneratedColumn<double>(
+    'ascent_m',
+    aliasedName,
+    false,
+    type: DriftSqlType.double,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _profileJsonMeta = const VerificationMeta(
+    'profileJson',
+  );
+  @override
+  late final GeneratedColumn<String> profileJson = GeneratedColumn<String>(
+    'profile_json',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _createdAtMeta = const VerificationMeta(
+    'createdAt',
+  );
+  @override
+  late final GeneratedColumn<int> createdAt = GeneratedColumn<int>(
+    'created_at',
+    aliasedName,
+    false,
+    type: DriftSqlType.int,
+    requiredDuringInsert: true,
+  );
+  @override
+  List<GeneratedColumn> get $columns => [
+    id,
+    name,
+    source,
+    externalRef,
+    gpx,
+    fingerprint,
+    distanceM,
+    ascentM,
+    profileJson,
+    createdAt,
+  ];
+  @override
+  String get aliasedName => _alias ?? actualTableName;
+  @override
+  String get actualTableName => $name;
+  static const String $name = 'saved_routes';
+  @override
+  VerificationContext validateIntegrity(
+    Insertable<SavedRouteRow> instance, {
+    bool isInserting = false,
+  }) {
+    final context = VerificationContext();
+    final data = instance.toColumns(true);
+    if (data.containsKey('id')) {
+      context.handle(_idMeta, id.isAcceptableOrUnknown(data['id']!, _idMeta));
+    } else if (isInserting) {
+      context.missing(_idMeta);
+    }
+    if (data.containsKey('name')) {
+      context.handle(
+        _nameMeta,
+        name.isAcceptableOrUnknown(data['name']!, _nameMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_nameMeta);
+    }
+    if (data.containsKey('source')) {
+      context.handle(
+        _sourceMeta,
+        source.isAcceptableOrUnknown(data['source']!, _sourceMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_sourceMeta);
+    }
+    if (data.containsKey('external_ref')) {
+      context.handle(
+        _externalRefMeta,
+        externalRef.isAcceptableOrUnknown(
+          data['external_ref']!,
+          _externalRefMeta,
+        ),
+      );
+    }
+    if (data.containsKey('gpx')) {
+      context.handle(
+        _gpxMeta,
+        gpx.isAcceptableOrUnknown(data['gpx']!, _gpxMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_gpxMeta);
+    }
+    if (data.containsKey('fingerprint')) {
+      context.handle(
+        _fingerprintMeta,
+        fingerprint.isAcceptableOrUnknown(
+          data['fingerprint']!,
+          _fingerprintMeta,
+        ),
+      );
+    } else if (isInserting) {
+      context.missing(_fingerprintMeta);
+    }
+    if (data.containsKey('distance_m')) {
+      context.handle(
+        _distanceMMeta,
+        distanceM.isAcceptableOrUnknown(data['distance_m']!, _distanceMMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_distanceMMeta);
+    }
+    if (data.containsKey('ascent_m')) {
+      context.handle(
+        _ascentMMeta,
+        ascentM.isAcceptableOrUnknown(data['ascent_m']!, _ascentMMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_ascentMMeta);
+    }
+    if (data.containsKey('profile_json')) {
+      context.handle(
+        _profileJsonMeta,
+        profileJson.isAcceptableOrUnknown(
+          data['profile_json']!,
+          _profileJsonMeta,
+        ),
+      );
+    } else if (isInserting) {
+      context.missing(_profileJsonMeta);
+    }
+    if (data.containsKey('created_at')) {
+      context.handle(
+        _createdAtMeta,
+        createdAt.isAcceptableOrUnknown(data['created_at']!, _createdAtMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_createdAtMeta);
+    }
+    return context;
+  }
+
+  @override
+  Set<GeneratedColumn> get $primaryKey => {id};
+  @override
+  SavedRouteRow map(Map<String, dynamic> data, {String? tablePrefix}) {
+    final effectivePrefix = tablePrefix != null ? '$tablePrefix.' : '';
+    return SavedRouteRow(
+      id: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}id'],
+      )!,
+      name: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}name'],
+      )!,
+      source: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}source'],
+      )!,
+      externalRef: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}external_ref'],
+      ),
+      gpx: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}gpx'],
+      )!,
+      fingerprint: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}fingerprint'],
+      )!,
+      distanceM: attachedDatabase.typeMapping.read(
+        DriftSqlType.double,
+        data['${effectivePrefix}distance_m'],
+      )!,
+      ascentM: attachedDatabase.typeMapping.read(
+        DriftSqlType.double,
+        data['${effectivePrefix}ascent_m'],
+      )!,
+      profileJson: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}profile_json'],
+      )!,
+      createdAt: attachedDatabase.typeMapping.read(
+        DriftSqlType.int,
+        data['${effectivePrefix}created_at'],
+      )!,
+    );
+  }
+
+  @override
+  $SavedRoutesTable createAlias(String alias) {
+    return $SavedRoutesTable(attachedDatabase, alias);
+  }
+}
+
+class SavedRouteRow extends DataClass implements Insertable<SavedRouteRow> {
+  final String id;
+  final String name;
+
+  /// 'import' for a file the rider picked, otherwise the id of the route
+  /// source that provided it — see `SavedRoute.source`.
+  final String source;
+  final String? externalRef;
+
+  /// The GPX file as picked, re-parsed on each ride so parser improvements
+  /// reach routes saved before them.
+  final String gpx;
+  final String fingerprint;
+  final double distanceM;
+  final double ascentM;
+  final String profileJson;
+  final int createdAt;
+  const SavedRouteRow({
+    required this.id,
+    required this.name,
+    required this.source,
+    this.externalRef,
+    required this.gpx,
+    required this.fingerprint,
+    required this.distanceM,
+    required this.ascentM,
+    required this.profileJson,
+    required this.createdAt,
+  });
+  @override
+  Map<String, Expression> toColumns(bool nullToAbsent) {
+    final map = <String, Expression>{};
+    map['id'] = Variable<String>(id);
+    map['name'] = Variable<String>(name);
+    map['source'] = Variable<String>(source);
+    if (!nullToAbsent || externalRef != null) {
+      map['external_ref'] = Variable<String>(externalRef);
+    }
+    map['gpx'] = Variable<String>(gpx);
+    map['fingerprint'] = Variable<String>(fingerprint);
+    map['distance_m'] = Variable<double>(distanceM);
+    map['ascent_m'] = Variable<double>(ascentM);
+    map['profile_json'] = Variable<String>(profileJson);
+    map['created_at'] = Variable<int>(createdAt);
+    return map;
+  }
+
+  SavedRoutesCompanion toCompanion(bool nullToAbsent) {
+    return SavedRoutesCompanion(
+      id: Value(id),
+      name: Value(name),
+      source: Value(source),
+      externalRef: externalRef == null && nullToAbsent
+          ? const Value.absent()
+          : Value(externalRef),
+      gpx: Value(gpx),
+      fingerprint: Value(fingerprint),
+      distanceM: Value(distanceM),
+      ascentM: Value(ascentM),
+      profileJson: Value(profileJson),
+      createdAt: Value(createdAt),
+    );
+  }
+
+  factory SavedRouteRow.fromJson(
+    Map<String, dynamic> json, {
+    ValueSerializer? serializer,
+  }) {
+    serializer ??= driftRuntimeOptions.defaultSerializer;
+    return SavedRouteRow(
+      id: serializer.fromJson<String>(json['id']),
+      name: serializer.fromJson<String>(json['name']),
+      source: serializer.fromJson<String>(json['source']),
+      externalRef: serializer.fromJson<String?>(json['externalRef']),
+      gpx: serializer.fromJson<String>(json['gpx']),
+      fingerprint: serializer.fromJson<String>(json['fingerprint']),
+      distanceM: serializer.fromJson<double>(json['distanceM']),
+      ascentM: serializer.fromJson<double>(json['ascentM']),
+      profileJson: serializer.fromJson<String>(json['profileJson']),
+      createdAt: serializer.fromJson<int>(json['createdAt']),
+    );
+  }
+  @override
+  Map<String, dynamic> toJson({ValueSerializer? serializer}) {
+    serializer ??= driftRuntimeOptions.defaultSerializer;
+    return <String, dynamic>{
+      'id': serializer.toJson<String>(id),
+      'name': serializer.toJson<String>(name),
+      'source': serializer.toJson<String>(source),
+      'externalRef': serializer.toJson<String?>(externalRef),
+      'gpx': serializer.toJson<String>(gpx),
+      'fingerprint': serializer.toJson<String>(fingerprint),
+      'distanceM': serializer.toJson<double>(distanceM),
+      'ascentM': serializer.toJson<double>(ascentM),
+      'profileJson': serializer.toJson<String>(profileJson),
+      'createdAt': serializer.toJson<int>(createdAt),
+    };
+  }
+
+  SavedRouteRow copyWith({
+    String? id,
+    String? name,
+    String? source,
+    Value<String?> externalRef = const Value.absent(),
+    String? gpx,
+    String? fingerprint,
+    double? distanceM,
+    double? ascentM,
+    String? profileJson,
+    int? createdAt,
+  }) => SavedRouteRow(
+    id: id ?? this.id,
+    name: name ?? this.name,
+    source: source ?? this.source,
+    externalRef: externalRef.present ? externalRef.value : this.externalRef,
+    gpx: gpx ?? this.gpx,
+    fingerprint: fingerprint ?? this.fingerprint,
+    distanceM: distanceM ?? this.distanceM,
+    ascentM: ascentM ?? this.ascentM,
+    profileJson: profileJson ?? this.profileJson,
+    createdAt: createdAt ?? this.createdAt,
+  );
+  SavedRouteRow copyWithCompanion(SavedRoutesCompanion data) {
+    return SavedRouteRow(
+      id: data.id.present ? data.id.value : this.id,
+      name: data.name.present ? data.name.value : this.name,
+      source: data.source.present ? data.source.value : this.source,
+      externalRef: data.externalRef.present
+          ? data.externalRef.value
+          : this.externalRef,
+      gpx: data.gpx.present ? data.gpx.value : this.gpx,
+      fingerprint: data.fingerprint.present
+          ? data.fingerprint.value
+          : this.fingerprint,
+      distanceM: data.distanceM.present ? data.distanceM.value : this.distanceM,
+      ascentM: data.ascentM.present ? data.ascentM.value : this.ascentM,
+      profileJson: data.profileJson.present
+          ? data.profileJson.value
+          : this.profileJson,
+      createdAt: data.createdAt.present ? data.createdAt.value : this.createdAt,
+    );
+  }
+
+  @override
+  String toString() {
+    return (StringBuffer('SavedRouteRow(')
+          ..write('id: $id, ')
+          ..write('name: $name, ')
+          ..write('source: $source, ')
+          ..write('externalRef: $externalRef, ')
+          ..write('gpx: $gpx, ')
+          ..write('fingerprint: $fingerprint, ')
+          ..write('distanceM: $distanceM, ')
+          ..write('ascentM: $ascentM, ')
+          ..write('profileJson: $profileJson, ')
+          ..write('createdAt: $createdAt')
+          ..write(')'))
+        .toString();
+  }
+
+  @override
+  int get hashCode => Object.hash(
+    id,
+    name,
+    source,
+    externalRef,
+    gpx,
+    fingerprint,
+    distanceM,
+    ascentM,
+    profileJson,
+    createdAt,
+  );
+  @override
+  bool operator ==(Object other) =>
+      identical(this, other) ||
+      (other is SavedRouteRow &&
+          other.id == this.id &&
+          other.name == this.name &&
+          other.source == this.source &&
+          other.externalRef == this.externalRef &&
+          other.gpx == this.gpx &&
+          other.fingerprint == this.fingerprint &&
+          other.distanceM == this.distanceM &&
+          other.ascentM == this.ascentM &&
+          other.profileJson == this.profileJson &&
+          other.createdAt == this.createdAt);
+}
+
+class SavedRoutesCompanion extends UpdateCompanion<SavedRouteRow> {
+  final Value<String> id;
+  final Value<String> name;
+  final Value<String> source;
+  final Value<String?> externalRef;
+  final Value<String> gpx;
+  final Value<String> fingerprint;
+  final Value<double> distanceM;
+  final Value<double> ascentM;
+  final Value<String> profileJson;
+  final Value<int> createdAt;
+  final Value<int> rowid;
+  const SavedRoutesCompanion({
+    this.id = const Value.absent(),
+    this.name = const Value.absent(),
+    this.source = const Value.absent(),
+    this.externalRef = const Value.absent(),
+    this.gpx = const Value.absent(),
+    this.fingerprint = const Value.absent(),
+    this.distanceM = const Value.absent(),
+    this.ascentM = const Value.absent(),
+    this.profileJson = const Value.absent(),
+    this.createdAt = const Value.absent(),
+    this.rowid = const Value.absent(),
+  });
+  SavedRoutesCompanion.insert({
+    required String id,
+    required String name,
+    required String source,
+    this.externalRef = const Value.absent(),
+    required String gpx,
+    required String fingerprint,
+    required double distanceM,
+    required double ascentM,
+    required String profileJson,
+    required int createdAt,
+    this.rowid = const Value.absent(),
+  }) : id = Value(id),
+       name = Value(name),
+       source = Value(source),
+       gpx = Value(gpx),
+       fingerprint = Value(fingerprint),
+       distanceM = Value(distanceM),
+       ascentM = Value(ascentM),
+       profileJson = Value(profileJson),
+       createdAt = Value(createdAt);
+  static Insertable<SavedRouteRow> custom({
+    Expression<String>? id,
+    Expression<String>? name,
+    Expression<String>? source,
+    Expression<String>? externalRef,
+    Expression<String>? gpx,
+    Expression<String>? fingerprint,
+    Expression<double>? distanceM,
+    Expression<double>? ascentM,
+    Expression<String>? profileJson,
+    Expression<int>? createdAt,
+    Expression<int>? rowid,
+  }) {
+    return RawValuesInsertable({
+      if (id != null) 'id': id,
+      if (name != null) 'name': name,
+      if (source != null) 'source': source,
+      if (externalRef != null) 'external_ref': externalRef,
+      if (gpx != null) 'gpx': gpx,
+      if (fingerprint != null) 'fingerprint': fingerprint,
+      if (distanceM != null) 'distance_m': distanceM,
+      if (ascentM != null) 'ascent_m': ascentM,
+      if (profileJson != null) 'profile_json': profileJson,
+      if (createdAt != null) 'created_at': createdAt,
+      if (rowid != null) 'rowid': rowid,
+    });
+  }
+
+  SavedRoutesCompanion copyWith({
+    Value<String>? id,
+    Value<String>? name,
+    Value<String>? source,
+    Value<String?>? externalRef,
+    Value<String>? gpx,
+    Value<String>? fingerprint,
+    Value<double>? distanceM,
+    Value<double>? ascentM,
+    Value<String>? profileJson,
+    Value<int>? createdAt,
+    Value<int>? rowid,
+  }) {
+    return SavedRoutesCompanion(
+      id: id ?? this.id,
+      name: name ?? this.name,
+      source: source ?? this.source,
+      externalRef: externalRef ?? this.externalRef,
+      gpx: gpx ?? this.gpx,
+      fingerprint: fingerprint ?? this.fingerprint,
+      distanceM: distanceM ?? this.distanceM,
+      ascentM: ascentM ?? this.ascentM,
+      profileJson: profileJson ?? this.profileJson,
+      createdAt: createdAt ?? this.createdAt,
+      rowid: rowid ?? this.rowid,
+    );
+  }
+
+  @override
+  Map<String, Expression> toColumns(bool nullToAbsent) {
+    final map = <String, Expression>{};
+    if (id.present) {
+      map['id'] = Variable<String>(id.value);
+    }
+    if (name.present) {
+      map['name'] = Variable<String>(name.value);
+    }
+    if (source.present) {
+      map['source'] = Variable<String>(source.value);
+    }
+    if (externalRef.present) {
+      map['external_ref'] = Variable<String>(externalRef.value);
+    }
+    if (gpx.present) {
+      map['gpx'] = Variable<String>(gpx.value);
+    }
+    if (fingerprint.present) {
+      map['fingerprint'] = Variable<String>(fingerprint.value);
+    }
+    if (distanceM.present) {
+      map['distance_m'] = Variable<double>(distanceM.value);
+    }
+    if (ascentM.present) {
+      map['ascent_m'] = Variable<double>(ascentM.value);
+    }
+    if (profileJson.present) {
+      map['profile_json'] = Variable<String>(profileJson.value);
+    }
+    if (createdAt.present) {
+      map['created_at'] = Variable<int>(createdAt.value);
+    }
+    if (rowid.present) {
+      map['rowid'] = Variable<int>(rowid.value);
+    }
+    return map;
+  }
+
+  @override
+  String toString() {
+    return (StringBuffer('SavedRoutesCompanion(')
+          ..write('id: $id, ')
+          ..write('name: $name, ')
+          ..write('source: $source, ')
+          ..write('externalRef: $externalRef, ')
+          ..write('gpx: $gpx, ')
+          ..write('fingerprint: $fingerprint, ')
+          ..write('distanceM: $distanceM, ')
+          ..write('ascentM: $ascentM, ')
+          ..write('profileJson: $profileJson, ')
+          ..write('createdAt: $createdAt, ')
+          ..write('rowid: $rowid')
+          ..write(')'))
+        .toString();
+  }
+}
+
 abstract class _$AppDatabase extends GeneratedDatabase {
   _$AppDatabase(QueryExecutor e) : super(e);
   $AppDatabaseManager get managers => $AppDatabaseManager(this);
@@ -5191,6 +5867,7 @@ abstract class _$AppDatabase extends GeneratedDatabase {
     this,
   );
   late final $FtpHistoryTable ftpHistory = $FtpHistoryTable(this);
+  late final $SavedRoutesTable savedRoutes = $SavedRoutesTable(this);
   @override
   Iterable<TableInfo<Table, Object?>> get allTables =>
       allSchemaEntities.whereType<TableInfo<Table, Object?>>();
@@ -5206,6 +5883,7 @@ abstract class _$AppDatabase extends GeneratedDatabase {
     scheduledWorkouts,
     personalRecords,
     ftpHistory,
+    savedRoutes,
   ];
 }
 
@@ -5231,6 +5909,7 @@ typedef $$RidesTableCreateCompanionBuilder =
       Value<double?> intensityFactor,
       Value<double?> ftpAtTime,
       Value<double?> elevationGainM,
+      Value<String?> routeId,
       Value<int> rowid,
     });
 typedef $$RidesTableUpdateCompanionBuilder =
@@ -5255,6 +5934,7 @@ typedef $$RidesTableUpdateCompanionBuilder =
       Value<double?> intensityFactor,
       Value<double?> ftpAtTime,
       Value<double?> elevationGainM,
+      Value<String?> routeId,
       Value<int> rowid,
     });
 
@@ -5470,6 +6150,11 @@ class $$RidesTableFilterComposer extends Composer<_$AppDatabase, $RidesTable> {
 
   ColumnFilters<double> get elevationGainM => $composableBuilder(
     column: $table.elevationGainM,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get routeId => $composableBuilder(
+    column: $table.routeId,
     builder: (column) => ColumnFilters(column),
   );
 
@@ -5707,6 +6392,11 @@ class $$RidesTableOrderingComposer
     column: $table.elevationGainM,
     builder: (column) => ColumnOrderings(column),
   );
+
+  ColumnOrderings<String> get routeId => $composableBuilder(
+    column: $table.routeId,
+    builder: (column) => ColumnOrderings(column),
+  );
 }
 
 class $$RidesTableAnnotationComposer
@@ -5791,6 +6481,9 @@ class $$RidesTableAnnotationComposer
     column: $table.elevationGainM,
     builder: (column) => column,
   );
+
+  GeneratedColumn<String> get routeId =>
+      $composableBuilder(column: $table.routeId, builder: (column) => column);
 
   Expression<T> sensorReadingsRefs<T extends Object>(
     Expression<T> Function($$SensorReadingsTableAnnotationComposer a) f,
@@ -5973,6 +6666,7 @@ class $$RidesTableTableManager
                 Value<double?> intensityFactor = const Value.absent(),
                 Value<double?> ftpAtTime = const Value.absent(),
                 Value<double?> elevationGainM = const Value.absent(),
+                Value<String?> routeId = const Value.absent(),
                 Value<int> rowid = const Value.absent(),
               }) => RidesCompanion(
                 id: id,
@@ -5995,6 +6689,7 @@ class $$RidesTableTableManager
                 intensityFactor: intensityFactor,
                 ftpAtTime: ftpAtTime,
                 elevationGainM: elevationGainM,
+                routeId: routeId,
                 rowid: rowid,
               ),
           createCompanionCallback:
@@ -6019,6 +6714,7 @@ class $$RidesTableTableManager
                 Value<double?> intensityFactor = const Value.absent(),
                 Value<double?> ftpAtTime = const Value.absent(),
                 Value<double?> elevationGainM = const Value.absent(),
+                Value<String?> routeId = const Value.absent(),
                 Value<int> rowid = const Value.absent(),
               }) => RidesCompanion.insert(
                 id: id,
@@ -6041,6 +6737,7 @@ class $$RidesTableTableManager
                 intensityFactor: intensityFactor,
                 ftpAtTime: ftpAtTime,
                 elevationGainM: elevationGainM,
+                routeId: routeId,
                 rowid: rowid,
               ),
           withReferenceMapper: (p0) => p0
@@ -9327,6 +10024,307 @@ typedef $$FtpHistoryTableProcessedTableManager =
       FtpHistoryRow,
       PrefetchHooks Function()
     >;
+typedef $$SavedRoutesTableCreateCompanionBuilder =
+    SavedRoutesCompanion Function({
+      required String id,
+      required String name,
+      required String source,
+      Value<String?> externalRef,
+      required String gpx,
+      required String fingerprint,
+      required double distanceM,
+      required double ascentM,
+      required String profileJson,
+      required int createdAt,
+      Value<int> rowid,
+    });
+typedef $$SavedRoutesTableUpdateCompanionBuilder =
+    SavedRoutesCompanion Function({
+      Value<String> id,
+      Value<String> name,
+      Value<String> source,
+      Value<String?> externalRef,
+      Value<String> gpx,
+      Value<String> fingerprint,
+      Value<double> distanceM,
+      Value<double> ascentM,
+      Value<String> profileJson,
+      Value<int> createdAt,
+      Value<int> rowid,
+    });
+
+class $$SavedRoutesTableFilterComposer
+    extends Composer<_$AppDatabase, $SavedRoutesTable> {
+  $$SavedRoutesTableFilterComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  ColumnFilters<String> get id => $composableBuilder(
+    column: $table.id,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get name => $composableBuilder(
+    column: $table.name,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get source => $composableBuilder(
+    column: $table.source,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get externalRef => $composableBuilder(
+    column: $table.externalRef,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get gpx => $composableBuilder(
+    column: $table.gpx,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get fingerprint => $composableBuilder(
+    column: $table.fingerprint,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<double> get distanceM => $composableBuilder(
+    column: $table.distanceM,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<double> get ascentM => $composableBuilder(
+    column: $table.ascentM,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get profileJson => $composableBuilder(
+    column: $table.profileJson,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<int> get createdAt => $composableBuilder(
+    column: $table.createdAt,
+    builder: (column) => ColumnFilters(column),
+  );
+}
+
+class $$SavedRoutesTableOrderingComposer
+    extends Composer<_$AppDatabase, $SavedRoutesTable> {
+  $$SavedRoutesTableOrderingComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  ColumnOrderings<String> get id => $composableBuilder(
+    column: $table.id,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get name => $composableBuilder(
+    column: $table.name,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get source => $composableBuilder(
+    column: $table.source,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get externalRef => $composableBuilder(
+    column: $table.externalRef,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get gpx => $composableBuilder(
+    column: $table.gpx,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get fingerprint => $composableBuilder(
+    column: $table.fingerprint,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<double> get distanceM => $composableBuilder(
+    column: $table.distanceM,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<double> get ascentM => $composableBuilder(
+    column: $table.ascentM,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get profileJson => $composableBuilder(
+    column: $table.profileJson,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<int> get createdAt => $composableBuilder(
+    column: $table.createdAt,
+    builder: (column) => ColumnOrderings(column),
+  );
+}
+
+class $$SavedRoutesTableAnnotationComposer
+    extends Composer<_$AppDatabase, $SavedRoutesTable> {
+  $$SavedRoutesTableAnnotationComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  GeneratedColumn<String> get id =>
+      $composableBuilder(column: $table.id, builder: (column) => column);
+
+  GeneratedColumn<String> get name =>
+      $composableBuilder(column: $table.name, builder: (column) => column);
+
+  GeneratedColumn<String> get source =>
+      $composableBuilder(column: $table.source, builder: (column) => column);
+
+  GeneratedColumn<String> get externalRef => $composableBuilder(
+    column: $table.externalRef,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<String> get gpx =>
+      $composableBuilder(column: $table.gpx, builder: (column) => column);
+
+  GeneratedColumn<String> get fingerprint => $composableBuilder(
+    column: $table.fingerprint,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<double> get distanceM =>
+      $composableBuilder(column: $table.distanceM, builder: (column) => column);
+
+  GeneratedColumn<double> get ascentM =>
+      $composableBuilder(column: $table.ascentM, builder: (column) => column);
+
+  GeneratedColumn<String> get profileJson => $composableBuilder(
+    column: $table.profileJson,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<int> get createdAt =>
+      $composableBuilder(column: $table.createdAt, builder: (column) => column);
+}
+
+class $$SavedRoutesTableTableManager
+    extends
+        RootTableManager<
+          _$AppDatabase,
+          $SavedRoutesTable,
+          SavedRouteRow,
+          $$SavedRoutesTableFilterComposer,
+          $$SavedRoutesTableOrderingComposer,
+          $$SavedRoutesTableAnnotationComposer,
+          $$SavedRoutesTableCreateCompanionBuilder,
+          $$SavedRoutesTableUpdateCompanionBuilder,
+          (
+            SavedRouteRow,
+            BaseReferences<_$AppDatabase, $SavedRoutesTable, SavedRouteRow>,
+          ),
+          SavedRouteRow,
+          PrefetchHooks Function()
+        > {
+  $$SavedRoutesTableTableManager(_$AppDatabase db, $SavedRoutesTable table)
+    : super(
+        TableManagerState(
+          db: db,
+          table: table,
+          createFilteringComposer: () =>
+              $$SavedRoutesTableFilterComposer($db: db, $table: table),
+          createOrderingComposer: () =>
+              $$SavedRoutesTableOrderingComposer($db: db, $table: table),
+          createComputedFieldComposer: () =>
+              $$SavedRoutesTableAnnotationComposer($db: db, $table: table),
+          updateCompanionCallback:
+              ({
+                Value<String> id = const Value.absent(),
+                Value<String> name = const Value.absent(),
+                Value<String> source = const Value.absent(),
+                Value<String?> externalRef = const Value.absent(),
+                Value<String> gpx = const Value.absent(),
+                Value<String> fingerprint = const Value.absent(),
+                Value<double> distanceM = const Value.absent(),
+                Value<double> ascentM = const Value.absent(),
+                Value<String> profileJson = const Value.absent(),
+                Value<int> createdAt = const Value.absent(),
+                Value<int> rowid = const Value.absent(),
+              }) => SavedRoutesCompanion(
+                id: id,
+                name: name,
+                source: source,
+                externalRef: externalRef,
+                gpx: gpx,
+                fingerprint: fingerprint,
+                distanceM: distanceM,
+                ascentM: ascentM,
+                profileJson: profileJson,
+                createdAt: createdAt,
+                rowid: rowid,
+              ),
+          createCompanionCallback:
+              ({
+                required String id,
+                required String name,
+                required String source,
+                Value<String?> externalRef = const Value.absent(),
+                required String gpx,
+                required String fingerprint,
+                required double distanceM,
+                required double ascentM,
+                required String profileJson,
+                required int createdAt,
+                Value<int> rowid = const Value.absent(),
+              }) => SavedRoutesCompanion.insert(
+                id: id,
+                name: name,
+                source: source,
+                externalRef: externalRef,
+                gpx: gpx,
+                fingerprint: fingerprint,
+                distanceM: distanceM,
+                ascentM: ascentM,
+                profileJson: profileJson,
+                createdAt: createdAt,
+                rowid: rowid,
+              ),
+          withReferenceMapper: (p0) => p0
+              .map((e) => (e.readTable(table), BaseReferences(db, table, e)))
+              .toList(),
+          prefetchHooksCallback: null,
+        ),
+      );
+}
+
+typedef $$SavedRoutesTableProcessedTableManager =
+    ProcessedTableManager<
+      _$AppDatabase,
+      $SavedRoutesTable,
+      SavedRouteRow,
+      $$SavedRoutesTableFilterComposer,
+      $$SavedRoutesTableOrderingComposer,
+      $$SavedRoutesTableAnnotationComposer,
+      $$SavedRoutesTableCreateCompanionBuilder,
+      $$SavedRoutesTableUpdateCompanionBuilder,
+      (
+        SavedRouteRow,
+        BaseReferences<_$AppDatabase, $SavedRoutesTable, SavedRouteRow>,
+      ),
+      SavedRouteRow,
+      PrefetchHooks Function()
+    >;
 
 class $AppDatabaseManager {
   final _$AppDatabase _db;
@@ -9350,4 +10348,6 @@ class $AppDatabaseManager {
       $$PersonalRecordsTableTableManager(_db, _db.personalRecords);
   $$FtpHistoryTableTableManager get ftpHistory =>
       $$FtpHistoryTableTableManager(_db, _db.ftpHistory);
+  $$SavedRoutesTableTableManager get savedRoutes =>
+      $$SavedRoutesTableTableManager(_db, _db.savedRoutes);
 }

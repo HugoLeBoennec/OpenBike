@@ -44,6 +44,11 @@ class Ride with _$Ride {
     // itself) — it's set once from RouteSimulator's live total on stop and
     // persisted verbatim, same as the other cached fields above.
     Distance? cachedElevationGain,
+
+    // The saved route this ride followed. Null for free rides, workouts and
+    // routes ridden without saving them. Set by `StoragePort.linkRideToRoute`
+    // once the ride stops — `saveRide` never writes it.
+    String? routeId,
   }) = _Ride;
 
   // ---------------------------------------------------------------------------

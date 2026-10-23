@@ -1,9 +1,12 @@
+import 'dart:convert';
+
 import 'package:drift/drift.dart';
 
 import '../../core/domain/entities/ftp_history_entry.dart';
 import '../../core/domain/entities/lap.dart';
 import '../../core/domain/entities/personal_record.dart';
 import '../../core/domain/entities/ride.dart';
+import '../../core/domain/entities/saved_route.dart';
 import '../../core/domain/entities/scheduled_workout.dart';
 import '../../core/domain/entities/sensor_reading.dart';
 import '../../core/domain/entities/user_profile.dart';
@@ -109,6 +112,7 @@ class DriftStorage implements StoragePort {
       ftpAtTime: row.ftpAtTime != null ? Watts(row.ftpAtTime!) : null,
       cachedElevationGain:
           row.elevationGainM != null ? Distance(row.elevationGainM!) : null,
+      routeId: row.routeId,
     );
   }
 
@@ -427,5 +431,123 @@ class DriftStorage implements StoragePort {
       (s) => s.name == name,
       orElse: () => FtpSource.manual,
     );
+  }
+
+  // -------------------------------------------------------------------------
+  // Saved routes
+  // -------------------------------------------------------------------------
+
+  @override
+  Future<void> saveRoute(SavedRoute route, String gpx) async {
+    await _db.into(_db.savedRoutes).insertOnConflictUpdate(
+          SavedRoutesCompanion.insert(
+            id: route.id,
+            name: route.name,
+            source: route.source,
+            externalRef: Value(route.externalRef),
+            gpx: gpx,
+            fingerprint: route.fingerprint,
+            distanceM: route.distance.meters,
+            ascentM: route.ascent,
+            profileJson: jsonEncode(route.profile),
+            createdAt: route.createdAt.millisecondsSinceEpoch,
+          ),
+        );
+  }
+
+  @override
+  Future<List<SavedRoute>> getSavedRoutes() async {
+    final routes = _db.savedRoutes;
+    // Every column but the GPX text, which can run to megabytes per route.
+    final rows = await (_db.selectOnly(routes)
+          ..addColumns([
+            routes.id,
+            routes.name,
+            routes.source,
+            routes.externalRef,
+            routes.fingerprint,
+            routes.distanceM,
+            routes.ascentM,
+            routes.profileJson,
+            routes.createdAt,
+          ])
+          ..orderBy([OrderingTerm.desc(routes.createdAt)]))
+        .get();
+
+    final rides = _db.rides;
+    final rideCount = rides.id.count();
+    final lastRidden = rides.startTime.max();
+    final statRows = await (_db.selectOnly(rides)
+          ..addColumns([rides.routeId, rideCount, lastRidden])
+          ..where(rides.routeId.isNotNull())
+          ..groupBy([rides.routeId]))
+        .get();
+    final stats = {
+      for (final row in statRows)
+        row.read(rides.routeId)!: (
+          count: row.read(rideCount) ?? 0,
+          last: row.read(lastRidden),
+        ),
+    };
+
+    return [
+      for (final row in rows)
+        _savedRouteFromRow(row, stats[row.read(routes.id)!]),
+    ];
+  }
+
+  SavedRoute _savedRouteFromRow(
+    TypedResult row,
+    ({int count, int? last})? stats,
+  ) {
+    final routes = _db.savedRoutes;
+    final profile = jsonDecode(row.read(routes.profileJson)!) as List;
+    return SavedRoute(
+      id: row.read(routes.id)!,
+      name: row.read(routes.name)!,
+      source: row.read(routes.source)!,
+      externalRef: row.read(routes.externalRef),
+      fingerprint: row.read(routes.fingerprint)!,
+      distance: Distance(row.read(routes.distanceM)!),
+      ascent: row.read(routes.ascentM)!,
+      profile: [for (final e in profile) (e as num).toDouble()],
+      createdAt:
+          DateTime.fromMillisecondsSinceEpoch(row.read(routes.createdAt)!),
+      rideCount: stats?.count ?? 0,
+      lastRiddenAt: stats?.last != null
+          ? DateTime.fromMillisecondsSinceEpoch(stats!.last!)
+          : null,
+    );
+  }
+
+  @override
+  Future<String?> getRouteGpx(String id) async {
+    final routes = _db.savedRoutes;
+    final row = await (_db.selectOnly(routes)
+          ..addColumns([routes.gpx])
+          ..where(routes.id.equals(id)))
+        .getSingleOrNull();
+    return row?.read(routes.gpx);
+  }
+
+  @override
+  Future<void> renameRoute(String id, String name) async {
+    await (_db.update(_db.savedRoutes)..where((t) => t.id.equals(id)))
+        .write(SavedRoutesCompanion(name: Value(name)));
+  }
+
+  @override
+  Future<void> deleteRoute(String id) async {
+    await _db.transaction(() async {
+      await (_db.update(_db.rides)..where((t) => t.routeId.equals(id)))
+          .write(const RidesCompanion(routeId: Value(null)));
+      await (_db.delete(_db.savedRoutes)..where((t) => t.id.equals(id))).go();
+    });
+  }
+
+  @override
+  Future<void> linkRideToRoute(String rideId, String routeId) async {
+    await (_db.update(_db.rides)..where((t) => t.id.equals(rideId)))
+        .write(RidesCompanion(routeId: Value(routeId)));
   }
 }
