@@ -111,16 +111,16 @@ Settled with the maintainer before implementation (2026-10-23):
       mode).
 
 ### 3. Ride ↔ route link
-- [ ] Link finished rides to the saved route they followed — an active-route
+- [x] Link finished rides to the saved route they followed — an active-route
       provider set by `RideScreen` plus a linker on `RideStopped`, like
       `scheduledWorkoutLinkerProvider`, so every way of starting the recording
       is covered.
-- [ ] Ride summary: **Save this route to library** for a "use once" route.
-- [ ] Route sheet lists the rides done on the route (date, duration, average
+- [x] Ride summary: **Save this route to library** for a "use once" route.
+- [x] Route sheet lists the rides done on the route (date, duration, average
       power, finished or not); the best finished time is highlighted.
-- [ ] History and Home recent rides show the route name; ride detail shows
+- [x] History and Home recent rides show the route name; ride detail shows
       "Route: …" linking to the route.
-- [ ] `GpxFileExportPlugin` with a `requires-route` capability; the export
+- [x] `GpxFileExportPlugin` with a `requires-route` capability; the export
       section hides it for rides without a route.
       (`lib/plugins/exports/gpx_file_export_plugin.dart`)
       **Accept:** linker test (saved route links, use-once doesn't, free ride

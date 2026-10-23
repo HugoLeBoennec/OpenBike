@@ -973,6 +973,58 @@ final saveImportedRoutesProvider = StateProvider<bool>((ref) {
   return ref.read(appPreferencesProvider).saveImportedRoutes;
 });
 
+/// Saved routes by id, for showing a ride's route name — empty until
+/// [savedRoutesProvider] has loaded.
+final savedRoutesByIdProvider = Provider<Map<String, SavedRoute>>((ref) {
+  final routes = ref.watch(savedRoutesProvider).valueOrNull ?? const [];
+  return {for (final r in routes) r.id: r};
+});
+
+/// The route [RideScreen] is riding, from [RideExtra]: the saved route's id,
+/// or the file of a route ridden without saving it.
+class ActiveRoute {
+  const ActiveRoute({this.savedRouteId, this.draft});
+
+  final String? savedRouteId;
+  final RouteDraft? draft;
+}
+
+/// Set by [RideScreen] so [routeRideLinkerProvider] knows which route the
+/// ride followed once recording stops.
+final activeRouteProvider = StateProvider<ActiveRoute?>((ref) => null);
+
+/// A finished ride on a route that wasn't saved, with that route's file —
+/// the ride summary offers to save it, which also links the ride.
+final unsavedRouteRideProvider =
+    StateProvider<({String rideId, RouteDraft draft})?>((ref) => null);
+
+/// Watch this once from [RideScreen] to link a finished ride to the saved
+/// route it followed — whichever control started and stopped recording.
+final routeRideLinkerProvider = Provider<void>((ref) {
+  final storage = ref.watch(storageProvider);
+  final eventBus = ref.watch(eventBusProvider);
+  final sub = eventBus.on<RideEvent>().listen((event) {
+    if (event is! RideStopped) return;
+    final active = ref.read(activeRouteProvider);
+    if (active == null) return;
+    ref.read(activeRouteProvider.notifier).state = null;
+    final rideId = event.ride.id;
+    final routeId = active.savedRouteId;
+    final draft = active.draft;
+    if (routeId != null) {
+      storage.linkRideToRoute(rideId, routeId).then((_) {
+        ref.invalidate(savedRoutesProvider);
+        ref.invalidate(rideHistoryProvider);
+        ref.invalidate(rideDetailProvider(rideId));
+      });
+    } else if (draft != null) {
+      ref.read(unsavedRouteRideProvider.notifier).state =
+          (rideId: rideId, draft: draft);
+    }
+  });
+  ref.onDispose(sub.cancel);
+});
+
 /// Toggles the OSM mini-map in [RouteProfilePane]. Off by default — it's a
 /// stretch feature (P3 task 3) layered on top of the elevation profile.
 final showMiniMapProvider = StateProvider<bool>((ref) => false);

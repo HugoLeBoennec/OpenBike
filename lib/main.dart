@@ -12,6 +12,7 @@ import 'package:shared_preferences/shared_preferences.dart';
 import 'core/application/services/bundled_workouts.dart';
 import 'core/application/services/personal_records_backfill.dart';
 import 'core/application/services/physics_engine.dart';
+import 'core/application/services/route_library.dart';
 import 'core/events/event_bus.dart';
 import 'infrastructure/ant/ant_device_plugin.dart';
 import 'infrastructure/ant/ant_usb_transport.dart';
@@ -28,6 +29,7 @@ import 'infrastructure/persistence/drift_storage.dart';
 import 'infrastructure/preferences/app_preferences.dart';
 import 'infrastructure/simulator/simulator.dart';
 import 'plugins/exports/fit_file_export_plugin.dart';
+import 'plugins/exports/gpx_file_export_plugin.dart';
 import 'plugins/exports/strava_export_plugin.dart';
 import 'plugins/exports/tcx_file_export_plugin.dart';
 import 'plugins/plugin_registry.dart';
@@ -65,7 +67,8 @@ Future<void> _runApp(AppPreferences appPrefs) async {
   final eventBus = EventBus();
   final bleTransport = BleTransport();
   final registry = PluginRegistry();
-  _registerPlugins(registry, eventBus, bleTransport);
+  final storage = DriftStorage(db);
+  _registerPlugins(registry, eventBus, bleTransport, storage);
 
   // ---- Restore export plugin sessions (e.g. Strava OAuth tokens) ----
   for (final plugin in registry.getExportPlugins()) {
@@ -78,7 +81,6 @@ Future<void> _runApp(AppPreferences appPrefs) async {
   await initializeDesktopWindow(appPrefs);
 
   // ---- Load persisted user profile ----
-  final storage = DriftStorage(db);
   final savedProfile = await storage.getProfile();
 
   // ---- Seed the starter workout library (idempotent) and load workouts ----
@@ -118,8 +120,8 @@ Future<void> _runApp(AppPreferences appPrefs) async {
   );
 }
 
-void _registerPlugins(
-    PluginRegistry registry, EventBus eventBus, BleTransport bleTransport) {
+void _registerPlugins(PluginRegistry registry, EventBus eventBus,
+    BleTransport bleTransport, DriftStorage storage) {
   // ---- Device plugins ----
 
   // BLE FTMS — always available (shares BleTransport with bleTransportProvider).
@@ -172,6 +174,12 @@ void _registerPlugins(
 
   // TCX — local file export (always available).
   registry.registerExport(TcxFileExportPlugin());
+
+  // GPX — local file export, offered only for rides that followed a saved
+  // route (their readings are placed on its geometry).
+  registry.registerExport(GpxFileExportPlugin(
+    loadRoute: RouteLibrary(storage: storage).loadById,
+  ));
 
   // Strava — OAuth2 upload (requires client credentials via env).
   const stravaClientId = String.fromEnvironment('STRAVA_CLIENT_ID');

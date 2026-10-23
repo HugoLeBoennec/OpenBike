@@ -7,10 +7,10 @@ import 'package:go_router/go_router.dart';
 import '../../core/application/services/route_library.dart';
 import '../../core/domain/entities/entities.dart';
 import '../models/ride_extra.dart';
-import '../models/route_sort.dart';
 import '../state/providers.dart';
 import '../theme/app_theme.dart';
 import 'gpx_profile_widget.dart';
+import 'ride_summary_widgets.dart';
 import 'start_ride_actions.dart';
 
 /// Opens the preview of a GPX file the rider just picked: name, profile,
@@ -239,12 +239,8 @@ class _RoutePreviewSheetState extends ConsumerState<RoutePreviewSheet> {
                   ref.read(appPreferencesProvider).setSaveImportedRoutes(value);
                 },
               ),
-          ] else
-            Text(
-              routeUsageLabel(widget.saved!, DateTime.now()),
-              style: TextStyle(color: tokens.textTertiary, fontSize: 13),
-            ),
-          const SizedBox(height: 16),
+            const SizedBox(height: 16),
+          ],
           ElevatedButton.icon(
             key: const Key('startRouteRideButton'),
             style: ElevatedButton.styleFrom(
@@ -267,7 +263,123 @@ class _RoutePreviewSheetState extends ConsumerState<RoutePreviewSheet> {
               child: const Text('Save without riding'),
             ),
           ],
+          if (!_isImport) ...[
+            const SizedBox(height: 24),
+            _RouteRides(route: widget.saved!),
+          ],
         ],
+      ),
+    );
+  }
+}
+
+/// Whether [ride] covered [route] to the end — within 1 %, as trainers and
+/// the simulator measure distance a little differently.
+bool isRouteFinished(Ride ride, SavedRoute route) =>
+    ride.totalDistance.meters >= route.distance.meters * 0.99;
+
+/// The rides done on [route], newest first, with the fastest finished one
+/// marked.
+class _RouteRides extends ConsumerWidget {
+  const _RouteRides({required this.route});
+
+  final SavedRoute route;
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final tokens = context.tokens;
+    final rides = [
+      for (final ride in ref.watch(rideHistoryProvider).valueOrNull ?? const [])
+        if (ride.routeId == route.id) ride,
+    ];
+    if (rides.isEmpty) {
+      return Text('Not ridden yet',
+          style: TextStyle(color: tokens.textTertiary, fontSize: 13));
+    }
+    final finished = rides.where((r) => isRouteFinished(r, route));
+    final best = finished.isEmpty
+        ? null
+        : finished.reduce(
+            (a, b) => a.activeDuration <= b.activeDuration ? a : b);
+
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        const SectionLabel('YOUR RIDES ON THIS ROUTE'),
+        const SizedBox(height: 8),
+        for (final ride in rides)
+          _RouteRideRow(
+            ride: ride,
+            finished: isRouteFinished(ride, route),
+            best: ride.id == best?.id,
+          ),
+      ],
+    );
+  }
+}
+
+class _RouteRideRow extends StatelessWidget {
+  const _RouteRideRow({
+    required this.ride,
+    required this.finished,
+    required this.best,
+  });
+
+  final Ride ride;
+  final bool finished;
+  final bool best;
+
+  @override
+  Widget build(BuildContext context) {
+    final tokens = context.tokens;
+    final highlight = best ? Colors.amber : tokens.textPrimary;
+
+    return InkWell(
+      key: Key('routeRide-${ride.id}'),
+      borderRadius: BorderRadius.circular(8),
+      onTap: () {
+        final router = GoRouter.of(context);
+        Navigator.of(context).pop();
+        router.push('/history/${ride.id}');
+      },
+      child: Padding(
+        padding: const EdgeInsets.symmetric(vertical: 8, horizontal: 4),
+        child: Row(
+          children: [
+            Expanded(
+              child: Text(formatDate(ride.startTime),
+                  style: TextStyle(color: tokens.textSecondary)),
+            ),
+            Text(formatDuration(ride.activeDuration),
+                style: TextStyle(
+                    color: highlight,
+                    fontWeight: best ? FontWeight.w700 : FontWeight.w500)),
+            const SizedBox(width: 16),
+            SizedBox(
+              width: 56,
+              child: Text('${ride.averagePower.value.round()} W',
+                  textAlign: TextAlign.right,
+                  style: TextStyle(color: tokens.textSecondary)),
+            ),
+            const SizedBox(width: 12),
+            SizedBox(
+              width: 24,
+              child: best
+                  ? const Tooltip(
+                      message: 'Best time',
+                      child: Icon(Icons.emoji_events,
+                          color: Colors.amber, size: 18),
+                    )
+                  : finished
+                      ? Tooltip(
+                          message: 'Finished',
+                          child: Icon(Icons.check_circle,
+                              color: tokens.textTertiary, size: 18),
+                        )
+                      : const SizedBox.shrink(),
+            ),
+          ],
+        ),
       ),
     );
   }

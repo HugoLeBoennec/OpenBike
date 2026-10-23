@@ -238,4 +238,40 @@ void main() {
     expect(find.text('Connect a trainer'), findsOneWidget);
     expect(rideExtra, isNull);
   });
+
+  testWidgets('a saved route lists its rides and marks the best finish',
+      (tester) async {
+    // _gpx is about 1.1 km long.
+    await storage.saveRoute(_route('a', 'Galibier', km: 1.1), _gpx);
+    Ride ride(String id, int day, int minutes, double meters) => Ride(
+          id: id,
+          startTime: DateTime(2026, 10, day, 8),
+          endTime: DateTime(2026, 10, day, 8).add(Duration(minutes: minutes)),
+          status: RideStatus.finished,
+          cachedTotalDistance: Distance(meters),
+        );
+    await storage.saveRide(ride('slow', 1, 50, 1100));
+    await storage.saveRide(ride('fast', 2, 40, 1100));
+    // Quickest of all, but stopped half-way: not a finish.
+    await storage.saveRide(ride('partial', 3, 10, 550));
+    for (final id in ['slow', 'fast', 'partial']) {
+      await storage.linkRideToRoute(id, 'a');
+    }
+    await pumpLibrary(tester);
+
+    await tester.tap(find.text('Galibier'));
+    await tester.pumpAndSettle();
+
+    expect(find.text('YOUR RIDES ON THIS ROUTE'), findsOneWidget);
+    for (final id in ['slow', 'fast', 'partial']) {
+      expect(find.byKey(Key('routeRide-$id')), findsOneWidget);
+    }
+    final best = find.descendant(
+      of: find.byKey(const Key('routeRide-fast')),
+      matching: find.byIcon(Icons.emoji_events),
+    );
+    expect(best, findsOneWidget);
+    expect(find.byIcon(Icons.emoji_events), findsOneWidget);
+    expect(find.byIcon(Icons.check_circle), findsOneWidget);
+  });
 }

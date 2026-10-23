@@ -104,6 +104,14 @@ class RouteLibrary {
     return _parser.parse(gpx, name: saved.name).copyWith(id: saved.id);
   }
 
+  /// [load] for the saved route [id], or null when there is none.
+  Future<Route?> loadById(String id) async {
+    for (final saved in await _storage.getSavedRoutes()) {
+      if (saved.id == id) return load(saved);
+    }
+    return null;
+  }
+
   static String? _baseName(String? fileName) {
     if (fileName == null) return null;
     final dot = fileName.lastIndexOf('.');

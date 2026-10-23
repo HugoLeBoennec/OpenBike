@@ -10,6 +10,7 @@ import '../theme/app_theme.dart';
 import '../widgets/delete_ride_action.dart';
 import '../widgets/ftp_test_prompt.dart';
 import '../widgets/ride_summary_widgets.dart';
+import '../widgets/save_route_card.dart';
 
 /// Post-ride summary screen shown after stopping a ride.
 ///
@@ -78,6 +79,8 @@ class RideSummaryScreen extends ConsumerWidget {
               children: [
                 HeaderCard(ride: ride),
                 const SizedBox(height: 16),
+                SaveRouteCard(rideId: ride.id),
+                RouteLinkTile(ride: ride),
                 if (newPrDurations.isNotEmpty) ...[
                   NewPersonalRecordsBanner(durations: newPrDurations),
                   const SizedBox(height: 16),
@@ -108,7 +111,7 @@ class RideSummaryScreen extends ConsumerWidget {
                 ],
                 const SectionLabel('EXPORT'),
                 const SizedBox(height: 8),
-                ExportSection(rideId: ride.id),
+                ExportSection(ride: ride),
                 const SizedBox(height: 32),
 
                 // Action buttons

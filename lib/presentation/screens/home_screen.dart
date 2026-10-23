@@ -399,6 +399,9 @@ class _RecentRideTile extends ConsumerWidget {
     final dist = ride.totalDistance.meters > 0
         ? '${formatter.distance(ride.totalDistance)}  •  '
         : '';
+    final routeName = ride.routeId == null
+        ? null
+        : ref.watch(savedRoutesByIdProvider)[ride.routeId]?.name;
 
     final ifactor = ride.intensityFactor(ftp);
     final borderColor = _intensityColor(ifactor);
@@ -426,12 +429,16 @@ class _RecentRideTile extends ConsumerWidget {
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      Text(date,
+                      Text(routeName ?? date,
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
                           style: TextStyle(
                               color: tokens.textPrimary,
                               fontWeight: FontWeight.w600)),
                       const SizedBox(height: 4),
-                      Text('$dur  •  $dist$avgW W  •  NP $np',
+                      Text(
+                          '${routeName != null ? '$date  •  ' : ''}'
+                          '$dur  •  $dist$avgW W  •  NP $np',
                           style: TextStyle(
                               color: tokens.textTertiary, fontSize: 12)),
                     ],

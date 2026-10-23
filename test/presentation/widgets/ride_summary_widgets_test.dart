@@ -89,8 +89,8 @@ void main() {
           exportQueueServiceProvider.overrideWithValue(service),
           exportPluginsProvider.overrideWithValue({'fake-export': plugin}),
         ],
-        child: const MaterialApp(
-          home: Scaffold(body: ExportSection(rideId: 'ride-1')),
+        child: MaterialApp(
+          home: Scaffold(body: ExportSection(ride: _testRide('ride-1'))),
         ),
       ),
     );

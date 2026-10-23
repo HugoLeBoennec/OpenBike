@@ -50,6 +50,12 @@ extension ExportPluginKind on ExportPlugin {
   /// works offline, has no account to connect, and isn't worth running
   /// unasked since the file lands in the app's private folder.
   bool get isFileExport => manifest.capabilities.contains('file-export');
+
+  /// Places the ride on the route it followed (GPX track points), so it
+  /// only applies to rides linked to a saved route.
+  bool get requiresRoute => manifest.capabilities.contains('requires-route');
+
+  bool canExport(Ride ride) => !requiresRoute || ride.routeId != null;
 }
 
 // ---------------------------------------------------------------------------

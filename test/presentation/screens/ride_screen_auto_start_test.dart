@@ -93,6 +93,7 @@ void main() {
         powerHistoryUpdaterProvider.overrideWith((ref) {}),
         hrHistoryUpdaterProvider.overrideWith((ref) {}),
         scheduledWorkoutLinkerProvider.overrideWith((ref) {}),
+        routeRideLinkerProvider.overrideWith((ref) {}),
         autoUploadProvider.overrideWith((ref) {}),
         backgroundRecordingServiceProvider
             .overrideWithValue(_MockBackgroundService()),
