@@ -36,6 +36,9 @@ Settled with the maintainer before implementation (2026-10-23):
   elevation profile, distance / climbing / max grade, **Start ride**.
   - Picked file: editable name + a **Save to library** switch. The switch keeps
     the position it was left in (stored in `AppPreferences`, ON the first time).
+    With the switch on, Start ride saves the route before the trainer check,
+    and a **Save without riding** button keeps it without riding — otherwise
+    saving would need a paired trainer.
   - Saved route: the rides done on it instead of the switch.
 - **Default name:** GPX track name → GPX metadata name → file name →
   "Unnamed route".
@@ -93,16 +96,16 @@ Settled with the maintainer before implementation (2026-10-23):
       summary values.
 
 ### 2. Library UI
-- [ ] Providers: saved routes, sort + search state, "Save to library" switch
+- [x] Providers: saved routes, sort + search state, "Save to library" switch
       (persisted).
-- [ ] `/routes` screen: search, sort menu, route tiles (profile thumbnail,
+- [x] `/routes` screen: search, sort menu, route tiles (profile thumbnail,
       distance, climbing, "3× · 4 d ago" / "never ridden"), empty state, import
       FAB, long-press rename / delete with the ride-count warning.
       (`lib/presentation/screens/route_library_screen.dart`)
-- [ ] Preview sheet shared by import and saved routes; duplicate notice;
+- [x] Preview sheet shared by import and saved routes; duplicate notice;
       trainer check on **Start ride**.
       (`lib/presentation/widgets/route_preview_sheet.dart`)
-- [ ] Home card opens `/routes`.
+- [x] Home card opens `/routes`.
       **Accept:** widget tests for the library (sort, search, empty state) and
       the sheet (switch remembers its position, duplicate notice, saved-route
       mode).

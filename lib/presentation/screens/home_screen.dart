@@ -1,7 +1,3 @@
-import 'dart:convert';
-import 'dart:io';
-
-import 'package:file_picker/file_picker.dart';
 import 'package:fl_chart/fl_chart.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -10,8 +6,6 @@ import 'package:go_router/go_router.dart';
 import '../../core/application/services/ftp_test_planner.dart';
 import '../../core/domain/entities/entities.dart';
 import '../../core/domain/value_objects/value_objects.dart';
-import '../../infrastructure/files/gpx_parser.dart';
-import '../models/ride_extra.dart';
 import '../state/providers.dart';
 import '../theme/app_theme.dart';
 import '../widgets/fitness_info_button.dart';
@@ -73,9 +67,9 @@ class HomeScreen extends ConsumerWidget {
           _ActionCard(
             icon: Icons.terrain,
             title: 'Simulate Route',
-            subtitle: 'Load a .gpx file to simulate',
+            subtitle: 'Ride a saved route or a .gpx file',
             color: Colors.green,
-            onTap: () => _pickRoute(context, ref),
+            onTap: () => context.push('/routes'),
           ),
           const SizedBox(height: 8),
           const _FtpTestCard(),
@@ -96,54 +90,6 @@ class HomeScreen extends ConsumerWidget {
           'resistance or ERG target as you go — pair a trainer first.',
     );
     if (connected && context.mounted) context.go('/ride');
-  }
-
-  Future<void> _pickRoute(BuildContext context, WidgetRef ref) async {
-    final connected = await ensureTrainerConnected(
-      context,
-      ref,
-      reason: 'Route simulation drives your trainer\'s resistance to match '
-          'the terrain — pair a trainer first.',
-    );
-    if (!connected) return;
-
-    final result = await FilePicker.platform.pickFiles(
-      type: FileType.custom,
-      allowedExtensions: ['gpx'],
-      // Guarantees `bytes` alongside `path` — on Android/iOS a file coming
-      // from a cloud-backed provider (Google Drive, "Files" on-demand
-      // downloads, etc.) isn't materialized on local disk, so `path` comes
-      // back null and bytes are the only way to read it.
-      withData: true,
-    );
-    if (result == null || result.files.isEmpty) return;
-
-    final gpxContent = await _readPickedFile(result.files.single);
-    if (gpxContent == null) {
-      if (context.mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('Could not read the selected file')),
-        );
-      }
-      return;
-    }
-
-    final route = GpxRouteParser().parse(gpxContent);
-    if (context.mounted) {
-      context.go('/ride', extra: RideExtra(route: route));
-    }
-  }
-
-  Future<String?> _readPickedFile(PlatformFile file) async {
-    try {
-      final path = file.path;
-      if (path != null) return await File(path).readAsString();
-      final bytes = file.bytes;
-      if (bytes != null) return utf8.decode(bytes);
-      return null;
-    } catch (_) {
-      return null;
-    }
   }
 }
 

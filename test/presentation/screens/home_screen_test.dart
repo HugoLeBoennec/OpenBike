@@ -35,6 +35,9 @@ Widget _wrap(
       GoRoute(
           path: '/scan',
           builder: (_, __) => const Scaffold(body: Text('scan screen'))),
+      GoRoute(
+          path: '/routes',
+          builder: (_, __) => const Scaffold(body: Text('routes screen'))),
     ],
   );
   return ProviderScope(
@@ -123,6 +126,17 @@ void main() {
     await tester.pumpAndSettle();
 
     expect(find.text('settings screen'), findsOneWidget);
+  });
+
+  testWidgets('Simulate Route opens the route library, trainer or not',
+      (tester) async {
+    await _pumpHome(tester, storage, appPrefs, AppTheme.dark);
+
+    await tester.tap(find.text('Simulate Route'));
+    await tester.pumpAndSettle();
+
+    expect(find.text('routes screen'), findsOneWidget);
+    expect(find.text('Connect a trainer'), findsNothing);
   });
 
   testWidgets('free ride without a trainer asks to connect one',

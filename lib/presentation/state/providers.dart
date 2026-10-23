@@ -30,6 +30,7 @@ import '../../plugins/plugin_interfaces.dart';
 import '../../plugins/plugin_registry.dart';
 import '../format/unit_formatter.dart';
 import '../models/ride_screen_config.dart';
+import '../models/route_sort.dart';
 
 // ---------------------------------------------------------------------------
 // Core singletons
@@ -945,6 +946,31 @@ final simulationStateProvider = StreamProvider<SimulationState>((ref) {
 
 final simulationProgressProvider = StreamProvider<SimulationProgress>((ref) {
   return ref.watch(routeSimulatorProvider).progressStream;
+});
+
+// ---------------------------------------------------------------------------
+// Route library
+// ---------------------------------------------------------------------------
+
+final routeLibraryProvider = Provider<RouteLibrary>((ref) {
+  return RouteLibrary(storage: ref.watch(storageProvider));
+});
+
+/// Every saved route with its ride stats — invalidate after saving,
+/// renaming or deleting a route, or linking a ride to one.
+final savedRoutesProvider = FutureProvider<List<SavedRoute>>((ref) {
+  return ref.watch(storageProvider).getSavedRoutes();
+});
+
+/// Seeded from [AppPreferences]; the library screen persists changes.
+final routeSortProvider = StateProvider<RouteSort>((ref) {
+  return RouteSort.fromName(ref.read(appPreferencesProvider).routeSort);
+});
+
+/// The "Save to library" switch shown after picking a GPX file. Seeded from
+/// [AppPreferences]; the preview sheet persists changes.
+final saveImportedRoutesProvider = StateProvider<bool>((ref) {
+  return ref.read(appPreferencesProvider).saveImportedRoutes;
 });
 
 /// Toggles the OSM mini-map in [RouteProfilePane]. Off by default — it's a
