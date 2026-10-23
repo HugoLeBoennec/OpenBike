@@ -36,6 +36,17 @@ and this project adheres to [Semantic Versioning](https://semver.org/).
   60 rpm or under 80% of the target, from the 8th step), or when you tap the
   new **I'm done** button that replaces skip during the ramp. Either drops
   to a new 5-minute cooldown and shows your FTP estimate.
+- **Route library** (Simulate Route on Home): imported GPX routes are kept
+  to ride again, with search, sort, rename and delete. Picking a file shows
+  its elevation profile, distance, climbing and steepest grade, with a
+  **Save to library** switch that remembers its position; a route already in
+  the library rides the saved copy. Routes can be browsed and saved without
+  a trainer; one is needed to start riding.
+- Rides on a saved route are linked to it: History and Home show the
+  route's name, and each route lists the rides done on it with the best
+  finished time. A route ridden without saving can be saved from the ride
+  summary.
+- GPX file export, for rides on a saved route.
 
 ### Changed
 - Every ride (workouts, FTP tests, Free Ride and routes) needs a connected
