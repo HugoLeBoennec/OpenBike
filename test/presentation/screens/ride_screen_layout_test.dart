@@ -44,6 +44,7 @@ Future<void> _pumpRideScreen(WidgetTester tester, Size size) async {
       powerHistoryUpdaterProvider.overrideWith((ref) {}),
       hrHistoryUpdaterProvider.overrideWith((ref) {}),
       scheduledWorkoutLinkerProvider.overrideWith((ref) {}),
+      routeRideLinkerProvider.overrideWith((ref) {}),
       autoUploadProvider.overrideWith((ref) {}),
       backgroundRecordingServiceProvider
           .overrideWithValue(_MockBackgroundService()),

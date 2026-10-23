@@ -33,6 +33,10 @@ class Rides extends Table {
   RealColumn get ftpAtTime => real().nullable()();
   RealColumn get elevationGainM => real().nullable()();
 
+  /// [SavedRoutes] row this ride followed. No FK constraint: SQLite doesn't
+  /// enforce them here, and deleting a route clears this by hand instead.
+  TextColumn get routeId => text().nullable()();
+
   @override
   Set<Column> get primaryKey => {id};
 }
@@ -194,6 +198,33 @@ class FtpHistory extends Table {
 }
 
 // ---------------------------------------------------------------------------
+// Saved routes (route library)
+// ---------------------------------------------------------------------------
+
+@DataClassName('SavedRouteRow')
+class SavedRoutes extends Table {
+  TextColumn get id => text()();
+  TextColumn get name => text()();
+
+  /// 'import' for a file the rider picked, otherwise the id of the route
+  /// source that provided it — see `SavedRoute.source`.
+  TextColumn get source => text()();
+  TextColumn get externalRef => text().nullable()();
+
+  /// The GPX file as picked, re-parsed on each ride so parser improvements
+  /// reach routes saved before them.
+  TextColumn get gpx => text()();
+  TextColumn get fingerprint => text()();
+  RealColumn get distanceM => real()();
+  RealColumn get ascentM => real()();
+  TextColumn get profileJson => text()(); // JSON list of elevations (m)
+  IntColumn get createdAt => integer()(); // epoch ms
+
+  @override
+  Set<Column> get primaryKey => {id};
+}
+
+// ---------------------------------------------------------------------------
 // Database
 // ---------------------------------------------------------------------------
 
@@ -208,12 +239,13 @@ class FtpHistory extends Table {
   ScheduledWorkouts,
   PersonalRecords,
   FtpHistory,
+  SavedRoutes,
 ])
 class AppDatabase extends _$AppDatabase {
   AppDatabase(super.e);
 
   @override
-  int get schemaVersion => 6;
+  int get schemaVersion => 7;
 
   @override
   MigrationStrategy get migration => MigrationStrategy(
@@ -246,6 +278,10 @@ class AppDatabase extends _$AppDatabase {
               },
               from5To6: (m, schema) async {
                 await m.addColumn(schema.ftpHistory, schema.ftpHistory.source);
+              },
+              from6To7: (m, schema) async {
+                await m.createTable(schema.savedRoutes);
+                await m.addColumn(schema.rides, schema.rides.routeId);
               },
             )(m, from, to);
           }

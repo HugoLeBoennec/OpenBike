@@ -69,6 +69,7 @@ class RideDetailScreen extends ConsumerWidget {
             children: [
               HeaderCard(ride: ride),
               const SizedBox(height: 16),
+              RouteLinkTile(ride: ride),
               MetricsGrid(ride: ride, ftp: ftp),
               const SizedBox(height: 24),
               if (ride.readings.isNotEmpty) ...[
@@ -94,7 +95,7 @@ class RideDetailScreen extends ConsumerWidget {
               ],
               const SectionLabel('EXPORT'),
               const SizedBox(height: 8),
-              ExportSection(rideId: ride.id),
+              ExportSection(ride: ride),
               const SizedBox(height: 32),
             ],
           );

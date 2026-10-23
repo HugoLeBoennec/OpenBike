@@ -62,6 +62,22 @@ class _RideScreenState extends ConsumerState<RideScreen> {
     super.initState();
     WakelockPlus.enable();
 
+    // Which route this ride follows, for routeRideLinkerProvider. Left alone
+    // while a recording is under way, so reopening the ride screen without
+    // extras doesn't drop the link of the ride in progress.
+    Future.microtask(() {
+      if (ref.read(recordingEngineProvider).state != RecordingState.idle) {
+        return;
+      }
+      final extra = widget.extra;
+      ref.read(activeRouteProvider.notifier).state = extra?.route == null
+          ? null
+          : ActiveRoute(
+              savedRouteId: extra!.savedRouteId,
+              draft: extra.routeDraft,
+            );
+    });
+
     // If a workout was passed, set it as the current workout and start the
     // ERG-driving engine against the connected trainer, along with the
     // recording.
@@ -330,6 +346,8 @@ class _RideScreenState extends ConsumerState<RideScreen> {
     ref.watch(backgroundRecordingServiceProvider);
     // Links a finished ride back to the calendar entry it was started from.
     ref.watch(scheduledWorkoutLinkerProvider);
+    // Links the finished ride to the saved route it followed.
+    ref.watch(routeRideLinkerProvider);
     // Auto-enqueues exports for any service with auto-upload enabled.
     ref.watch(autoUploadProvider);
     ref.listen(

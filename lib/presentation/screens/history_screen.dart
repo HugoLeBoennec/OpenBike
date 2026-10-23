@@ -125,6 +125,11 @@ class _RideTile extends ConsumerWidget {
     final dur = _formatDuration(ride.activeDuration);
     final date = _formatDate(ride.startTime);
     final dist = formatter.distanceValue(ride.totalDistance);
+    // Route rides are named after their route, looked up rather than stored
+    // so renaming the route renames its past rides too.
+    final routeName = ride.routeId == null
+        ? null
+        : ref.watch(savedRoutesByIdProvider)[ride.routeId]?.name;
 
     // Intensity-based left border color
     final ifactor = ride.intensityFactor(ftp);
@@ -147,23 +152,24 @@ class _RideTile extends ConsumerWidget {
         child: ListTile(
           contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
           title: Text(
-            date,
+            routeName ?? date,
+            maxLines: 1,
+            overflow: TextOverflow.ellipsis,
             style: TextStyle(color: tokens.textPrimary, fontWeight: FontWeight.w600),
           ),
           subtitle: Padding(
             padding: const EdgeInsets.only(top: 4),
-            child: Row(
+            // Wraps rather than overflowing once a route ride adds its date.
+            child: Wrap(
+              spacing: 12,
               children: [
+                if (routeName != null) _MiniStat(value: date, label: ''),
                 _MiniStat(value: dur, label: ''),
-                const SizedBox(width: 12),
-                if (dist > 0) ...[
+                if (dist > 0)
                   _MiniStat(
                       value: dist.toStringAsFixed(1),
                       label: formatter.distanceUnit),
-                  const SizedBox(width: 12),
-                ],
                 _MiniStat(value: '$avgW', label: 'W'),
-                const SizedBox(width: 12),
                 _MiniStat(value: '$np', label: 'NP'),
               ],
             ),

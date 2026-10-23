@@ -14,7 +14,10 @@ class GpxRouteParser {
 
   /// Parses a GPX string into a [Route] with Haversine distances,
   /// 5-point smoothed elevations, and clamped grades.
-  Route parse(String gpxContent, {String? name}) {
+  ///
+  /// [name] replaces the file's own name; [fallbackName] (e.g. the file
+  /// name) is used only when the file has none.
+  Route parse(String gpxContent, {String? name, String? fallbackName}) {
     final gpx = gpx_lib.GpxReader().fromString(gpxContent);
 
     // Collect raw geo points from tracks, then routes.
@@ -46,7 +49,7 @@ class GpxRouteParser {
     if (rawPoints.isEmpty) {
       return Route(
         id: _uuid.v4(),
-        name: name ?? 'Unnamed Route',
+        name: name ?? _nonBlank(fallbackName) ?? 'Unnamed Route',
         points: const [],
       );
     }
@@ -89,11 +92,14 @@ class GpxRouteParser {
       ));
     }
 
-    // Determine name: parameter > GPX track name > GPX metadata name.
+    // Determine name: parameter > GPX track name > GPX route name > GPX
+    // metadata name > fallback. Exporters often write an empty <name/>.
     final gpxName = name ??
-        (gpx.trks.isNotEmpty && gpx.trks.first.name != null
-            ? gpx.trks.first.name!
-            : (gpx.metadata?.name ?? 'Unnamed Route'));
+        _nonBlank(gpx.trks.isNotEmpty ? gpx.trks.first.name : null) ??
+        _nonBlank(gpx.rtes.isNotEmpty ? gpx.rtes.first.name : null) ??
+        _nonBlank(gpx.metadata?.name) ??
+        _nonBlank(fallbackName) ??
+        'Unnamed Route';
 
     return Route(
       id: _uuid.v4(),
@@ -102,6 +108,9 @@ class GpxRouteParser {
       points: points,
     );
   }
+
+  static String? _nonBlank(String? s) =>
+      s == null || s.trim().isEmpty ? null : s.trim();
 
   /// Public Haversine distance in meters between two geo points.
   static double haversine(GeoPoint a, GeoPoint b) => _haversine(a, b);

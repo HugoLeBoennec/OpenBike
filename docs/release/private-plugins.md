@@ -14,6 +14,14 @@ contains **no code, endpoints, or credentials for either service** — that's
 enforced by CI (`grep -ri "opencoach\|records_api" lib/` must be empty; see
 the P6 phase's `validation` block).
 
+## Planned — Records race courses
+
+Records will also be a source of **routes**: the bike course of the races a
+rider has on Records, shown in the route library (P12). That needs a third
+hook next to the two below, `extraRouteSources()` returning
+`RouteSourcePlugin`s, plus a new endpoint on the Records side. Tracked in
+[`docs/roadmap/P13-records-route-source.md`](../roadmap/P13-records-route-source.md).
+
 ## Ideas — not started
 
 More candidates for the private package. None exist yet; each would be one

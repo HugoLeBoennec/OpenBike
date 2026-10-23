@@ -8,6 +8,7 @@ export 'onboarding_screen.dart';
 export 'ride_detail_screen.dart';
 export 'ride_screen.dart';
 export 'ride_summary_screen.dart';
+export 'route_library_screen.dart';
 export 'settings_screen.dart';
 export 'trends_screen.dart';
 export 'workout_builder_screen.dart';

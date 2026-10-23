@@ -43,7 +43,11 @@ mixin _$Ride {
   // compute this from readings (no elevation source besides the route
   // itself) — it's set once from RouteSimulator's live total on stop and
   // persisted verbatim, same as the other cached fields above.
-  Distance? get cachedElevationGain => throw _privateConstructorUsedError;
+  Distance? get cachedElevationGain =>
+      throw _privateConstructorUsedError; // The saved route this ride followed. Null for free rides, workouts and
+  // routes ridden without saving them. Set by `StoragePort.linkRideToRoute`
+  // once the ride stops — `saveRide` never writes it.
+  String? get routeId => throw _privateConstructorUsedError;
 
   /// Create a copy of Ride
   /// with the given fields replaced by the non-null parameter values.
@@ -75,6 +79,7 @@ abstract class $RideCopyWith<$Res> {
     double? cachedIntensityFactor,
     Watts? ftpAtTime,
     Distance? cachedElevationGain,
+    String? routeId,
   });
 
   $WattsCopyWith<$Res>? get cachedAvgPower;
@@ -121,6 +126,7 @@ class _$RideCopyWithImpl<$Res, $Val extends Ride>
     Object? cachedIntensityFactor = freezed,
     Object? ftpAtTime = freezed,
     Object? cachedElevationGain = freezed,
+    Object? routeId = freezed,
   }) {
     return _then(
       _value.copyWith(
@@ -196,6 +202,10 @@ class _$RideCopyWithImpl<$Res, $Val extends Ride>
                 ? _value.cachedElevationGain
                 : cachedElevationGain // ignore: cast_nullable_to_non_nullable
                       as Distance?,
+            routeId: freezed == routeId
+                ? _value.routeId
+                : routeId // ignore: cast_nullable_to_non_nullable
+                      as String?,
           )
           as $Val,
     );
@@ -355,6 +365,7 @@ abstract class _$$RideImplCopyWith<$Res> implements $RideCopyWith<$Res> {
     double? cachedIntensityFactor,
     Watts? ftpAtTime,
     Distance? cachedElevationGain,
+    String? routeId,
   });
 
   @override
@@ -407,6 +418,7 @@ class __$$RideImplCopyWithImpl<$Res>
     Object? cachedIntensityFactor = freezed,
     Object? ftpAtTime = freezed,
     Object? cachedElevationGain = freezed,
+    Object? routeId = freezed,
   }) {
     return _then(
       _$RideImpl(
@@ -482,6 +494,10 @@ class __$$RideImplCopyWithImpl<$Res>
             ? _value.cachedElevationGain
             : cachedElevationGain // ignore: cast_nullable_to_non_nullable
                   as Distance?,
+        routeId: freezed == routeId
+            ? _value.routeId
+            : routeId // ignore: cast_nullable_to_non_nullable
+                  as String?,
       ),
     );
   }
@@ -509,6 +525,7 @@ class _$RideImpl extends _Ride {
     this.cachedIntensityFactor,
     this.ftpAtTime,
     this.cachedElevationGain,
+    this.routeId,
   }) : _readings = readings,
        _laps = laps,
        super._();
@@ -574,10 +591,15 @@ class _$RideImpl extends _Ride {
   // persisted verbatim, same as the other cached fields above.
   @override
   final Distance? cachedElevationGain;
+  // The saved route this ride followed. Null for free rides, workouts and
+  // routes ridden without saving them. Set by `StoragePort.linkRideToRoute`
+  // once the ride stops — `saveRide` never writes it.
+  @override
+  final String? routeId;
 
   @override
   String toString() {
-    return 'Ride(id: $id, startTime: $startTime, endTime: $endTime, status: $status, readings: $readings, laps: $laps, pauseDuration: $pauseDuration, cachedAvgPower: $cachedAvgPower, cachedNormalizedPower: $cachedNormalizedPower, cachedMaxPower: $cachedMaxPower, cachedAvgCadence: $cachedAvgCadence, cachedAvgHr: $cachedAvgHr, cachedMaxHr: $cachedMaxHr, cachedTotalDistance: $cachedTotalDistance, cachedTss: $cachedTss, cachedIntensityFactor: $cachedIntensityFactor, ftpAtTime: $ftpAtTime, cachedElevationGain: $cachedElevationGain)';
+    return 'Ride(id: $id, startTime: $startTime, endTime: $endTime, status: $status, readings: $readings, laps: $laps, pauseDuration: $pauseDuration, cachedAvgPower: $cachedAvgPower, cachedNormalizedPower: $cachedNormalizedPower, cachedMaxPower: $cachedMaxPower, cachedAvgCadence: $cachedAvgCadence, cachedAvgHr: $cachedAvgHr, cachedMaxHr: $cachedMaxHr, cachedTotalDistance: $cachedTotalDistance, cachedTss: $cachedTss, cachedIntensityFactor: $cachedIntensityFactor, ftpAtTime: $ftpAtTime, cachedElevationGain: $cachedElevationGain, routeId: $routeId)';
   }
 
   @override
@@ -615,11 +637,12 @@ class _$RideImpl extends _Ride {
             (identical(other.ftpAtTime, ftpAtTime) ||
                 other.ftpAtTime == ftpAtTime) &&
             (identical(other.cachedElevationGain, cachedElevationGain) ||
-                other.cachedElevationGain == cachedElevationGain));
+                other.cachedElevationGain == cachedElevationGain) &&
+            (identical(other.routeId, routeId) || other.routeId == routeId));
   }
 
   @override
-  int get hashCode => Object.hash(
+  int get hashCode => Object.hashAll([
     runtimeType,
     id,
     startTime,
@@ -639,7 +662,8 @@ class _$RideImpl extends _Ride {
     cachedIntensityFactor,
     ftpAtTime,
     cachedElevationGain,
-  );
+    routeId,
+  ]);
 
   /// Create a copy of Ride
   /// with the given fields replaced by the non-null parameter values.
@@ -670,6 +694,7 @@ abstract class _Ride extends Ride {
     final double? cachedIntensityFactor,
     final Watts? ftpAtTime,
     final Distance? cachedElevationGain,
+    final String? routeId,
   }) = _$RideImpl;
   const _Ride._() : super._();
 
@@ -714,7 +739,11 @@ abstract class _Ride extends Ride {
   // itself) — it's set once from RouteSimulator's live total on stop and
   // persisted verbatim, same as the other cached fields above.
   @override
-  Distance? get cachedElevationGain;
+  Distance? get cachedElevationGain; // The saved route this ride followed. Null for free rides, workouts and
+  // routes ridden without saving them. Set by `StoragePort.linkRideToRoute`
+  // once the ride stops — `saveRide` never writes it.
+  @override
+  String? get routeId;
 
   /// Create a copy of Ride
   /// with the given fields replaced by the non-null parameter values.

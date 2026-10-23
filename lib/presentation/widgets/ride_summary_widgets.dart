@@ -9,6 +9,7 @@ import '../../infrastructure/persistence/export_queue_service.dart';
 import '../../plugins/plugin_interfaces.dart';
 import '../state/providers.dart';
 import '../theme/app_theme.dart';
+import 'route_preview_sheet.dart';
 
 // ---------------------------------------------------------------------------
 // New personal records banner
@@ -478,16 +479,61 @@ class LapRow extends StatelessWidget {
 }
 
 // ---------------------------------------------------------------------------
+// Route link
+// ---------------------------------------------------------------------------
+
+/// The saved route a ride followed, opening that route when tapped.
+/// Nothing for a ride without one.
+class RouteLinkTile extends ConsumerWidget {
+  const RouteLinkTile({super.key, required this.ride});
+
+  final Ride ride;
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final routeId = ride.routeId;
+    final route =
+        routeId == null ? null : ref.watch(savedRoutesByIdProvider)[routeId];
+    if (route == null) return const SizedBox.shrink();
+    final tokens = context.tokens;
+
+    return Padding(
+      padding: const EdgeInsets.only(bottom: 16),
+      child: Material(
+        color: tokens.surfaceTier2,
+        borderRadius: BorderRadius.circular(12),
+        clipBehavior: Clip.antiAlias,
+        child: ListTile(
+          key: const Key('rideRouteTile'),
+          leading: const Icon(Icons.terrain, color: Colors.deepOrange),
+          title: Text(route.name,
+              style: TextStyle(
+                  color: tokens.textPrimary, fontWeight: FontWeight.w600)),
+          subtitle: Text('Route',
+              style: TextStyle(color: tokens.textTertiary, fontSize: 12)),
+          trailing: Icon(Icons.chevron_right, color: tokens.textDisabled),
+          onTap: () => showSavedRoutePreview(context, route),
+        ),
+      ),
+    );
+  }
+}
+
+// ---------------------------------------------------------------------------
 // Export section
 // ---------------------------------------------------------------------------
 
 class ExportSection extends ConsumerWidget {
-  const ExportSection({super.key, required this.rideId});
-  final String rideId;
+  const ExportSection({super.key, required this.ride});
+  final Ride ride;
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    final plugins = ref.watch(exportPluginsProvider);
+    // GPX needs the route the ride followed — hidden on rides without one.
+    final plugins = {
+      for (final entry in ref.watch(exportPluginsProvider).entries)
+        if (entry.value.canExport(ride)) entry.key: entry.value,
+    };
     final queueAsync = ref.watch(exportQueueProvider);
 
     if (plugins.isEmpty) {
@@ -502,7 +548,7 @@ class ExportSection extends ConsumerWidget {
       children: [
         for (final entry in plugins.entries)
           ExportButton(
-            rideId: rideId,
+            rideId: ride.id,
             pluginId: entry.key,
             pluginName: entry.value.manifest.name,
             isAuthenticated: entry.value.isAuthenticated,

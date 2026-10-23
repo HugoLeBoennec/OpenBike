@@ -228,4 +228,40 @@ void main() {
 
     await db.close();
   });
+
+  test('v6 -> v7 migration adds saved routes and rides.route_id', () async {
+    final schema = await verifier.schemaAt(6);
+    final oldDb = v6.DatabaseAtV6(schema.newConnection());
+    await oldDb.customStatement(
+      "INSERT INTO rides (id, start_time, status) "
+      "VALUES ('ride-pre-v7', 6000, 'finished')",
+    );
+    await oldDb.close();
+
+    final db = AppDatabase(schema.newConnection());
+    await verifier.migrateAndValidate(db, 7);
+
+    final ride = await db.select(db.rides).getSingle();
+    expect(ride.id, 'ride-pre-v7');
+    expect(ride.routeId, isNull);
+
+    // The new table and column are usable going forward.
+    await db.into(db.savedRoutes).insert(SavedRoutesCompanion.insert(
+          id: 'route-1',
+          name: 'Galibier',
+          source: 'import',
+          gpx: '<gpx/>',
+          fingerprint: '{}',
+          distanceM: 18100,
+          ascentM: 1245,
+          profileJson: '[]',
+          createdAt: 7000,
+        ));
+    await (db.update(db.rides)..where((t) => t.id.equals('ride-pre-v7')))
+        .write(const RidesCompanion(routeId: Value('route-1')));
+    expect((await db.select(db.rides).getSingle()).routeId, 'route-1');
+    expect(await db.select(db.savedRoutes).get(), hasLength(1));
+
+    await db.close();
+  });
 }

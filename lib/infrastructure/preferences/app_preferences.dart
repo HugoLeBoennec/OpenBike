@@ -35,6 +35,8 @@ class AppPreferences {
   static const _kLastResistanceLevel = 'last_resistance_level';
   static const _kTrainerDifficulty = 'trainer_difficulty';
   static const _kFtpRetestIntervalDays = 'ftp_retest_interval_days';
+  static const _kSaveImportedRoutes = 'save_imported_routes';
+  static const _kRouteSort = 'route_sort';
 
   // -------------------------------------------------------------------------
   // Onboarding
@@ -249,4 +251,21 @@ class AppPreferences {
           FtpTestPlanner.maxIntervalDays,
         ),
       );
+
+  // -------------------------------------------------------------------------
+  // Route library
+  // -------------------------------------------------------------------------
+
+  /// Where the "Save to library" switch was left when a GPX file was last
+  /// picked (default on: a route worth picking is usually worth keeping).
+  bool get saveImportedRoutes => _prefs.getBool(_kSaveImportedRoutes) ?? true;
+
+  Future<void> setSaveImportedRoutes(bool value) =>
+      _prefs.setBool(_kSaveImportedRoutes, value);
+
+  /// Name of the route library's sort order; null until the rider picks one.
+  String? get routeSort => _prefs.getString(_kRouteSort);
+
+  Future<void> setRouteSort(String value) =>
+      _prefs.setString(_kRouteSort, value);
 }

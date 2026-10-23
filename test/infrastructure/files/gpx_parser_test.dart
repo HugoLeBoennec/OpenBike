@@ -237,6 +237,19 @@ void main() {
       expect(route.name, 'My Custom Name');
     });
 
+    test('fallbackName names only a file without a name', () {
+      expect(parser.parse(_simple3Point, fallbackName: 'file').name,
+          'Test Track');
+      expect(parser.parse(_noElevation, fallbackName: 'file').name, 'file');
+    });
+
+    test('a blank track name falls through to the metadata name', () {
+      final route = parser.parse(
+        _simple3Point.replaceFirst('<name>Test Track</name>', '<name> </name>'),
+      );
+      expect(route.name, 'Test Route');
+    });
+
     test('route points (rte) are parsed when no tracks', () {
       final route = parser.parse(_routePoints);
       expect(route.points, hasLength(2));
