@@ -67,12 +67,12 @@ class _SaveRouteCardState extends ConsumerState<SaveRouteCard> {
         key: const Key('saveRouteCard'),
         padding: const EdgeInsets.all(16),
         decoration: BoxDecoration(
-          color: Colors.green.withValues(alpha: 0.12),
+          color: Colors.deepOrange.withValues(alpha: 0.12),
           borderRadius: BorderRadius.circular(12),
         ),
         child: Row(
           children: [
-            const Icon(Icons.terrain, color: Colors.green),
+            const Icon(Icons.terrain, color: Colors.deepOrange),
             const SizedBox(width: 12),
             Expanded(
               child: Column(

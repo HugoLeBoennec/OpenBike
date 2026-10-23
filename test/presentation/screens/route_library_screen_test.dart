@@ -13,7 +13,6 @@ import 'package:open_bike/infrastructure/persistence/app_database.dart';
 import 'package:open_bike/infrastructure/persistence/drift_storage.dart';
 import 'package:open_bike/infrastructure/preferences/app_preferences.dart';
 import 'package:open_bike/presentation/models/ride_extra.dart';
-import 'package:open_bike/presentation/models/route_sort.dart';
 import 'package:open_bike/presentation/screens/route_library_screen.dart';
 import 'package:open_bike/presentation/state/providers.dart';
 import 'package:open_bike/presentation/theme/app_theme.dart';
@@ -141,10 +140,9 @@ void main() {
     await pumpLibrary(tester);
     expect(tileNames(tester), ['Ventoux', 'Alpe d\'Huez']);
 
-    await tester.tap(find.byKey(const Key('routeSortMenu')));
+    await tester.tap(find.byKey(const Key('routeSortButton')));
     await tester.pumpAndSettle();
-    await tester
-        .tap(find.widgetWithText(CheckedPopupMenuItem<RouteSort>, 'Name'));
+    await tester.tap(find.byKey(const Key('routeSort-name')));
     await tester.pumpAndSettle();
 
     expect(tileNames(tester), ['Alpe d\'Huez', 'Ventoux']);

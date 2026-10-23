@@ -40,22 +40,11 @@ class _RouteLibraryScreenState extends ConsumerState<RouteLibraryScreen> {
       appBar: AppBar(
         title: const Text('Routes'),
         actions: [
-          PopupMenuButton<RouteSort>(
-            key: const Key('routeSortMenu'),
+          IconButton(
+            key: const Key('routeSortButton'),
             icon: Icon(Icons.sort, color: tokens.textTertiary),
             tooltip: 'Sort',
-            onSelected: (value) {
-              ref.read(routeSortProvider.notifier).state = value;
-              ref.read(appPreferencesProvider).setRouteSort(value.name);
-            },
-            itemBuilder: (_) => [
-              for (final option in RouteSort.values)
-                CheckedPopupMenuItem(
-                  value: option,
-                  checked: option == sort,
-                  child: Text(option.label),
-                ),
-            ],
+            onPressed: () => _showSortOptions(sort),
           ),
         ],
       ),
@@ -80,7 +69,7 @@ class _RouteLibraryScreenState extends ConsumerState<RouteLibraryScreen> {
       ),
       floatingActionButton: FloatingActionButton.extended(
         key: const Key('importRouteFab'),
-        backgroundColor: Colors.green,
+        backgroundColor: Colors.deepOrange,
         foregroundColor: Colors.white,
         onPressed: _importRoute,
         icon: const Icon(Icons.file_open),
@@ -198,6 +187,35 @@ class _RouteLibraryScreenState extends ConsumerState<RouteLibraryScreen> {
     if (!mounted) return;
     ScaffoldMessenger.of(context)
         .showSnackBar(SnackBar(content: Text(message)));
+  }
+
+  void _showSortOptions(RouteSort current) {
+    final tokens = context.tokens;
+    showModalBottomSheet<void>(
+      context: context,
+      backgroundColor: tokens.surfaceTier2,
+      builder: (ctx) => SafeArea(
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            for (final option in RouteSort.values)
+              ListTile(
+                key: Key('routeSort-${option.name}'),
+                title: Text(option.label,
+                    style: TextStyle(color: tokens.textPrimary)),
+                trailing: option == current
+                    ? const Icon(Icons.check, color: Colors.deepOrange)
+                    : null,
+                onTap: () {
+                  Navigator.pop(ctx);
+                  ref.read(routeSortProvider.notifier).state = option;
+                  ref.read(appPreferencesProvider).setRouteSort(option.name);
+                },
+              ),
+          ],
+        ),
+      ),
+    );
   }
 
   void _showRouteActions(SavedRoute route) {

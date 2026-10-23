@@ -8,7 +8,7 @@ class RouteMiniProfile extends StatelessWidget {
   const RouteMiniProfile({
     super.key,
     required this.profile,
-    this.color = Colors.green,
+    this.color = Colors.deepOrange,
     this.size = const Size(56, 32),
   });
 

@@ -244,7 +244,7 @@ class _RoutePreviewSheetState extends ConsumerState<RoutePreviewSheet> {
           ElevatedButton.icon(
             key: const Key('startRouteRideButton'),
             style: ElevatedButton.styleFrom(
-              backgroundColor: Colors.green,
+              backgroundColor: Colors.deepOrange,
               foregroundColor: Colors.white,
               minimumSize: const Size.fromHeight(48),
               shape: RoundedRectangleBorder(
@@ -457,12 +457,12 @@ class _LibraryNotice extends StatelessWidget {
       key: const Key('routeLibraryNotice'),
       padding: const EdgeInsets.all(12),
       decoration: BoxDecoration(
-        color: Colors.green.withValues(alpha: 0.12),
+        color: Colors.deepOrange.withValues(alpha: 0.12),
         borderRadius: BorderRadius.circular(12),
       ),
       child: Row(
         children: [
-          const Icon(Icons.bookmark_added, color: Colors.green, size: 20),
+          const Icon(Icons.bookmark_added, color: Colors.deepOrange, size: 20),
           const SizedBox(width: 8),
           Expanded(
             child: Text(text,

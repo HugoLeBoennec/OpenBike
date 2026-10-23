@@ -505,7 +505,7 @@ class RouteLinkTile extends ConsumerWidget {
         clipBehavior: Clip.antiAlias,
         child: ListTile(
           key: const Key('rideRouteTile'),
-          leading: const Icon(Icons.terrain, color: Colors.green),
+          leading: const Icon(Icons.terrain, color: Colors.deepOrange),
           title: Text(route.name,
               style: TextStyle(
                   color: tokens.textPrimary, fontWeight: FontWeight.w600)),
