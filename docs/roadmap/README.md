@@ -158,5 +158,5 @@ An agent picking up a phase MUST:
 | [P9](P9-release.md) | Release — stores, crash reporting, LICENSE | DONE |
 | [P10](P10-monetization-optional.md) | Monetization scaffolding (optional) | BLOCKED |
 | [P11](P11-trainer-control-port.md) | Manual trainer control port (ERG/resistance/SIM on the fly, from `stole-version`) | DONE |
-| [P12](P12-route-library.md) | Route library — saved GPX routes, ride ↔ route link, GPX export | IN_PROGRESS |
+| [P12](P12-route-library.md) | Route library — saved GPX routes, ride ↔ route link, GPX export | DONE |
 | [P13](P13-records-route-source.md) | Records race courses in the route library (private integration) | NOT_STARTED |
