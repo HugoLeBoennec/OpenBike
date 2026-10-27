@@ -123,8 +123,10 @@ class RecordingEngine {
   // Distance ridden since start. Trainers report a running counter that
   // started when they powered on or connected, not when the ride did, so
   // readings carry the sum of its increments instead of the raw value.
+  // Many trainers send no counter at all, only speed: theirs is added up.
   double _distanceRidden = 0;
   double? _lastTrainerDistance;
+  bool _trainerCountsDistance = false;
 
   // ---------------------------------------------------------------------------
   // start
@@ -155,6 +157,7 @@ class RecordingEngine {
     _latestReading = null;
     _distanceRidden = 0;
     _lastTrainerDistance = null;
+    _trainerCountsDistance = false;
 
     // Listen to sensor events — buffer the latest reading.
     _latestGrade = null;
@@ -425,11 +428,7 @@ class RecordingEngine {
         cadence: reading.cadence,
         heartRate: reading.heartRate,
         speed: reading.speed,
-        distance: reading.distance != null
-            ? Distance(_addTrainerDistance(reading.distance!.meters))
-            : (_latestSimDistance != null
-                ? Distance(_latestSimDistance!)
-                : null),
+        distance: _distanceFor(reading),
         grade: _latestGrade,
       );
       _readings.add(stamped);
@@ -442,6 +441,23 @@ class RecordingEngine {
       _ticksSinceLastSave = 0;
       _pendingAutoSave = _autoSave();
     }
+  }
+
+  /// Distance ridden so far for the sample taken from [reading]: from the
+  /// trainer's counter when it sends one, else the route simulator's, else
+  /// the trainer's speed over the second the sample stands for.
+  Distance? _distanceFor(SensorReading reading) {
+    if (reading.distance != null) {
+      _trainerCountsDistance = true;
+      return Distance(_addTrainerDistance(reading.distance!.meters));
+    }
+    if (_latestSimDistance != null) return Distance(_latestSimDistance!);
+    // A trainer that sends its counter in some notifications only: the next
+    // one carries the distance ridden meanwhile, so adding its speed too
+    // would count that stretch twice.
+    if (_trainerCountsDistance || reading.speed == null) return null;
+    _distanceRidden += reading.speed!.mps; // samples are 1 s apart
+    return Distance(_distanceRidden);
   }
 
   /// Adds the trainer counter's increase since the last sample and returns

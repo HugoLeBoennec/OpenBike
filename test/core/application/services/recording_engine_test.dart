@@ -654,11 +654,16 @@ void main() {
         () async {
       await engine.start();
 
-      // Trainer reports power/cadence but no distance (common for many
+      // Trainer reports power and speed but no distance (common for many
       // FTMS trainers) — the simulator's own physics-driven distance
-      // should be stamped onto the reading instead.
+      // should be stamped onto the reading instead of the trainer's speed
+      // added up.
       eventBus.fire(SensorEvent(
-        reading: SensorReading(timestamp: DateTime.now(), power: const Watts(200)),
+        reading: SensorReading(
+          timestamp: DateTime.now(),
+          power: const Watts(200),
+          speed: const Speed(36),
+        ),
         deviceId: 'test-trainer',
       ));
       eventBus.fire(SimulationEvent.positionChanged(
@@ -831,6 +836,47 @@ void main() {
 
       final ride = await engine.stop();
       expect(ride.totalDistance.meters, 130);
+    });
+
+    void trainerSpeed(double kmh, {double? counter}) =>
+        eventBus.fire(SensorEvent(
+          reading: SensorReading(
+            timestamp: DateTime.now(),
+            power: const Watts(200),
+            speed: Speed(kmh),
+            distance: counter != null ? Distance(counter) : null,
+          ),
+          deviceId: 'test-trainer',
+        ));
+
+    test('adds up speed when the trainer sends no distance', () async {
+      await engine.start();
+      trainerSpeed(36); // 10 m/s
+      await Future<void>.delayed(const Duration(milliseconds: 1200));
+      trainerSpeed(18); // 5 m/s
+      await Future<void>.delayed(const Duration(milliseconds: 1000));
+
+      final ride = await engine.stop();
+      expect(ride.readings.map((r) => r.distance?.meters),
+          [closeTo(10, 1e-9), closeTo(15, 1e-9)]);
+      expect(ride.totalDistance.meters, closeTo(15, 1e-9));
+    });
+
+    test('does not add speed to a counter sent in some notifications only',
+        () async {
+      await engine.start();
+      trainerSpeed(36, counter: 1000);
+      await Future<void>.delayed(const Duration(milliseconds: 1200));
+      // A notification without the counter: its distance comes with the
+      // next one.
+      trainerSpeed(36);
+      await Future<void>.delayed(const Duration(milliseconds: 1000));
+      trainerSpeed(36, counter: 1020);
+      await Future<void>.delayed(const Duration(milliseconds: 1000));
+
+      final ride = await engine.stop();
+      expect(ride.readings.map((r) => r.distance?.meters), [0, null, 20]);
+      expect(ride.totalDistance.meters, 20);
     });
   });
 

@@ -102,6 +102,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/).
 - FIT exports and Strava uploads reported a 200 W FTP whatever yours was,
   so their TSS and IF disagreed with the app's; they now use the FTP the
   ride was scored against.
+- Free rides, workouts and FTP tests on a trainer that reports speed but no
+  distance (many do over Bluetooth) recorded 0 km: on the ride screen, the
+  summary, History, and FIT and TCX exports. Distance is now worked out
+  from the trainer's speed; on a one-hour ride it came within 0.2% of a
+  Garmin watch recording the same trainer. Route rides already used the
+  route's distance.
 
 ## [1.0.0] - 2026-07-10
 
